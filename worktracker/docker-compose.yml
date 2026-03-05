@@ -1,0 +1,39 @@
+name: worktracker
+
+services:
+  web:
+    image: worktracker-web:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        SUPABASE_URL: ${SUPABASE_URL:-}
+        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+        GOOGLE_IOS_REVERSED_CLIENT_ID: ${GOOGLE_IOS_REVERSED_CLIENT_ID:-}
+        EAS_PROJECT_ID: ${EAS_PROJECT_ID:-}
+    ports:
+      - '${WORKTRACKER_WEB_PORT:-3000}:80'
+    volumes:
+      - nginx_logs:/var/log/nginx
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:80/health >/dev/null || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Optional self-hosted Supabase container for offline-only smoke testing.
+  # Keep this profile disabled if you use `supabase start` locally instead.
+  supabase:
+    image: supabase/supabase:latest
+    profiles:
+      - supabase
+    ports:
+      - '${SUPABASE_LOCAL_PORT:-54321}:8000'
+    volumes:
+      - supabase_data:/var/lib/supabase
+
+volumes:
+  nginx_logs:
+  supabase_data:
