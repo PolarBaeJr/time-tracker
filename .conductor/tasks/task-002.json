@@ -1,0 +1,16 @@
+{
+  "id": "task-002",
+  "subject": "Configure ESLint Prettier and Husky",
+  "description": "Set up code quality tooling. Install eslint, @typescript-eslint/parser, @typescript-eslint/eslint-plugin, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-native, prettier, eslint-config-prettier, husky, lint-staged. Create .eslintrc.js extending recommended configs for TypeScript and React Native. Create .prettierrc with singleQuote: true, trailingComma: 'es5', printWidth: 100. Initialize Husky with 'npx husky install', create pre-commit hook running 'npx lint-staged'. Create lint-staged.config.js targeting *.ts,*.tsx files.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-001"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.143Z",
+  "started_at": null,
+  "completed_at": null
+}

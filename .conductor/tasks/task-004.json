@@ -1,0 +1,25 @@
+{
+  "id": "task-004",
+  "subject": "Create Supabase Client Configuration",
+  "description": "Install @supabase/supabase-js, expo-secure-store. Create src/lib/supabase.ts with platform detection. Create src/lib/supabase.native.ts using SecureStore adapter for token storage: implement custom storage object with getItem/setItem/removeItem using SecureStore.getItemAsync/setItemAsync/deleteItemAsync. Create src/lib/supabase.web.ts using localStorage (default). Export createClient with proper configuration including auth.flowType: 'pkce', auth.autoRefreshToken: true, auth.persistSession: true. Create src/lib/constants.ts for SUPABASE_URL and SUPABASE_ANON_KEY environment variables using expo-constants. Add .env.example with placeholder values.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-001"
+  ],
+  "blocks": [
+    "task-010",
+    "task-013",
+    "task-016",
+    "task-018",
+    "task-019",
+    "task-020",
+    "task-021",
+    "task-036"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.145Z",
+  "started_at": null,
+  "completed_at": null
+}

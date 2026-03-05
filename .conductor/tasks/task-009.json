@@ -1,0 +1,19 @@
+{
+  "id": "task-009",
+  "subject": "Create Database Functions and Triggers",
+  "description": "Create supabase/migrations/20240101000007_functions.sql. Create trigger function update_updated_at(): CREATE OR REPLACE FUNCTION update_updated_at() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ LANGUAGE plpgsql; Apply to users and time_entries tables. Create function to handle user creation from auth.users: CREATE OR REPLACE FUNCTION handle_new_user() RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth AS $$ BEGIN INSERT INTO public.users (id, email, name) VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'name'); RETURN NEW; END; $$; Create trigger on auth.users AFTER INSERT. Create function stop_timer_and_create_entry(p_notes text DEFAULT NULL) that atomically: 1) Gets active timer for current user, 2) Calculates duration, 3) Inserts time_entry, 4) Deletes active_timer, 5) Returns the new time_entry. CRITICAL: ALL SECURITY DEFINER functions MUST include 'SET search_path = public' (or appropriate schema list) to prevent search_path injection attacks.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-007"
+  ],
+  "blocks": [
+    "task-016",
+    "task-045"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.148Z",
+  "started_at": null,
+  "completed_at": null
+}

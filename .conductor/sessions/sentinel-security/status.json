@@ -1,0 +1,8 @@
+{
+  "session_id": "sentinel-security",
+  "state": "failed",
+  "current_task": null,
+  "tasks_completed": [],
+  "progress": "Cannot read properties of undefined (reading 'substring')",
+  "updated_at": "2026-03-05T10:17:33.685Z"
+}

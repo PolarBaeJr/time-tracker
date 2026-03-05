@@ -1,0 +1,22 @@
+{
+  "id": "task-024",
+  "subject": "Build Timer Screen",
+  "description": "Create src/screens/TimerScreen.tsx as main timer interface. Create src/components/timer/TimerDisplay.tsx showing large formatted time (HH:MM:SS), updates every second, shows 'No active timer' when idle. Create src/components/timer/TimerControls.tsx with Start/Pause/Stop buttons, disabled states based on timer status. Create src/components/timer/CategorySelector.tsx as modal/dropdown for selecting category before starting timer, shows user's categories with colors AND types, allows 'No category' option. Integrate useRealtimeTimer hook for live updates. Show connection status indicator. Add quick notes input for when stopping timer. Responsive layout that works on phone and tablet.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-006",
+    "task-016",
+    "task-017",
+    "task-018"
+  ],
+  "blocks": [
+    "task-046",
+    "task-048"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.159Z",
+  "started_at": null,
+  "completed_at": null
+}

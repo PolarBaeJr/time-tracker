@@ -1,0 +1,18 @@
+{
+  "id": "task-010",
+  "subject": "Configure Supabase Auth with Google OAuth",
+  "description": "Create docs/SUPABASE_SETUP.md with complete instructions: 1) Create Supabase project, 2) Enable Google OAuth provider in Authentication settings, 3) Configure Google Cloud Console OAuth credentials (create project, create OAuth 2.0 credentials for Web application, set authorized redirect URIs for web and mobile). NOTE: Google+ API is DEPRECATED - do NOT reference it. For basic OAuth, no additional APIs need to be enabled. If you need profile data beyond email, enable 'Google People API' instead. 4) Set redirect URIs in Supabase (https://your-project.supabase.co/auth/v1/callback), 5) Configure site URL and redirect URLs. Create supabase/config.toml with local development settings. Create .env.example with SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET placeholders. Document mobile deep link schemes (worktracker://) for OAuth redirect.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-004"
+  ],
+  "blocks": [
+    "task-013"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.149Z",
+  "started_at": null,
+  "completed_at": null
+}

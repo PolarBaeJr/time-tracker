@@ -1,0 +1,18 @@
+{
+  "id": "task-042",
+  "subject": "Create SSL Certificate Setup",
+  "description": "Create scripts/setup-ssl.sh for Let's Encrypt: install certbot, run certbot certonly --webroot -w /var/www/certbot -d yourdomain.com, configure auto-renewal cron job. Create scripts/setup-ssl-selfsigned.sh for development: generate self-signed cert with openssl (365 day validity), save to certs/ directory. Update nginx/ssl.conf with SSL configuration: listen 443 ssl, ssl_certificate/ssl_certificate_key paths, ssl_protocols TLSv1.2 TLSv1.3, ssl_ciphers (modern config from Mozilla SSL Config Generator), ssl_prefer_server_ciphers on. Add redirect from HTTP to HTTPS. Create docs/SSL_SETUP.md with step-by-step instructions for both options.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-041"
+  ],
+  "blocks": [
+    "task-043"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.170Z",
+  "started_at": null,
+  "completed_at": null
+}

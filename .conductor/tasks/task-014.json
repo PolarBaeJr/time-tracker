@@ -1,0 +1,17 @@
+{
+  "id": "task-014",
+  "subject": "Create Login Screen with Google OAuth",
+  "description": "Create src/screens/LoginScreen.tsx with centered layout, app logo/title, Google sign-in button, loading state during auth. Create src/components/auth/GoogleSignInButton.tsx using themed Button component with Google icon (from @expo/vector-icons). Implement signInWithGoogle using supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: getRedirectUrl() } }). Handle platform-specific redirect URLs (web uses window.location.origin, native uses expo-linking scheme). Show error toast on auth failure. Add loading spinner during OAuth flow. Navigate to main app on successful auth.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-006",
+    "task-013"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.151Z",
+  "started_at": null,
+  "completed_at": null
+}

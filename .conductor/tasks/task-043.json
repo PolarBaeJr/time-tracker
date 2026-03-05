@@ -1,0 +1,21 @@
+{
+  "id": "task-043",
+  "subject": "Create Raspberry Pi Deployment Guide",
+  "description": "Create docs/RASPBERRY_PI_DEPLOYMENT.md with complete instructions: 1) Flash Raspberry Pi OS 64-bit, 2) Initial setup (SSH, updates, hostname), 3) Install Docker (curl -fsSL get.docker.com | sh), 4) Install docker-compose, 5) Configure UFW firewall (allow 22, 80, 443), 6) Clone repository, 7) Configure environment variables, 8) Build and start containers. Create scripts/deploy.sh automating: git pull, docker-compose build, docker-compose up -d. Create scripts/systemd/worktracker.service for auto-start on boot. Include troubleshooting section. Add performance tuning for Pi (swap, memory limits). Document backup strategy for data.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-039",
+    "task-040",
+    "task-041",
+    "task-042"
+  ],
+  "blocks": [
+    "task-048"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.170Z",
+  "started_at": null,
+  "completed_at": null
+}

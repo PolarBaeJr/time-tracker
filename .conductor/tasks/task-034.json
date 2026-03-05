@@ -1,0 +1,18 @@
+{
+  "id": "task-034",
+  "subject": "Create Electron Main Process",
+  "description": "Create electron/ directory. Create electron/main.ts with BrowserWindow configuration: width: 1200, height: 800, minWidth: 400, minHeight: 600, webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') }. Load the web build URL (development: localhost:19006, production: file://). Create electron/preload.ts exposing safe APIs via contextBridge: versions (node, chrome, electron), platform. Handle window close, minimize, maximize. Implement single instance lock. Add Content Security Policy header. Create electron/electron-builder.yml for packaging config.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-001"
+  ],
+  "blocks": [
+    "task-035"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.166Z",
+  "started_at": null,
+  "completed_at": null
+}

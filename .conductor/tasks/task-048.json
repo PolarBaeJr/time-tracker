@@ -1,0 +1,23 @@
+{
+  "id": "task-048",
+  "subject": "Create User Documentation",
+  "description": "Create README.md with: project description, features list, tech stack, quick start instructions, screenshots, links to detailed docs. Create docs/USER_GUIDE.md explaining: how to use timer, managing categories (with name, color, AND type fields explained), viewing history, understanding analytics, setting goals, configuring settings. Create docs/DEVELOPER_GUIDE.md with: architecture overview, local setup, coding standards, testing approach, PR process, explanation of Create/Update schema pattern for mutations. Create docs/API.md documenting Supabase schema and any RPC functions. Create docs/DEPLOYMENT_CHECKLIST.md with pre-deployment verification steps. Add inline code comments for complex logic. Ensure all existing docs are complete and accurate.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-024",
+    "task-026",
+    "task-028",
+    "task-030",
+    "task-031",
+    "task-032",
+    "task-043",
+    "task-047"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.175Z",
+  "started_at": null,
+  "completed_at": null
+}

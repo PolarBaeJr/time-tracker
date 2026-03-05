@@ -1,0 +1,16 @@
+{
+  "id": "task-023",
+  "subject": "Create Navigation Structure",
+  "description": "Install @react-navigation/native, @react-navigation/bottom-tabs, @react-navigation/native-stack, react-native-screens, react-native-safe-area-context. Create src/navigation/types.ts with typed navigation params: RootStackParamList (Login, Main, EntryEdit), MainTabParamList (Timer, History, Analytics, Categories, Goals, Settings). Create src/navigation/RootNavigator.tsx with conditional rendering: if !isAuthenticated show LoginScreen, else show MainNavigator. Create src/navigation/MainTabs.tsx with bottom tab navigator, themed tab bar, icons from @expo/vector-icons. Create src/navigation/index.ts exporting NavigationContainer wrapper with theme integration.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-013"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.159Z",
+  "started_at": null,
+  "completed_at": null
+}

@@ -1,0 +1,10 @@
+{
+  "auth_patterns": [],
+  "validation_patterns": [],
+  "error_handling_patterns": [],
+  "test_patterns": [],
+  "directory_structure": [],
+  "naming_conventions": [],
+  "key_libraries": [],
+  "security_invariants": []
+}

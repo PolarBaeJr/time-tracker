@@ -1,0 +1,17 @@
+{
+  "id": "task-037",
+  "subject": "Configure Deep Linking for OAuth",
+  "description": "Update app.json with scheme: 'worktracker'. Create src/lib/linking.ts with linking configuration for React Navigation: prefixes: ['worktracker://', 'https://worktracker.app'], config mapping routes. Handle OAuth PKCE callback flow correctly: The callback URL (worktracker://auth/callback) receives an authorization code, NOT tokens directly. Use Supabase's exchangeCodeForSession() to securely exchange the code for tokens. NEVER pass tokens in callback URLs. Create src/hooks/useDeepLink.ts to handle incoming links: parse the URL, extract the code parameter, call supabase.auth.exchangeCodeForSession(code), then route to main app on success. Update Supabase client to use correct redirect URL based on platform: web uses window.location.origin + '/auth/callback', native uses 'worktracker://auth/callback'. Document required setup for iOS (Associated Domains) and Android (intent-filter) in docs/DEEP_LINKING.md.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-013",
+    "task-033"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.167Z",
+  "started_at": null,
+  "completed_at": null
+}

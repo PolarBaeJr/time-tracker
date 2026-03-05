@@ -1,0 +1,17 @@
+{
+  "id": "task-027",
+  "subject": "Build Entry Edit Modal",
+  "description": "Create src/components/history/EntryEditModal.tsx as modal/bottom sheet for editing time entries. Pre-fill form with existing entry data. Allow editing: category, start_at, end_at, notes. Show delete button with confirmation dialog. Validate changes with UpdateTimeEntrySchema. Use useUpdateEntry and useDeleteEntry mutations. Close modal and show toast on success. Handle optimistic updates with rollback on error. Prevent editing entries from other users (should not be possible due to RLS, but defensive check).",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-006",
+    "task-019"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.162Z",
+  "started_at": null,
+  "completed_at": null
+}

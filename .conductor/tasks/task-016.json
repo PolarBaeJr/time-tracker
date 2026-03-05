@@ -1,0 +1,22 @@
+{
+  "id": "task-016",
+  "subject": "Create Timer Service with Supabase Integration",
+  "description": "Create src/services/timerService.ts with functions: startTimer(categoryId?: string): Promise<ActiveTimer> - inserts into active_timers WITHOUT sending started_at (database DEFAULT now() enforces server-side timestamp), running = true; stopTimer(notes?: string): Promise<TimeEntry> - calls stop_timer_and_create_entry RPC function; pauseTimer(): same as stop but allows restart; getActiveTimer(): Promise<ActiveTimer | null> - fetches current user's active timer; syncTimer(localState, serverState): handles conflict resolution (server wins with notification). All functions use Supabase client. IMPORTANT: Validate category_id using a dedicated schema: CategoryIdSchema = z.string().uuid().nullable().optional() - do NOT use CreateCategorySchema which is for category entity creation. Handle errors gracefully. Return typed results. Implement optimistic updates pattern (update local immediately, rollback on error).",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-004",
+    "task-009",
+    "task-015"
+  ],
+  "blocks": [
+    "task-022",
+    "task-024",
+    "task-044"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.153Z",
+  "started_at": null,
+  "completed_at": null
+}

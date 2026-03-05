@@ -1,0 +1,16 @@
+{
+  "id": "task-035",
+  "subject": "Configure Electron Build Pipeline",
+  "description": "Install electron, electron-builder, concurrently as devDependencies. Create electron/forge.config.ts (or use electron-builder.yml) with: appId: com.worktracker.desktop, productName: WorkTracker, mac: { category: public.app-category.productivity, target: [dmg, zip], hardenedRuntime: true }, asar: true. Configure code signing for macOS (document process, can be self-signed for personal use). Add package.json scripts: electron:dev (runs web + electron concurrently), electron:build (builds web then packages Electron), electron:package (creates distributable). Create docs/ELECTRON_BUILD.md with build and signing instructions.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-034"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.167Z",
+  "started_at": null,
+  "completed_at": null
+}

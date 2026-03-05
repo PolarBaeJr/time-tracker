@@ -1,0 +1,20 @@
+{
+  "id": "task-018",
+  "subject": "Create Categories TanStack Query Hooks",
+  "description": "Install @tanstack/react-query. Create src/lib/queryClient.ts with configured QueryClient (staleTime: 5 minutes, cacheTime: 30 minutes). Create src/hooks/useCategories.ts with useQuery for fetching all user categories: queryKey: ['categories'], queryFn fetches from supabase.from('categories').select('*').order('name'). Create src/hooks/useCategoryMutations.ts with useMutation hooks: useCreateCategory (validates with CreateCategorySchema), useUpdateCategory (validates with UpdateCategorySchema), useDeleteCategory. IMPORTANT: Mutation hooks must validate with Create/Update schemas, NOT full CategorySchema. Implement optimistic updates using onMutate/onError/onSettled pattern. Invalidate ['categories'] query on mutation success.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-003",
+    "task-004"
+  ],
+  "blocks": [
+    "task-024",
+    "task-031"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.155Z",
+  "started_at": null,
+  "completed_at": null
+}

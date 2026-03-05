@@ -1,0 +1,22 @@
+{
+  "id": "task-007",
+  "subject": "Create Supabase Database Migrations",
+  "description": "Create supabase/ directory structure. Create supabase/migrations/20240101000001_create_users_table.sql: CREATE TABLE public.users (id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, email text NOT NULL, name text, timezone text DEFAULT 'UTC', week_start_day int DEFAULT 1 CHECK (week_start_day >= 0 AND week_start_day <= 6), created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()); Create index on email. Create supabase/migrations/20240101000002_create_categories.sql: categories (id uuid PK DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid() REFERENCES public.users(id) ON DELETE CASCADE, name text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 100), color text NOT NULL CHECK (color ~ '^#[0-9A-Fa-f]{6}$'), type text NOT NULL CHECK (char_length(type) BETWEEN 1 AND 50), created_at timestamptz DEFAULT now()); Create index on user_id. Create supabase/migrations/20240101000003_create_time_entries.sql with all columns per spec including user_id uuid NOT NULL DEFAULT auth.uid(), category_id REFERENCES categories(id) ON DELETE SET NULL (NOT CASCADE - preserves entries when category deleted), indexes on (user_id, start_at), (user_id, category_id). Create supabase/migrations/20240101000004_create_active_timers.sql with user_id uuid NOT NULL DEFAULT auth.uid() and UNIQUE constraint on user_id. Create supabase/migrations/20240101000005_create_monthly_goals.sql with user_id uuid NOT NULL DEFAULT auth.uid(). IMPORTANT: For monthly_goals uniqueness with nullable category_id, create TWO constraints: (1) Partial unique index for overall goals: CREATE UNIQUE INDEX idx_monthly_goals_overall_unique ON monthly_goals (user_id, month) WHERE category_id IS NULL; (2) Partial unique index for per-category goals: CREATE UNIQUE INDEX idx_monthly_goals_category_unique ON monthly_goals (user_id, month, category_id) WHERE category_id IS NOT NULL. Do NOT use a simple UNIQUE (user_id, month, category_id) as PostgreSQL allows multiple NULLs. CRITICAL: All tables with user_id must use DEFAULT auth.uid() to ensure user_id is always server-derived and never client-provided. This is an ANCHOR TASK.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-003"
+  ],
+  "blocks": [
+    "task-008",
+    "task-009",
+    "task-011",
+    "task-012",
+    "task-045"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.147Z",
+  "started_at": null,
+  "completed_at": null
+}

@@ -1,0 +1,24 @@
+{
+  "id": "task-019",
+  "subject": "Create Time Entries TanStack Query Hooks",
+  "description": "Create src/hooks/useTimeEntries.ts with useInfiniteQuery for paginated entries: queryKey: ['timeEntries', filters], implement cursor-based pagination using created_at. Support filters: dateRange (start, end), categoryId, searchNotes, minDuration, maxDuration. Create src/hooks/useTimeEntryMutations.ts with useCreateEntry (validates with CreateTimeEntrySchema), useUpdateEntry (validates with UpdateTimeEntrySchema), useDeleteEntry mutations with optimistic updates. Create src/hooks/useTimeEntrySummary.ts for aggregated data (total hours in range, entries count). All queries filter by user's data (handled by RLS). IMPORTANT: Use Create/Update schemas for mutations, never full TimeEntrySchema.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-003",
+    "task-004"
+  ],
+  "blocks": [
+    "task-020",
+    "task-021",
+    "task-022",
+    "task-025",
+    "task-026",
+    "task-027"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.155Z",
+  "started_at": null,
+  "completed_at": null
+}

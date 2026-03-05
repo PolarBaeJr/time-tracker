@@ -1,0 +1,16 @@
+{
+  "id": "task-029",
+  "subject": "Implement Victory Native Charts",
+  "description": "Install victory-native, react-native-svg. Create src/components/charts/DailyChart.tsx as bar chart showing last 30 days, x-axis as dates (abbreviated), y-axis as hours, themed colors. Create src/components/charts/WeeklyChart.tsx as bar chart for last 12 weeks with week labels. Create src/components/charts/MonthlyChart.tsx as bar chart for last 12 months. Create src/components/charts/HeatmapChart.tsx showing hour-of-day (y) vs day-of-week (x) grid with color intensity based on logged hours (use VictoryHeatmap or custom implementation with VictoryScatter). All charts use dark theme colors, have tooltips on touch, and handle empty data gracefully. Create src/components/charts/ChartContainer.tsx wrapper with loading state and error boundary.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-021"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.163Z",
+  "started_at": null,
+  "completed_at": null
+}

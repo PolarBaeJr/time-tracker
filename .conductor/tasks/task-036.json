@@ -1,0 +1,16 @@
+{
+  "id": "task-036",
+  "subject": "Implement Platform-Specific Storage",
+  "description": "Create src/lib/storage/index.ts with Storage interface: getItem(key): Promise<string | null>, setItem(key, value): Promise<void>, removeItem(key): Promise<void>, clear(): Promise<void>. Create src/lib/storage/storage.native.ts implementing Storage using @react-native-async-storage/async-storage for general data and expo-secure-store for sensitive data (auth tokens). Create src/lib/storage/storage.web.ts using localStorage with try-catch for private browsing. Create src/lib/storage/secureStorage.ts abstracting secure storage (SecureStore on native, localStorage with warning on web). Export platform-appropriate implementation using .native.ts/.web.ts convention.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-004"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.167Z",
+  "started_at": null,
+  "completed_at": null
+}

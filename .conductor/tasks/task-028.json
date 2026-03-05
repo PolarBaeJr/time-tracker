@@ -1,0 +1,21 @@
+{
+  "id": "task-028",
+  "subject": "Build Analytics Dashboard Screen",
+  "description": "Create src/screens/AnalyticsScreen.tsx as scrollable dashboard. Create src/components/analytics/KPICards.tsx showing: Today's hours, This week's hours, This month's hours, Streak (consecutive days with entries). Create src/components/analytics/GoalProgress.tsx showing: overall monthly goal as progress bar with percentage, per-category goals as smaller progress bars, days remaining in month, required daily pace to meet goal. Use useGoalProgress hook. Create chart containers for Daily/Weekly/Monthly/Heatmap charts (charts implemented in separate task). Responsive grid layout: 2 columns on tablet/desktop, 1 column on phone.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-006",
+    "task-020",
+    "task-021"
+  ],
+  "blocks": [
+    "task-046",
+    "task-048"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.162Z",
+  "started_at": null,
+  "completed_at": null
+}

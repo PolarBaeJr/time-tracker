@@ -1,0 +1,8 @@
+{
+  "contract_id": "Theme type definition",
+  "contract_type": "type_definition",
+  "spec": "// Import from @/theme\ninterface Theme {\n  colors: {\n    background: '#0F0F0F';\n    surface: '#1A1A1A';\n    surfaceVariant: '#252525';\n    primary: '#6366F1';\n    primaryVariant: '#4F46E5';\n    secondary: '#22D3EE';\n    error: '#EF4444';\n    warning: '#F59E0B';\n    success: '#10B981';\n    text: '#FFFFFF';\n    textSecondary: '#A1A1AA';\n    textMuted: '#71717A';\n    border: '#27272A';\n    overlay: 'rgba(0, 0, 0, 0.5)';\n    overlayLight: 'rgba(255, 255, 255, 0.05)';\n  };\n  spacing: { xs: 4; sm: 8; md: 16; lg: 24; xl: 32; xxl: 48 };\n  fontSizes: { xs: 12; sm: 14; md: 16; lg: 20; xl: 24; xxl: 32; display: 48 };\n  fontWeights: { normal: '400'; medium: '500'; semibold: '600'; bold: '700' };\n  lineHeights: { tight: 1.2; normal: 1.5; relaxed: 1.75 };\n  borderRadius: { none: 0; sm: 4; md: 8; lg: 12; xl: 16; full: 9999 };\n  shadows: { none: {...}; sm: {...}; md: {...}; lg: {...} };\n}\n\n// Hook: const theme = useTheme();\n// Direct: import { colors, spacing } from '@/theme';",
+  "owner_task_id": "worker-1772705568171-1",
+  "registered_by": "worker-1772705568171-1",
+  "registered_at": "2026-03-05T10:17:41.342Z"
+}

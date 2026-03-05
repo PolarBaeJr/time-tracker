@@ -1,0 +1,22 @@
+{
+  "id": "task-013",
+  "subject": "Implement Authentication Context and Hooks",
+  "description": "Create src/contexts/AuthContext.tsx with AuthProvider wrapping app, providing: user (User | null), session (Session | null), loading (boolean), signInWithGoogle(), signOut(), isAuthenticated. Use useEffect to listen to auth state changes via supabase.auth.onAuthStateChange(). Create src/hooks/useAuth.ts returning context value. Create src/hooks/useSession.ts for session-specific operations (refresh, check expiry). Handle loading states during initial auth check. Implement proper cleanup of auth listeners on unmount. Store user profile in context after fetching from public.users table.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-004",
+    "task-010"
+  ],
+  "blocks": [
+    "task-014",
+    "task-023",
+    "task-030",
+    "task-037"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.151Z",
+  "started_at": null,
+  "completed_at": null
+}

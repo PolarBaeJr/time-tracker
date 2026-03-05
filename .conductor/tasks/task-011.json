@@ -1,0 +1,19 @@
+{
+  "id": "task-011",
+  "subject": "Create Supabase Realtime Configuration",
+  "description": "Create supabase/migrations/20240101000008_realtime_config.sql. Enable realtime on active_timers table: ALTER PUBLICATION supabase_realtime ADD TABLE active_timers; Ensure RLS policies apply to realtime (they do by default in Supabase). Document in comments that realtime subscriptions are filtered by RLS. Create src/lib/realtime.ts with helper function to create typed channel subscription for active_timers with proper TypeScript types for payload (old_record, new_record, eventType). Include reconnection logic and error handling.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-007",
+    "task-008"
+  ],
+  "blocks": [
+    "task-017"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.149Z",
+  "started_at": null,
+  "completed_at": null
+}

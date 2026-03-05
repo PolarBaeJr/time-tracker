@@ -1,0 +1,20 @@
+{
+  "id": "task-047",
+  "subject": "Configure CI CD Pipeline",
+  "description": "Create .github/workflows/ci.yml running on push/PR: checkout, setup-node, npm ci, npm run lint, npm run typecheck (tsc --noEmit), npm run test (unit tests). Add job for integration tests: setup Supabase CLI, supabase start, run integration tests, supabase stop. Create .github/workflows/build.yml for build verification: build web, build Electron (macOS), verify Docker build. Create .github/workflows/deploy.yml (manual trigger) for deployment to Raspberry Pi: SSH to Pi, run deploy script. Document required GitHub secrets: SUPABASE_URL, SUPABASE_ANON_KEY, PI_SSH_KEY. Add status badges to README.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-044",
+    "task-045",
+    "task-046"
+  ],
+  "blocks": [
+    "task-048"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.174Z",
+  "started_at": null,
+  "completed_at": null
+}

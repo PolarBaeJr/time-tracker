@@ -1,0 +1,21 @@
+{
+  "id": "task-020",
+  "subject": "Implement Goals TanStack Query Hooks",
+  "description": "Create src/hooks/useGoals.ts with useQuery for monthly goals: queryKey: ['goals', month], fetches goals for specified month including overall (category_id IS NULL) and per-category goals. Create src/hooks/useGoalProgress.ts that combines goals with time entries summary to calculate: targetHours, actualHours, progressPercent, remainingHours, dailyRequiredToMeetGoal. Create src/hooks/useGoalMutations.ts with SEPARATE mutation handlers for overall vs per-category goals to handle partial unique indexes correctly: (1) useSetOverallGoal: first queries for existing goal WHERE category_id IS NULL, then performs INSERT or UPDATE accordingly; (2) useSetCategoryGoal: first queries for existing goal WHERE category_id = :id, then performs INSERT or UPDATE accordingly. Alternatively, implement a single set_goal RPC function in the database that handles the conditional logic server-side. Do NOT use simple upsert with ON CONFLICT on (user_id, month, category_id) as this fails with NULL category_id. Create useDeleteGoal mutation. IMPORTANT: Use CreateGoalSchema/UpdateGoalSchema for input validation.",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-003",
+    "task-004",
+    "task-019"
+  ],
+  "blocks": [
+    "task-028",
+    "task-032"
+  ],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.156Z",
+  "started_at": null,
+  "completed_at": null
+}

@@ -1,0 +1,16 @@
+{
+  "id": "task-012",
+  "subject": "Create Database Seed Script",
+  "description": "Create supabase/seed.sql with development seed data. DO NOT create pre-seeded categories (per user requirement). Create test users via auth.users if running locally, or document manual creation. Create scripts/seed-dev.ts using Supabase client with service role key to: 1) Create test user accounts, 2) Optionally create sample time entries for testing (clearly marked as removable). Include README section in docs/DEVELOPMENT.md explaining seed script usage. Ensure seed script is idempotent (can run multiple times safely).",
+  "status": "pending",
+  "owner": null,
+  "depends_on": [
+    "task-007"
+  ],
+  "blocks": [],
+  "result_summary": null,
+  "files_changed": [],
+  "created_at": "2026-03-05T10:12:04.150Z",
+  "started_at": null,
+  "completed_at": null
+}
