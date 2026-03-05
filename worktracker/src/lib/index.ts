@@ -1,6 +1,24 @@
 /**
  * Library utilities and configurations
+ *
+ * This module exports all library utilities including:
+ * - Supabase client configuration
+ * - Environment constants
  */
 
-// Placeholder - lib exports will be added as they are created
-export {};
+// Supabase client and types
+export {
+  supabase,
+  config,
+  validateConfig,
+} from './supabase';
+
+export type {
+  SupabaseClient,
+  Session,
+  User,
+  AuthError,
+  AuthChangeEvent,
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from './supabase';
