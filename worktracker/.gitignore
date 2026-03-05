@@ -66,5 +66,8 @@ coverage/
 logs/
 *.log
 
+# Local certificates and ACME artifacts
+certs/
+
 # Supabase local
 .supabase/
