@@ -18,7 +18,8 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["com.googleusercontent.apps.GOOGLE_CLIENT_ID"]
+            "CFBundleURLName": "google-signin",
+            "CFBundleURLSchemes": ["com.googleusercontent.apps.YOUR_IOS_REVERSED_CLIENT_ID"]
           }
         ]
       }
@@ -37,7 +38,14 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "worktracker"
+              "scheme": "worktracker",
+              "host": "auth",
+              "pathPrefix": "/callback"
+            },
+            {
+              "scheme": "https",
+              "host": "worktracker.app",
+              "pathPrefix": "/auth/callback"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
