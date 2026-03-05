@@ -23,7 +23,7 @@ RUN npm run build:web
 
 FROM --platform=$TARGETPLATFORM nginx:alpine AS production
 
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/ /etc/nginx/
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
