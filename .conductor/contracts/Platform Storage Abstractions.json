@@ -1,0 +1,8 @@
+{
+  "contract_id": "Platform Storage Abstractions",
+  "contract_type": "type_definition",
+  "spec": "// Storage abstraction contract\\n// Files: src/lib/storage/index.ts, src/lib/storage/storage.native.ts, src/lib/storage/storage.web.ts, src/lib/storage/secureStorage.ts, src/lib/storage/secureStorage.native.ts, src/lib/storage/secureStorage.web.ts\\n\\n// Import from '@/lib'\\nexport interface Storage {\\n  getItem(key: string): Promise<string | null>;\\n  setItem(key: string, value: string): Promise<void>;\\n  removeItem(key: string): Promise<void>;\\n  clear(): Promise<void>;\\n}\\n\\nexport interface SecureStorage {\\n  getItem(key: string): Promise<string | null>;\\n  setItem(key: string, value: string): Promise<void>;\\n  removeItem(key: string): Promise<void>;\\n  clear(): Promise<void>;\\n}\\n\\nexport const storage: Storage;\\nexport const secureStorage: SecureStorage;\\n\\n// Behavior\\n// - Native storage uses @react-native-async-storage/async-storage API shape for general key/value data.\\n// - Web storage uses localStorage with try/catch guards for restricted/private contexts.\\n// - Native secure storage uses expo-secure-store for sensitive values.\\n// - Web secure storage falls back to localStorage and emits warnings about reduced security.\\n// - All implementations are async and never throw on get/remove unless caller needs explicit write/clear error handling.",
+  "owner_task_id": "worker-1772770738504-1",
+  "registered_by": "worker-1772770738504-1",
+  "registered_at": "2026-03-06T04:23:08.275Z"
+}

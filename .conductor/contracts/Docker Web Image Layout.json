@@ -1,0 +1,8 @@
+{
+  "contract_id": "Docker Web Image Layout",
+  "contract_type": "type_definition",
+  "spec": "// Container build/runtime contract for deployment tasks\\n// Files: Dockerfile, nginx/nginx.conf\\n\\n// Build stage\\nFROM node:20-alpine AS builder\\nWORKDIR /app\\nCOPY package.json package-lock.json ./\\nRUN npm ci\\nCOPY . .\\nENV/ARG: SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_IOS_REVERSED_CLIENT_ID, EAS_PROJECT_ID\\nRUN npm run build:web\\n// Output written to /app/dist\\n\\n// Runtime stage\\nFROM nginx:alpine\\nCOPY nginx/nginx.conf /etc/nginx/nginx.conf\\nCOPY --from=builder /app/dist /usr/share/nginx/html\\nEXPOSE 80\\nCMD [\"nginx\", \"-g\", \"daemon off;\"]\\n\\n// nginx/nginx.conf currently provides:\\n// - listen 80\\n// - root /usr/share/nginx/html\\n// - SPA fallback: try_files $uri $uri/ /index.html\\n// - health endpoint: GET /health returns 200 OK\\n\\n// Deployment expectation\\n// - docker buildx build --platform linux/arm64 ... works without changing the Dockerfile\\n// - No real .env file is copied into the image context",
+  "owner_task_id": "worker-1772752558488-respawn-0",
+  "registered_by": "worker-1772752558488-respawn-0",
+  "registered_at": "2026-03-05T23:18:51.126Z"
+}

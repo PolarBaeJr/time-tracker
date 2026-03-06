@@ -1,0 +1,8 @@
+{
+  "contract_id": "Supabase Client",
+  "contract_type": "type_definition",
+  "spec": "// Supabase Client Configuration - src/lib/supabase.ts\n\n// Main exports:\nexport { supabase } from '@/lib/supabase';  // Platform-aware client\nexport { config, validateConfig } from '@/lib/supabase';\n\n// Type exports:\nexport type {\n  SupabaseClient,\n  Session,\n  User,\n  AuthError,\n  AuthChangeEvent,\n  RealtimeChannel,\n  RealtimePostgresChangesPayload,\n} from '@/lib/supabase';\n\n// Configuration (from constants.ts):\ninterface AppConfig {\n  supabaseUrl: string;\n  supabaseAnonKey: string;\n}\n\n// Platform-specific clients:\n// - supabase.native.ts: Uses SecureStore (iOS Keychain, Android EncryptedSharedPreferences)\n// - supabase.web.ts: Uses localStorage\n\n// Auth configuration:\n// - flowType: 'pkce' (secure for public clients)\n// - autoRefreshToken: true\n// - persistSession: true\n// - detectSessionInUrl: true (web only, for OAuth callbacks)\n\n// Environment variables (see .env.example):\n// - SUPABASE_URL: Your Supabase project URL\n// - SUPABASE_ANON_KEY: Your Supabase anon/public key",
+  "owner_task_id": "worker-1772723213107-0",
+  "registered_by": "worker-1772723213107-0",
+  "registered_at": "2026-03-05T15:19:16.259Z"
+}

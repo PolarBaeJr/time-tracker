@@ -1,0 +1,8 @@
+{
+  "contract_id": "Raspberry Pi Deployment Layout",
+  "contract_type": "type_definition",
+  "spec": "// Raspberry Pi deployment contract\\n// Files: docs/RASPBERRY_PI_DEPLOYMENT.md, scripts/deploy.sh, scripts/systemd/worktracker.service\\n\\n// scripts/deploy.sh\\n// - resolves repo root relative to the script location\\n// - requires .env and the target compose file (default docker-compose.prod.yml)\\n// - supports either `docker compose` or legacy `docker-compose`\\n// - refuses to run with uncommitted git changes\\n// - performs `git pull --ff-only`\\n// - runs `<compose> -f docker-compose.prod.yml build --pull`, then `up -d`, then `ps`\\n\\n// scripts/systemd/worktracker.service\\n// - Type=oneshot with RemainAfterExit=yes\\n// - expects clone path /opt/worktracker/worktracker by default\\n// - defaults User/Group to pi\\n// - ExecStart and ExecReload both call scripts/deploy.sh with COMPOSE_FILE=docker-compose.prod.yml\\n// - ordered after docker.service and network-online.target\\n\\n// docs/RASPBERRY_PI_DEPLOYMENT.md\\n// - deploy target is Raspberry Pi OS Lite 64-bit\\n// - Docker install path uses get.docker.com with a note about the official repo alternative\\n// - firewall opens 22/tcp, 80/tcp, 443/tcp\\n// - production runtime remains HTTP-first by default on WORKTRACKER_HTTP_PORT -> container :80\\n// - optional HTTPS section points to docs/SSL_SETUP.md and requires adding 443 plus cert/acme mounts\\n// - backup guidance covers .env, certs/, and deployment overrides",
+  "owner_task_id": "worker-1772754297875-0",
+  "registered_by": "worker-1772754297875-0",
+  "registered_at": "2026-03-06T00:08:07.213Z"
+}

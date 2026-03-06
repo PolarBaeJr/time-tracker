@@ -2,17 +2,24 @@
   "id": "task-042",
   "subject": "Create SSL Certificate Setup",
   "description": "Create scripts/setup-ssl.sh for Let's Encrypt: install certbot, run certbot certonly --webroot -w /var/www/certbot -d yourdomain.com, configure auto-renewal cron job. Create scripts/setup-ssl-selfsigned.sh for development: generate self-signed cert with openssl (365 day validity), save to certs/ directory. Update nginx/ssl.conf with SSL configuration: listen 443 ssl, ssl_certificate/ssl_certificate_key paths, ssl_protocols TLSv1.2 TLSv1.3, ssl_ciphers (modern config from Mozilla SSL Config Generator), ssl_prefer_server_ciphers on. Add redirect from HTTP to HTTPS. Create docs/SSL_SETUP.md with step-by-step instructions for both options.",
-  "status": "pending",
-  "owner": null,
+  "status": "completed",
+  "owner": "worker-1772754297875-0",
   "depends_on": [
     "task-041"
   ],
   "blocks": [
     "task-043"
   ],
-  "result_summary": null,
-  "files_changed": [],
+  "result_summary": "Created SSL certificate setup assets and committed them as `d948afb` (`[task-042] Create SSL certificate setup`). Updated `nginx/ssl.conf` into a full HTTPS replacement template with an HTTP redirect server, ACME challenge exception at `/.well-known/acme-challenge/`, preserved plain HTTP `/health`, and TLS 1.2/1.3 settings with a Mozilla-compatible intermediate cipher list plus DH/session tuning. Added `scripts/setup-ssl.sh` for the Let's Encrypt webroot flow (Certbot install, `certonly --webroot`, cron-based renew with deploy hook), `scripts/setup-ssl-selfsigned.sh` for local/dev certificates, and `scripts/sync-letsencrypt-certs.sh` to normalize runtime cert files into `./certs`. Added `docs/SSL_SETUP.md` documenting both flows, Docker mount requirements, and how to promote `nginx/ssl.conf`, and updated `.gitignore` to exclude `certs/` so generated private keys are not committed.\n\nVerification: `bash -n scripts/setup-ssl.sh scripts/setup-ssl-selfsigned.sh scripts/sync-letsencrypt-certs.sh` passed; `npm run typecheck` passed; `SUPABASE_URL=https://example.supabase.co SUPABASE_ANON_KEY=public-anon-key npm run build:web` passed. `nginx -t` could not be run in this environment because the `nginx` binary is unavailable. `git pull --rebase` was attempted first and failed because the shared worktree contained unrelated unstaged changes; the SSL files were then committed directly without touching those unrelated changes.\n\nDefinition of Done notes: input validation, authentication, authorization, and sanitized client error handling were not applicable because this task only adds deployment config, shell automation, and docs. No dedicated automated happy-path/error-path test harness exists yet for these SSL scripts or nginx templates, so verification was limited to shell parsing, web export, typecheck, manual config inspection, and the commit.",
+  "files_changed": [
+    "worktracker/.gitignore",
+    "worktracker/nginx/ssl.conf",
+    "worktracker/scripts/setup-ssl.sh",
+    "worktracker/scripts/setup-ssl-selfsigned.sh",
+    "worktracker/scripts/sync-letsencrypt-certs.sh",
+    "worktracker/docs/SSL_SETUP.md"
+  ],
   "created_at": "2026-03-05T10:12:04.170Z",
-  "started_at": null,
-  "completed_at": null
+  "started_at": "2026-03-05T23:49:56.786Z",
+  "completed_at": "2026-03-05T23:58:29.430Z"
 }

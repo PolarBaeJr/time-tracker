@@ -1,0 +1,1 @@
+Coordinator had an active `wind_down` message in the shared log, so I did not claim a task. I checked task/contract/decision state, verified there was no task in progress for this session, posted a pause status to the coordinator, and made no repo changes.

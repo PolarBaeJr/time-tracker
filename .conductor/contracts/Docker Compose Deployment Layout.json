@@ -1,0 +1,8 @@
+{
+  "contract_id": "Docker Compose Deployment Layout",
+  "contract_type": "type_definition",
+  "spec": "// Deployment compose contract\\n// Files: docker-compose.yml, docker-compose.prod.yml, docs/DOCKER.md\\n\\n// docker-compose.yml\\n// - service web builds Dockerfile target=production\\n// - host port defaults to WORKTRACKER_WEB_PORT=3000 and maps to container :80\\n// - build args accepted: SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_IOS_REVERSED_CLIENT_ID, EAS_PROJECT_ID\\n// - named volume nginx_logs mounts at /var/log/nginx\\n// - optional profile service supabase uses image supabase/supabase:latest and maps SUPABASE_LOCAL_PORT (default 54321) to container :8000\\n\\n// docker-compose.prod.yml\\n// - standalone production compose file (not an override merge)\\n// - service web builds same Dockerfile target and tags WORKTRACKER_IMAGE (default worktracker-web:latest)\\n// - platform defaults to WORKTRACKER_DOCKER_PLATFORM=linux/arm64\\n// - host port defaults to WORKTRACKER_HTTP_PORT=80 and maps to container :80\\n// - restart: unless-stopped\\n// - json-file logging with DOCKER_LOG_MAX_SIZE / DOCKER_LOG_MAX_FILES\\n// - healthcheck hits http://127.0.0.1:80/health via wget\\n// - named volume nginx_logs mounts at /var/log/nginx\\n\\n// docs/DOCKER.md documents local startup, rebuilds, log viewing, production startup, and the optional supabase profile.",
+  "owner_task_id": "worker-1772754297877-1",
+  "registered_by": "worker-1772754297877-1",
+  "registered_at": "2026-03-05T23:51:09.534Z"
+}

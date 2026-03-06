@@ -2,8 +2,8 @@
   "id": "task-033",
   "subject": "Configure Expo for Multi-Platform Build",
   "description": "Update app.json with complete configuration: name, slug, version, orientation, icon, splash (backgroundColor matching theme), iOS (bundleIdentifier: com.worktracker.app, supportsTablet: true, infoPlist for Google Sign-In), android (package: com.worktracker.app, adaptiveIcon, intentFilters for OAuth), web (favicon, bundler: metro). Create eas.json with build profiles: development (development client), preview (internal distribution), production (store submission). Configure environment variables in eas.json (SUPABASE_URL, SUPABASE_ANON_KEY). Add scripts to package.json: build:ios, build:android, build:web. Document EAS setup in docs/MOBILE_BUILD.md.",
-  "status": "pending",
-  "owner": null,
+  "status": "completed",
+  "owner": "worker-1772752207275-respawn-0",
   "depends_on": [
     "task-001"
   ],
@@ -11,9 +11,14 @@
     "task-037",
     "task-038"
   ],
-  "result_summary": null,
-  "files_changed": [],
+  "result_summary": "Configured Expo multi-platform build support for WorkTracker. Updated app.json with explicit Google Sign-In URL scheme metadata and OAuth intent filters covering both worktracker://auth/callback and https://worktracker.app/auth/callback. Added app.config.js to inject SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_IOS_REVERSED_CLIENT_ID, and EAS_PROJECT_ID into Expo config at build time without hardcoding secrets. Created eas.json with development, preview, and production build profiles bound to same-named EAS environments. Added docs/MOBILE_BUILD.md covering EAS setup, required environment variables, build profiles, and platform build commands. Verification: npm run typecheck passed; npx expo config --type public resolved correctly with sample env values; npm run build:web passed with sample env values. No new endpoints or external inputs were added, so input validation/auth/authz/error-path test items were not applicable to this task. Git commit created: [task-033] Configure Expo multi-platform build (b634d77). git pull --rebase was attempted before commit but failed because the shared worktree contained unrelated unstaged changes.",
+  "files_changed": [
+    "worktracker/app.json",
+    "worktracker/app.config.js",
+    "worktracker/eas.json",
+    "worktracker/docs/MOBILE_BUILD.md"
+  ],
   "created_at": "2026-03-05T10:12:04.166Z",
-  "started_at": null,
-  "completed_at": null
+  "started_at": "2026-03-05T23:10:34.086Z",
+  "completed_at": "2026-03-05T23:15:33.707Z"
 }

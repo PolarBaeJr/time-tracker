@@ -1,0 +1,8 @@
+{
+  "contract_id": "Code Quality Tooling",
+  "contract_type": "type_definition",
+  "spec": "// Tooling contract for linting/formatting/hooks\\n// Files: package.json, .eslintrc.js, .prettierrc, .prettierignore, lint-staged.config.js, .husky/pre-commit\\n\\n// package.json scripts\\n// - lint: ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx\\n// - prepare: husky\\n\\n// ESLint config\\n// - file: .eslintrc.js\\n// - parser: @typescript-eslint/parser\\n// - extends eslint:recommended, plugin:@typescript-eslint/recommended, plugin:react/recommended, plugin:react/jsx-runtime, plugin:react-hooks/recommended, plugin:react-native/all, prettier\\n// - ignores build outputs and config artifacts\\n\\n// Prettier config\\n// - file: .prettierrc\\n// - singleQuote: true\\n// - trailingComma: es5\\n// - printWidth: 100\\n\\n// lint-staged\\n// - file: lint-staged.config.js\\n// - pattern: *.{ts,tsx}\\n// - commands: ESLINT_USE_FLAT_CONFIG=false eslint --fix, prettier --write\\n\\n// Husky\\n// - file: .husky/pre-commit\\n// - command: npx lint-staged",
+  "owner_task_id": "worker-1772754297877-1",
+  "registered_by": "worker-1772754297877-1",
+  "registered_at": "2026-03-05T23:55:50.424Z"
+}
