@@ -106,6 +106,14 @@ export {
   type ActiveTimerConnectionStatus,
 } from './useRealtimeTimer';
 
+// Deep link hooks
+export {
+  useDeepLink,
+  DeepLinkError,
+  type UseDeepLinkOptions,
+  type UseDeepLinkResult,
+} from './useDeepLink';
+
 // Analytics hooks
 export {
   useDailyTotals,

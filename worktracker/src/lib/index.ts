@@ -24,6 +24,16 @@ export {
 // React Query client
 export { queryClient, queryKeys, type QueryKeys } from './queryClient';
 
+// Deep linking
+export {
+  linking,
+  linkingPrefixes,
+  linkingConfig,
+  parseOAuthCallbackUrl,
+  isOAuthCallbackUrl,
+} from './linking';
+export type { RootStackParamList, LinkingConfig } from './linking';
+
 export type {
   SupabaseClient,
   Session,
