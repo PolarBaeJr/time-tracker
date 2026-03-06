@@ -100,6 +100,7 @@ export {
 export {
   useRealtimeTimer,
   useMarkLocalTimerAction,
+  markLocalTimerAction,
   type UseRealtimeTimerResult,
   type UseRealtimeTimerOptions,
   type ActiveTimerConnectionStatus,
