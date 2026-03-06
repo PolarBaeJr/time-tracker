@@ -66,11 +66,12 @@ function getTextContent(node: Element): string {
 function createTreeFromReactElement(element: React.ReactElement): Element {
   const { type, props } = element;
   const children: Element[] = [];
+  const elementProps = props as Record<string, unknown>;
 
-  if (props.children) {
-    const childArray = Array.isArray(props.children)
-      ? props.children
-      : [props.children];
+  if (elementProps.children) {
+    const childArray = Array.isArray(elementProps.children)
+      ? elementProps.children
+      : [elementProps.children];
     for (const child of childArray) {
       if (React.isValidElement(child)) {
         children.push(createTreeFromReactElement(child as React.ReactElement));
@@ -86,7 +87,7 @@ function createTreeFromReactElement(element: React.ReactElement): Element {
 
   return {
     type: typeof type === 'string' ? type : (type as React.ComponentType).name || 'Unknown',
-    props: { ...props },
+    props: { ...(elementProps as object) },
     children: children.length > 0 ? children : null,
   };
 }
