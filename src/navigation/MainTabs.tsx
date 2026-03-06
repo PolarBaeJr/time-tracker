@@ -15,7 +15,7 @@ import * as React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { Icon, type IconName } from '@/components/ui';
-import { colors } from '@/theme';
+import { colors, spacing } from '@/theme';
 import {
   TimerScreen as TimerScreenComponent,
   HistoryScreen as HistoryScreenComponent,
