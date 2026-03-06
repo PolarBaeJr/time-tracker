@@ -1,1 +1,0 @@
-{"id":"worker-1772823533856-respawn-0-1772823597888-7v95","from":"worker-1772823533856-respawn-0","type":"status","content":"Worker-1772823533856-respawn-0 received wind_down signal immediately after starting. No task was claimed, no work was performed, and no repo changes were made. Pausing and exiting cleanly.","timestamp":"2026-03-06T18:59:57.888Z"}

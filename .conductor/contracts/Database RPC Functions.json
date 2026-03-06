@@ -1,8 +1,0 @@
-{
-  "contract_id": "Database RPC Functions",
-  "contract_type": "api_endpoint",
-  "spec": "-- Supabase RPC Functions (call via supabase.rpc())\n\n-- Stop timer and create entry atomically\n-- Returns: time_entries row\nSELECT stop_timer_and_create_entry(p_notes := 'optional notes');\n-- Throws exception if no active timer found\n\n-- Set monthly goal (handles partial unique indexes)\n-- For overall goal (all categories):\nSELECT set_monthly_goal(\n    p_month := '2024-03-01'::date,\n    p_target_hours := 40.0\n);\n-- For per-category goal:\nSELECT set_monthly_goal(\n    p_month := '2024-03-01'::date,\n    p_target_hours := 20.0,\n    p_category_id := 'uuid-here'\n);",
-  "owner_task_id": "worker-1772723213107-0",
-  "registered_by": "worker-1772723213107-0",
-  "registered_at": "2026-03-05T15:16:17.527Z"
-}

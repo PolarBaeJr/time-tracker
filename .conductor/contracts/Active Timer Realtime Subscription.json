@@ -1,8 +1,0 @@
-{
-  "contract_id": "Active Timer Realtime Subscription",
-  "contract_type": "type_definition",
-  "spec": "// Import from '@/lib'\nexport type ActiveTimerConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';\nexport interface ActiveTimerRealtimePayload {\n  eventType: 'INSERT' | 'UPDATE' | 'DELETE';\n  old_record: Partial<ActiveTimer> | null;\n  new_record: ActiveTimer | null;\n  raw: RealtimePostgresChangesPayload<ActiveTimer>;\n}\nexport interface CreateActiveTimerSubscriptionOptions {\n  userId: string; // required UUID, used in filter user_id=eq.<uuid>\n  onEvent: (payload: ActiveTimerRealtimePayload) => void;\n  onStatusChange?: (status: ActiveTimerConnectionStatus) => void;\n  onError?: (error: Error) => void;\n  reconnectDelayMs?: number; // default 2000, exponential backoff capped at 30000\n  maxReconnectAttempts?: number; // default 5\n  channelName?: string; // optional prefix, actual channel name is suffixed uniquely\n}\nexport interface ActiveTimerSubscriptionHandle {\n  getChannel: () => RealtimeChannel | null;\n  unsubscribe: () => Promise<'ok' | 'timed out' | 'error'>;\n}\nexport declare function createActiveTimerSubscription(options: CreateActiveTimerSubscriptionOptions): ActiveTimerSubscriptionHandle;\nexport declare function normalizeActiveTimerRealtimePayload(payload: RealtimePostgresChangesPayload<ActiveTimer>): ActiveTimerRealtimePayload;\nexport declare function isValidActiveTimerRealtimePayload(payload: ActiveTimerRealtimePayload): boolean;",
-  "owner_task_id": "worker-1772751519612-1",
-  "registered_by": "worker-1772751519612-1",
-  "registered_at": "2026-03-05T23:08:12.402Z"
-}

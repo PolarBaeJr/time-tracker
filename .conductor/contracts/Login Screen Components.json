@@ -1,8 +1,0 @@
-{
-  "contract_id": "Login Screen Components",
-  "contract_type": "type_definition",
-  "spec": "// Login screen contract\\n// Files: src/screens/LoginScreen.tsx, src/components/auth/GoogleSignInButton.tsx\\n\\n// Import from '@/components/auth'\\nexport interface GoogleSignInButtonProps {\\n  loading?: boolean;\\n  disabled?: boolean;\\n  onPress: () => void | Promise<void>;\\n}\\nexport declare function GoogleSignInButton(props: GoogleSignInButtonProps): React.ReactElement;\\n\\n// Import from '@/screens'\\nexport declare function LoginScreen(): React.ReactElement;\\n\\n// Behavior notes\\n// - LoginScreen consumes useAuth() and calls signInWithGoogle()\\n// - loading state is driven from AuthContext\\n// - auth failures surface through an inline error banner plus platform alert fallback\\n// - App.tsx currently renders LoginScreen whenever `isAuthenticated` is false\\n// - Google button uses a local badge fallback instead of `@expo/vector-icons` because that package is not installed in this repo",
-  "owner_task_id": "worker-1772754297875-0",
-  "registered_by": "worker-1772754297875-0",
-  "registered_at": "2026-03-06T00:11:15.431Z"
-}

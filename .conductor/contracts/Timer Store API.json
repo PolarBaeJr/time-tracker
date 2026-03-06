@@ -1,8 +1,0 @@
-{
-  "contract_id": "Timer Store API",
-  "contract_type": "type_definition",
-  "spec": "// Import from '@/stores'\nexport interface TimerStoreState {\n  activeTimer: ActiveTimer | null;\n  localElapsed: number;\n  isRunning: boolean;\n  offlineQueue: QueuedAction[];\n  setActiveTimer: (timer: ActiveTimer | null) => void;\n  startLocalTick: () => void;\n  stopLocalTick: () => void;\n  queueAction: (action: QueuedAction) => void;\n  clearQueue: () => void;\n  syncFromServer: (timer: ActiveTimer | null) => void;\n}\n\nexport declare function getTimerStoreState(): TimerStoreState;\nexport declare function subscribeTimerStore(listener: () => void): () => void;\nexport declare function useTimerStore<T>(selector: (state: TimerStoreState) => T): T;\n\n// Behavior notes:\n// - localElapsed is computed from UTC server timestamp: floor((Date.now() - Date.parse(started_at))/1000)\n// - offlineQueue is persisted and hydrated from storage key `worktracker.timer-store.v1`\n// - startLocalTick/stopLocalTick manage a 1-second interval for elapsed updates",
-  "owner_task_id": "worker-1772770738500-0",
-  "registered_by": "worker-1772770738500-0",
-  "registered_at": "2026-03-06T04:24:35.971Z"
-}

@@ -1,8 +1,0 @@
-{
-  "contract_id": "Development Seed Workflow",
-  "contract_type": "type_definition",
-  "spec": "// Development seed contract\\n// Files: package.json, scripts/seed-dev.ts, supabase/seed.sql, docs/DEVELOPMENT.md, .env.example\\n\\n// npm script\\n// - `npm run seed:dev` => `node --experimental-strip-types scripts/seed-dev.ts`\\n\\n// Required server-side env\\n// - SUPABASE_URL\\n// - SUPABASE_SERVICE_ROLE_KEY\\n// Both are documented in .env.example and docs/DEVELOPMENT.md.\\n\\n// scripts/seed-dev.ts behavior\\n// - Creates or reuses auth users `dev.alice@worktracker.local` and `dev.bob@worktracker.local`\\n// - Upserts matching public.users profile rows\\n// - Upserts removable sample `time_entries` and overall `monthly_goals` using fixed row IDs for idempotency\\n// - Supports flags: `--dry-run`, `--skip-users`, `--skip-samples`\\n// - Never seeds categories\\n\\n// supabase/seed.sql behavior\\n// - Local SQL fallback only\\n// - Does NOT create auth users\\n// - Upserts the same removable sample `time_entries` and `monthly_goals` for the two dev emails if those users already exist\\n// - Never seeds categories\\n\\n// Seed markers\\n// - Sample time entry notes are prefixed with `[Seed - removable]` so they can be safely deleted after testing.",
-  "owner_task_id": "worker-1772754297875-0",
-  "registered_by": "worker-1772754297875-0",
-  "registered_at": "2026-03-06T00:23:14.457Z"
-}

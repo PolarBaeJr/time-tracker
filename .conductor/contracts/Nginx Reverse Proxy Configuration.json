@@ -1,8 +1,0 @@
-{
-  "contract_id": "Nginx Reverse Proxy Configuration",
-  "contract_type": "type_definition",
-  "spec": "// Deployment/runtime contract for nginx-based web serving\\n// Files: nginx/nginx.conf, nginx/security-headers.conf, nginx/ssl.conf, Dockerfile\\n\\n// Docker runtime stage now copies the entire nginx directory:\\n// COPY nginx/ /etc/nginx/\\n\\n// Active HTTP server (`/etc/nginx/nginx.conf`):\\n// - worker_processes auto\\n// - worker_connections 1024\\n// - server_tokens off\\n// - gzip enabled for text/css/js/json/xml/svg assets\\n// - GET /health returns 200 OK with text/plain\\n// - SPA fallback: try_files $uri $uri/ /index.html\\n// - /index.html and /metadata.json are served with no-cache headers\\n// - Hashed Expo assets under `/_expo/static/` are served with `Cache-Control: public, max-age=31536000, immutable`\\n\\n// Shared headers include (`/etc/nginx/security-headers.conf`):\\n// - X-Content-Type-Options: nosniff\\n// - X-Frame-Options: DENY\\n// - X-XSS-Protection: 1;mode=block\\n// - Referrer-Policy: strict-origin-when-cross-origin\\n// - Content-Security-Policy allows self, Supabase (`https://*.supabase.co`, `https://*.supabase.in`, matching wss://), and Google OAuth endpoints (`accounts.google.com`, `oauth2.googleapis.com`, `www.googleapis.com`, `apis.google.com`)\\n\\n// HTTPS template (`/etc/nginx/ssl.conf`):\\n// - dormant 443 server block with placeholder cert paths under /etc/nginx/certs\\n// - mirrors the same SPA fallback, health check, cache policy, and security headers\\n// - intended to be enabled only after certificates are provisioned",
-  "owner_task_id": "worker-1772754297875-0",
-  "registered_by": "worker-1772754297875-0",
-  "registered_at": "2026-03-05T23:48:50.875Z"
-}

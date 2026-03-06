@@ -1,8 +1,0 @@
-{
-  "contract_id": "Categories TanStack Query Hooks",
-  "contract_type": "type_definition",
-  "spec": "// TanStack Query hooks for categories\n// Files: src/lib/queryClient.ts, src/hooks/useCategories.ts, src/hooks/useCategoryMutations.ts\n\n// Import from '@/lib'\nexport const queryClient: QueryClient;\nexport const queryKeys: {\n  categories: ['categories'];\n  category: (id: string) => ['categories', id];\n  // ...other query keys\n};\n\n// Import from '@/hooks'\n\n// useCategories\nexport interface UseCategoriesOptions {\n  enabled?: boolean;\n  staleTime?: number;\n}\nexport function useCategories(options?: UseCategoriesOptions): UseQueryResult<Category[]>;\nexport class CategoriesFetchError extends Error { code?: string; }\n\n// useCategoryMutations\nexport function useCreateCategory(): UseMutationResult<Category, CategoryMutationError, CreateCategoryInput>;\nexport function useUpdateCategory(): UseMutationResult<Category, CategoryMutationError, { id: string; data: UpdateCategoryInput }>;\nexport function useDeleteCategory(): UseMutationResult<void, CategoryMutationError, string>;\nexport class CategoryMutationError extends Error { code?: string; operation?: 'create' | 'update' | 'delete'; }\n\n// Behavior notes:\n// - QueryClient: staleTime 5min, gcTime 30min, refetchOnWindowFocus: false\n// - useCategories fetches from supabase.from('categories').select('*').order('name')\n// - Mutations validate with CreateCategorySchema/UpdateCategorySchema (NOT full CategorySchema)\n// - All mutations implement optimistic updates via onMutate/onError/onSettled\n// - Cache invalidation on mutation settled",
-  "owner_task_id": "worker-1772787645165-1",
-  "registered_by": "worker-1772787645165-1",
-  "registered_at": "2026-03-06T09:02:35.106Z"
-}

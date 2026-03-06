@@ -1,8 +1,0 @@
-{
-  "contract_id": "Expo Build Configuration",
-  "contract_type": "type_definition",
-  "spec": "// Expo / EAS build configuration\\n// Files: app.json, app.config.js, eas.json\\n\\n// app.json contains checked-in cross-platform metadata:\\n// - scheme: worktracker\\n// - ios.bundleIdentifier: com.worktracker.app\\n// - android.package: com.worktracker.app\\n// - android.intentFilters cover worktracker://auth/callback and https://worktracker.app/auth/callback\\n// - web.bundler: metro\\n\\n// app.config.js injects env-driven values into expo.extra at config resolution time:\\ninterface ExpoExtra {\\n  SUPABASE_URL: string;\\n  SUPABASE_ANON_KEY: string;\\n  eas: { projectId: string };\\n}\\n\\n// Optional env inputs consumed by app.config.js:\\n// - SUPABASE_URL\\n// - SUPABASE_ANON_KEY\\n// - GOOGLE_IOS_REVERSED_CLIENT_ID\\n// - EAS_PROJECT_ID\\n\\n// eas.json profiles:\\n// - development: development client, internal distribution, environment=development\\n// - preview: internal distribution, environment=preview\\n// - production: autoIncrement enabled, environment=production\\n// Each profile sets APP_ENV and expects secrets to live in the matching EAS environment.",
-  "owner_task_id": "worker-1772752207275-respawn-0",
-  "registered_by": "worker-1772752207275-respawn-0",
-  "registered_at": "2026-03-05T23:14:57.147Z"
-}

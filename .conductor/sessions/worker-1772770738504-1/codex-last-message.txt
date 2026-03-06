@@ -1,8 +1,0 @@
-Completed and paused per `wind_down`.
-
-- Claimed and finished `task-036`.
-- Implemented platform storage modules under `src/lib/storage/*` plus `src/types/async-storage.d.ts`.
-- Updated `src/lib/index.ts` exports.
-- Validation passed: `npm run typecheck`, `npm run lint`.
-- Commit: `5b37b14` with message `[task-036] Implement platform-specific storage abstractions`.
-- Marked task complete in coordinator, posted escalation/error notes about blocked npm registry access, and posted final pause status.

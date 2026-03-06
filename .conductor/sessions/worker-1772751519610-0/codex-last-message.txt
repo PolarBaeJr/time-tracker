@@ -1,7 +1,0 @@
-Completed `task-010` and paused on the `wind_down` signal. I added the setup guide [docs/SUPABASE_SETUP.md](/Users/matthewcheng/Projects/Time tracker/worktracker/docs/SUPABASE_SETUP.md), local Supabase auth config [supabase/config.toml](/Users/matthewcheng/Projects/Time tracker/worktracker/supabase/config.toml), and updated [.env.example](/Users/matthewcheng/Projects/Time tracker/worktracker/.env.example) with Google OAuth placeholders and redirect guidance. The key clarification is that Google should redirect only to Supabase `/auth/v1/callback`; the app web/native callbacks belong in Supabase URL configuration.
-
-Validation: `npm run typecheck` passed, `npx prettier --check docs/SUPABASE_SETUP.md` passed, and `git diff --check` passed for the touched files. Commit: `4f84345` with message `[task-010] Document Supabase Google OAuth setup`. `git pull --rebase` could not be completed because the shared worktree had unrelated unstaged changes and no remote configured.
-
-Sources used to verify the auth flow and local config:
-- https://supabase.com/docs/guides/auth/social-login/auth-google
-- https://supabase.com/docs/guides/local-development/cli/config
