@@ -1,0 +1,101 @@
+name: Deploy to Raspberry Pi
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+# Required GitHub secrets:
+#   PI_HOST         - Raspberry Pi hostname or IP address
+#   PI_USER         - SSH username (e.g. pi)
+#   PI_SSH_KEY      - Private SSH key for connecting to the Pi
+#   SUPABASE_URL    - Production Supabase project URL
+#   SUPABASE_ANON_KEY - Supabase anon key
+
+jobs:
+  deploy:
+    name: Deploy to Raspberry Pi (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: worktracker/package-lock.json
+
+      - name: Install dependencies
+        working-directory: worktracker
+        run: npm ci
+
+      - name: Build web app
+        working-directory: worktracker
+        run: npm run build:web
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Build Docker image
+        working-directory: worktracker
+        run: |
+          docker build \
+            --build-arg EXPO_PUBLIC_SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --build-arg EXPO_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            -t worktracker:${{ github.sha }} \
+            -t worktracker:latest \
+            .
+
+      - name: Save Docker image
+        run: docker save worktracker:latest | gzip > worktracker.tar.gz
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PI_SSH_KEY }}
+
+      - name: Add Pi to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy image to Pi
+        run: |
+          scp worktracker.tar.gz ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:/tmp/worktracker.tar.gz
+
+      - name: Deploy on Pi
+        run: |
+          ssh ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }} bash -s << 'EOF'
+            set -e
+            echo "Loading new Docker image..."
+            docker load < /tmp/worktracker.tar.gz
+            rm /tmp/worktracker.tar.gz
+
+            echo "Running deploy script..."
+            cd ~/worktracker
+            git pull origin main
+            bash scripts/deploy.sh
+
+            echo "Deployment complete"
+          EOF
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          ssh ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }} \
+            'docker ps | grep worktracker && echo "Container is running"'
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment to ${{ github.event.inputs.environment }} failed"
