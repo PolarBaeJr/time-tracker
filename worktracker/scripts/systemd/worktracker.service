@@ -1,0 +1,19 @@
+[Unit]
+Description=WorkTracker container deployment
+Requires=docker.service
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+WorkingDirectory=/opt/worktracker/worktracker
+Environment=COMPOSE_FILE=docker-compose.prod.yml
+ExecStart=/usr/bin/env bash /opt/worktracker/worktracker/scripts/deploy.sh
+ExecReload=/usr/bin/env bash /opt/worktracker/worktracker/scripts/deploy.sh
+RemainAfterExit=yes
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
