@@ -1,5 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Spinner, Text } from '@/components/ui';
+import { AuthProvider } from '@/contexts';
+import { useAuth } from '@/hooks';
+import { ThemeProvider, colors, spacing } from '@/theme';
 
 /**
  * WorkTracker App - Main Entry Point
@@ -10,31 +15,58 @@ import { StyleSheet, Text, View } from 'react-native';
  * - Supabase Backend
  * - Google OAuth Authentication
  */
-export default function App() {
+function AppContent(): React.ReactElement {
+  const { loading, isAuthenticated, user, session } = useAuth();
+
+  if (loading) {
+    return <Spinner fullScreen size="large" message="Checking session..." />;
+  }
+
+  const displayName = user?.name ?? session?.user.email ?? 'WorkTracker user';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>WorkTracker</Text>
-      <Text style={styles.subtitle}>Time Tracking Made Simple</Text>
+      <Text variant="display" center style={styles.title}>
+        WorkTracker
+      </Text>
+      <Text variant="body" color="secondary" center>
+        {isAuthenticated ? `Signed in as ${displayName}` : 'Authentication context is ready'}
+      </Text>
+      <Text variant="bodySmall" color="muted" center style={styles.subtitle}>
+        {isAuthenticated
+          ? 'Your Supabase session is active and the profile sync is connected.'
+          : 'Google OAuth wiring is available. Login UI lands in the next auth task.'}
+      </Text>
       <StatusBar style="light" />
     </View>
+  );
+}
+
+export default function App(): React.ReactElement {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F0F0F',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#A1A1AA',
+    marginTop: spacing.md,
+    maxWidth: 360,
   },
 });
+
+export { AppContent };
