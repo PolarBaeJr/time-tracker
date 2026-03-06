@@ -12,6 +12,13 @@ export {
   config,
   validateConfig,
 } from './supabase';
+export { storage, secureStorage } from './storage';
+export {
+  createActiveTimerSubscription,
+  getReconnectDelayMs,
+  isValidActiveTimerRealtimePayload,
+  normalizeActiveTimerRealtimePayload,
+} from './realtime';
 
 export type {
   SupabaseClient,
@@ -22,3 +29,12 @@ export type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from './supabase';
+export type { SecureStorage, Storage } from './storage';
+export type {
+  ActiveTimerConnectionStatus,
+  ActiveTimerRealtimeClient,
+  ActiveTimerRealtimeEventType,
+  ActiveTimerRealtimePayload,
+  ActiveTimerSubscriptionHandle,
+  CreateActiveTimerSubscriptionOptions,
+} from './realtime';
