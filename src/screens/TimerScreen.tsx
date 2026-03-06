@@ -31,10 +31,12 @@ import {
   CategorySelector,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRealtimeTimer, useCategories, markLocalTimerAction } from '@/hooks';
 import { startTimer, stopTimer } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
 import { colors, spacing, borderRadius } from '@/theme';
+import { queryKeys } from '@/lib/queryClient';
 import type { Category } from '@/schemas';
 
 /**
@@ -139,6 +141,8 @@ function SelectedCategoryDisplay({
  * - Responsive layout for phone and tablet
  */
 export function TimerScreen(): React.ReactElement {
+  const queryClient = useQueryClient();
+
   // State
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null
@@ -244,9 +248,11 @@ export function TimerScreen(): React.ReactElement {
           Alert.alert('Error', `Failed to stop timer: ${message}`);
         }
       } else {
-        // Success - clear notes input
+        // Success - clear notes input and refresh history/analytics
         setStopNotes('');
         setShowNotesInput(false);
+        void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
       }
     } catch (error) {
       const message =
@@ -259,7 +265,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStopping(false);
     }
-  }, [showNotesInput, stopNotes]);
+  }, [showNotesInput, stopNotes, queryClient]);
 
   // Handle quick stop (without notes)
   const handleQuickStop = useCallback(async () => {
@@ -279,6 +285,8 @@ export function TimerScreen(): React.ReactElement {
       } else {
         setStopNotes('');
         setShowNotesInput(false);
+        void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
       }
     } catch (error) {
       const message =
@@ -291,7 +299,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStopping(false);
     }
-  }, []);
+  }, [queryClient]);
 
   // Cancel notes input
   const handleCancelNotes = useCallback(() => {
