@@ -12,65 +12,20 @@
  */
 
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { Icon, Text, type IconName } from '@/components/ui';
-import { colors, spacing } from '@/theme';
+import { Icon, type IconName } from '@/components/ui';
+import { colors } from '@/theme';
 import {
+  TimerScreen as TimerScreenComponent,
+  HistoryScreen as HistoryScreenComponent,
+  AnalyticsScreen as AnalyticsScreenComponent,
   CategoriesScreen as CategoriesScreenComponent,
+  GoalsScreen as GoalsScreenComponent,
   SettingsScreen as SettingsScreenComponent,
 } from '@/screens';
 
 import type { MainTabParamList } from './types';
-
-// ============================================================================
-// Placeholder Screen Components
-// These will be replaced with actual screens as they are implemented
-// ============================================================================
-
-function PlaceholderScreen({
-  title,
-  icon,
-}: {
-  title: string;
-  icon: IconName;
-}): React.ReactElement {
-  return (
-    <View style={styles.placeholderContainer}>
-      <Icon name={icon} size={48} color={colors.primary} />
-      <Text variant="heading" center style={styles.placeholderTitle}>
-        {title}
-      </Text>
-      <Text variant="body" color="muted" center>
-        Coming soon...
-      </Text>
-    </View>
-  );
-}
-
-// Placeholder screens for each tab
-// TODO: Replace with actual screen components as tasks are completed
-
-function TimerScreen(): React.ReactElement {
-  return <PlaceholderScreen title="Timer" icon="time-outline" />;
-}
-
-function HistoryScreen(): React.ReactElement {
-  return <PlaceholderScreen title="History" icon="list-outline" />;
-}
-
-function AnalyticsScreen(): React.ReactElement {
-  return <PlaceholderScreen title="Analytics" icon="bar-chart-outline" />;
-}
-
-// CategoriesScreen is imported from @/screens
-
-function GoalsScreen(): React.ReactElement {
-  return <PlaceholderScreen title="Goals" icon="flag-outline" />;
-}
-
-// SettingsScreen is imported from @/screens
 
 // ============================================================================
 // Tab Navigator Configuration
@@ -160,17 +115,17 @@ export function MainTabs(): React.ReactElement {
     >
       <Tab.Screen
         name="Timer"
-        component={TimerScreen}
+        component={TimerScreenComponent}
         options={{ title: 'Timer' }}
       />
       <Tab.Screen
         name="History"
-        component={HistoryScreen}
+        component={HistoryScreenComponent}
         options={{ title: 'History' }}
       />
       <Tab.Screen
         name="Analytics"
-        component={AnalyticsScreen}
+        component={AnalyticsScreenComponent}
         options={{ title: 'Analytics' }}
       />
       <Tab.Screen
@@ -180,7 +135,7 @@ export function MainTabs(): React.ReactElement {
       />
       <Tab.Screen
         name="Goals"
-        component={GoalsScreen}
+        component={GoalsScreenComponent}
         options={{ title: 'Goals' }}
       />
       <Tab.Screen
@@ -192,22 +147,5 @@ export function MainTabs(): React.ReactElement {
   );
 }
 
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles = StyleSheet.create({
-  placeholderContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  placeholderTitle: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-  },
-});
 
 export default MainTabs;

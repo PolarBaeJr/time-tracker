@@ -195,6 +195,13 @@ export function CategoryForm({
     }
   }, [validateForm, isEditMode, form, category, onSubmit]);
 
+  // Confirm deletion
+  const confirmDelete = useCallback(() => {
+    if (category && onDelete) {
+      onDelete(category.id);
+    }
+  }, [category, onDelete]);
+
   // Handle delete initiation
   const handleDeletePress = useCallback(() => {
     if (hasActiveTimer) {
@@ -224,14 +231,7 @@ export function CategoryForm({
       // No entries, delete immediately
       confirmDelete();
     }
-  }, [hasActiveTimer, entryCount, otherCategories.length, onStopTimer]);
-
-  // Confirm deletion
-  const confirmDelete = useCallback(() => {
-    if (category && onDelete) {
-      onDelete(category.id);
-    }
-  }, [category, onDelete]);
+  }, [hasActiveTimer, entryCount, otherCategories.length, onStopTimer, confirmDelete]);
 
   // Handle reassignment and deletion
   const handleReassignAndDelete = useCallback(() => {

@@ -11,6 +11,7 @@ import {
   DefaultTheme,
   type Theme as NavigationTheme,
 } from '@react-navigation/native';
+import { Platform } from 'react-native';
 
 import { colors } from '@/theme';
 
@@ -63,11 +64,33 @@ interface NavigationProviderProps {
  * </AuthProvider>
  * ```
  */
+const linking = {
+  prefixes: Platform.OS === 'web' && typeof window !== 'undefined'
+    ? [window.location.origin]
+    : ['worktracker://'],
+  config: {
+    screens: {
+      Login: 'login',
+      Main: {
+        path: '',
+        screens: {
+          Timer: 'timer',
+          History: 'history',
+          Analytics: 'analytics',
+          Categories: 'categories',
+          Settings: 'settings',
+        },
+      },
+      EntryEdit: 'entry/:entryId',
+    },
+  },
+};
+
 export function NavigationProvider({
   children,
 }: NavigationProviderProps): React.ReactElement {
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer theme={navigationTheme} linking={linking}>
       {children ?? <RootNavigator />}
     </NavigationContainer>
   );

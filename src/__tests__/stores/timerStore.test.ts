@@ -538,7 +538,7 @@ describe('timerStore', () => {
       const localTimer = mockActiveTimer({ id: 'local-1' });
       const serverTimer = mockActiveTimer({ id: 'server-1' });
 
-      let state = {
+      const state = {
         activeTimer: localTimer as ActiveTimer | null,
       };
 
