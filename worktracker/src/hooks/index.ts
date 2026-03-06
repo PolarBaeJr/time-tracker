@@ -165,3 +165,15 @@ export {
   type UseOfflineSyncOptions,
   type UseOfflineSyncResult,
 } from './useOfflineSync';
+
+// User settings hooks
+export {
+  useUserSettings,
+  useUpdateUserSettings,
+  userSettingsQueryKey,
+  UserSettingsError,
+  type UseUserSettingsOptions,
+  type UseUserSettingsResult,
+  type UseUpdateUserSettingsOptions,
+  type UseUpdateUserSettingsResult,
+} from './useUserSettings';

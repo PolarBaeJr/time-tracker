@@ -17,6 +17,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { Icon, Text, type IconName } from '@/components/ui';
 import { colors, spacing } from '@/theme';
+import { SettingsScreen as SettingsScreenComponent } from '@/screens';
 
 import type { MainTabParamList } from './types';
 
@@ -68,9 +69,7 @@ function GoalsScreen(): React.ReactElement {
   return <PlaceholderScreen title="Goals" icon="flag-outline" />;
 }
 
-function SettingsScreen(): React.ReactElement {
-  return <PlaceholderScreen title="Settings" icon="settings-outline" />;
-}
+// SettingsScreen is imported from @/screens
 
 // ============================================================================
 // Tab Navigator Configuration
@@ -185,8 +184,8 @@ export function MainTabs(): React.ReactElement {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        component={SettingsScreenComponent}
+        options={{ title: 'Settings', headerShown: false }}
       />
     </Tab.Navigator>
   );
