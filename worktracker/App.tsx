@@ -1,10 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
+import { View, StyleSheet } from 'react-native';
 
-import { Spinner } from '@/components/ui';
 import { AuthProvider } from '@/contexts';
-import { useAuth } from '@/hooks';
+import { useAuth, useSplashScreen } from '@/hooks';
 import { NavigationProvider } from '@/navigation';
 import { ThemeProvider } from '@/theme';
+import { colors } from '@/theme';
 
 /**
  * WorkTracker App - Main Entry Point
@@ -21,23 +22,38 @@ import { ThemeProvider } from '@/theme';
  * App Content Component
  *
  * Handles the loading state while auth is being initialized.
- * Once auth is ready, renders the navigation structure.
+ * Uses expo-splash-screen to keep the native splash visible until
+ * auth check is complete, then renders the navigation structure.
  */
-function AppContent(): React.ReactElement {
+function AppContent(): React.ReactElement | null {
   const { loading } = useAuth();
 
-  if (loading) {
-    return <Spinner fullScreen size="large" message="Checking session..." />;
+  // Control splash screen visibility based on auth loading state
+  const { isReady, onLayoutRootView } = useSplashScreen({
+    authLoading: loading,
+    minimumDisplayTime: 500, // Show splash for at least 500ms to prevent flash
+  });
+
+  // Keep the splash screen visible while loading
+  if (!isReady) {
+    return null;
   }
 
   // NavigationProvider renders RootNavigator which handles auth-based routing
   return (
-    <>
+    <View style={styles.container} onLayout={onLayoutRootView}>
       <NavigationProvider />
       <StatusBar style="light" />
-    </>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+});
 
 /**
  * App Root Component

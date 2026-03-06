@@ -177,3 +177,10 @@ export {
   type UseUpdateUserSettingsOptions,
   type UseUpdateUserSettingsResult,
 } from './useUserSettings';
+
+// Splash screen hook
+export {
+  useSplashScreen,
+  type UseSplashScreenOptions,
+  type UseSplashScreenResult,
+} from './useSplashScreen';
