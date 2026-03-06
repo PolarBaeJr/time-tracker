@@ -45,11 +45,13 @@ jest.mock('@/stores', () => ({
 
 // Now import the service
 import { supabase } from '@/lib/supabase';
+import { getTimerStoreState } from '@/stores';
 import {
   startTimer,
   stopTimer,
   getActiveTimer,
   syncTimer,
+  syncTimerWithStore,
   TimerServiceError,
 } from '@/services/timerService';
 
@@ -418,6 +420,254 @@ describe('timerService', () => {
 
       expect(error).toBeInstanceOf(Error);
       expect(error).toBeInstanceOf(TimerServiceError);
+    });
+  });
+
+  // ============================================================================
+  // Additional Edge Case Tests
+  // ============================================================================
+
+  describe('startTimer - additional edge cases', () => {
+    it('should handle non-duplicate database errors', async () => {
+      const mockSingle = jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'Connection timeout', code: 'PGRST500' },
+      });
+      const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
+      const mockInsert = jest.fn().mockReturnValue({ select: mockSelect });
+      (supabase.from as jest.Mock).mockReturnValue({ insert: mockInsert });
+
+      const result = await startTimer();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.code).toBe('PGRST500');
+      expect(result.error?.operation).toBe('start');
+    });
+
+    it('should handle null data returned from server', async () => {
+      const mockSingle = jest.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+      const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
+      const mockInsert = jest.fn().mockReturnValue({ select: mockSelect });
+      (supabase.from as jest.Mock).mockReturnValue({ insert: mockInsert });
+
+      const result = await startTimer();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.message).toContain('No data returned');
+    });
+
+    it('should handle invalid timer data from server (schema mismatch)', async () => {
+      const invalidTimer = { ...validTimer, running: 'not-a-boolean' };
+      const mockSingle = jest.fn().mockResolvedValue({
+        data: invalidTimer,
+        error: null,
+      });
+      const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
+      const mockInsert = jest.fn().mockReturnValue({ select: mockSelect });
+      (supabase.from as jest.Mock).mockReturnValue({ insert: mockInsert });
+
+      const result = await startTimer();
+
+      // Should still return data (defensive parsing) but log warning
+      expect(result.error).toBeNull();
+      expect(result.data).toEqual(invalidTimer);
+    });
+  });
+
+  describe('stopTimer - additional edge cases', () => {
+    it('should handle non-timer-not-found errors', async () => {
+      (supabase.rpc as jest.Mock).mockResolvedValue({
+        data: null,
+        error: { message: 'RPC function failed', code: 'PGRST500' },
+      });
+
+      const result = await stopTimer();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.code).toBe('PGRST500');
+      expect(result.error?.operation).toBe('stop');
+    });
+
+    it('should handle null data returned from RPC', async () => {
+      (supabase.rpc as jest.Mock).mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      const result = await stopTimer();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.message).toContain('No entry returned');
+    });
+
+    it('should handle invalid time entry data from server', async () => {
+      const invalidEntry = { ...validEntry, duration_seconds: 'not-a-number' };
+      (supabase.rpc as jest.Mock).mockResolvedValue({
+        data: invalidEntry,
+        error: null,
+      });
+
+      const result = await stopTimer();
+
+      // Should still return data (defensive parsing)
+      expect(result.error).toBeNull();
+      expect(result.data).toEqual(invalidEntry);
+    });
+  });
+
+  describe('getActiveTimer - additional edge cases', () => {
+    it('should handle invalid timer data from server', async () => {
+      const invalidTimer = { ...validTimer, id: 'not-a-uuid' };
+      const mockMaybeSingle = jest.fn().mockResolvedValue({
+        data: invalidTimer,
+        error: null,
+      });
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      const result = await getActiveTimer();
+
+      // Should still return data (defensive parsing)
+      expect(result.error).toBeNull();
+      expect(result.data).toEqual(invalidTimer);
+    });
+
+    it('should handle network errors gracefully', async () => {
+      const mockMaybeSingle = jest.fn().mockRejectedValue(new Error('Network error'));
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      const result = await getActiveTimer();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.message).toBe('Network error');
+      expect(result.error?.operation).toBe('get');
+    });
+  });
+
+  describe('syncTimer - additional edge cases', () => {
+    it('should detect conflict when started_at differs', () => {
+      const localTimer = mockActiveTimer({
+        id: 'timer-123-uuid',
+        started_at: '2024-03-01T10:00:00.000Z',
+      });
+      const serverTimer = mockActiveTimer({
+        id: 'timer-123-uuid',
+        started_at: '2024-03-01T10:05:00.000Z',
+      });
+
+      const result = syncTimer(localTimer, serverTimer);
+
+      expect(result.hadConflict).toBe(true);
+      expect(result.resolvedTimer).toEqual(serverTimer);
+      expect(result.message).toBe('Timer data was updated from another device');
+    });
+  });
+
+  // ============================================================================
+  // syncTimerWithStore Tests
+  // ============================================================================
+
+  describe('syncTimerWithStore', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should sync timer and update store', async () => {
+      // Setup mock for successful getActiveTimer
+      const mockMaybeSingle = jest.fn().mockResolvedValue({
+        data: validTimer,
+        error: null,
+      });
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      // Mock store to return no local timer
+      const mockSyncFromServer = jest.fn();
+      (getTimerStoreState as jest.Mock).mockReturnValue({
+        activeTimer: null,
+        syncFromServer: mockSyncFromServer,
+      });
+
+      const result = await syncTimerWithStore();
+
+      expect(result.error).toBeNull();
+      expect(result.data?.hadConflict).toBe(true);
+      expect(result.data?.message).toBe('Timer was started on another device');
+      expect(mockSyncFromServer).toHaveBeenCalledWith(validTimer);
+    });
+
+    it('should handle no conflict when timers match', async () => {
+      const mockMaybeSingle = jest.fn().mockResolvedValue({
+        data: validTimer,
+        error: null,
+      });
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      const mockSyncFromServer = jest.fn();
+      (getTimerStoreState as jest.Mock).mockReturnValue({
+        activeTimer: validTimer,
+        syncFromServer: mockSyncFromServer,
+      });
+
+      const result = await syncTimerWithStore();
+
+      expect(result.error).toBeNull();
+      expect(result.data?.hadConflict).toBe(false);
+      expect(result.data?.message).toBe('Timer in sync');
+    });
+
+    it('should return error when server fetch fails', async () => {
+      const mockMaybeSingle = jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'Server error', code: 'PGRST500' },
+      });
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      const result = await syncTimerWithStore();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.code).toBe('PGRST500');
+      expect(result.error?.operation).toBe('sync');
+    });
+
+    it('should handle network errors during sync', async () => {
+      const mockMaybeSingle = jest.fn().mockRejectedValue(new Error('Network timeout'));
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      const result = await syncTimerWithStore();
+
+      expect(result.error).toBeInstanceOf(TimerServiceError);
+      expect(result.error?.message).toBe('Network timeout');
+      expect(result.error?.operation).toBe('sync');
+    });
+
+    it('should sync both null timers correctly', async () => {
+      const mockMaybeSingle = jest.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+      const mockSelect = jest.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+
+      const mockSyncFromServer = jest.fn();
+      (getTimerStoreState as jest.Mock).mockReturnValue({
+        activeTimer: null,
+        syncFromServer: mockSyncFromServer,
+      });
+
+      const result = await syncTimerWithStore();
+
+      expect(result.error).toBeNull();
+      expect(result.data?.hadConflict).toBe(false);
+      expect(result.data?.message).toBe('No timer active');
+      expect(mockSyncFromServer).toHaveBeenCalledWith(null);
     });
   });
 });
