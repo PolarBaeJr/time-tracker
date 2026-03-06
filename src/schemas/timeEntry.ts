@@ -20,13 +20,13 @@ export const TimeEntrySchema = z.object({
   category_id: z.string().uuid().nullable(),
 
   /** Start timestamp of the time entry (ISO 8601 datetime) */
-  start_at: z.string().datetime(),
+  start_at: z.string().datetime({ offset: true }),
 
   /**
    * End timestamp of the time entry (ISO 8601 datetime)
    * Nullable for entries created from active timers before they're stopped
    */
-  end_at: z.string().datetime().nullable(),
+  end_at: z.string().datetime({ offset: true }).nullable(),
 
   /** Duration in seconds (non-negative integer) */
   duration_seconds: z.number().int().nonnegative(),
@@ -35,10 +35,10 @@ export const TimeEntrySchema = z.object({
   notes: z.string().max(1000).nullable(),
 
   /** Timestamp when entry was created */
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 
   /** Timestamp when entry was last updated */
-  updated_at: z.string().datetime(),
+  updated_at: z.string().datetime({ offset: true }),
 });
 
 /**
@@ -53,10 +53,10 @@ export const CreateTimeEntrySchema = z
     category_id: z.string().uuid().nullable().optional(),
 
     /** Start timestamp (ISO 8601 datetime, required) */
-    start_at: z.string().datetime(),
+    start_at: z.string().datetime({ offset: true }),
 
     /** End timestamp (ISO 8601 datetime, optional for ongoing entries) */
-    end_at: z.string().datetime().nullable().optional(),
+    end_at: z.string().datetime({ offset: true }).nullable().optional(),
 
     /** Duration in seconds (non-negative integer, required) */
     duration_seconds: z.number().int().nonnegative(),
@@ -110,10 +110,10 @@ export const UpdateTimeEntrySchema = z
     category_id: z.string().uuid().nullable().optional(),
 
     /** Start timestamp (ISO 8601 datetime) */
-    start_at: z.string().datetime().optional(),
+    start_at: z.string().datetime({ offset: true }).optional(),
 
     /** End timestamp (ISO 8601 datetime) */
-    end_at: z.string().datetime().nullable().optional(),
+    end_at: z.string().datetime({ offset: true }).nullable().optional(),
 
     /** Duration in seconds (non-negative integer) */
     duration_seconds: z.number().int().nonnegative().optional(),
@@ -145,10 +145,10 @@ export type UpdateTimeEntryInput = z.infer<typeof UpdateTimeEntrySchema>;
  */
 export const TimeEntryFiltersSchema = z.object({
   /** Filter by date range start (inclusive) */
-  dateStart: z.string().datetime().optional(),
+  dateStart: z.string().datetime({ offset: true }).optional(),
 
   /** Filter by date range end (inclusive) */
-  dateEnd: z.string().datetime().optional(),
+  dateEnd: z.string().datetime({ offset: true }).optional(),
 
   /** Filter by category ID */
   categoryId: z.string().uuid().nullable().optional(),

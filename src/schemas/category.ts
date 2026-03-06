@@ -32,7 +32,7 @@ export const CategorySchema = z.object({
   type: z.string().min(1).max(50),
 
   /** Timestamp when category was created */
-  created_at: z.string().datetime(),
+  created_at: z.string().datetime({ offset: true }),
 });
 
 /**

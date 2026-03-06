@@ -30,7 +30,7 @@ export const ActiveTimerSchema = z.object({
    * Set server-side via DEFAULT now() to ensure accurate timestamps
    * regardless of client clock skew
    */
-  started_at: z.string().datetime(),
+  started_at: z.string().datetime({ offset: true }),
 
   /** Whether the timer is currently running */
   running: z.boolean(),
@@ -104,7 +104,7 @@ export const QueuedActionSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
 
   /** When the action was queued */
-  timestamp: z.string().datetime(),
+  timestamp: z.string().datetime({ offset: true }),
 
   /** Number of retry attempts */
   retryCount: z.number().int().nonnegative().default(0),

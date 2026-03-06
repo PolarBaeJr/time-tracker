@@ -23,10 +23,10 @@ export const UserSchema = z.object({
   week_start_day: z.number().int().min(0).max(6).default(1),
 
   /** Timestamp when user record was created */
-  created_at: z.string().datetime().optional(),
+  created_at: z.string().datetime({ offset: true }).optional(),
 
   /** Timestamp when user record was last updated */
-  updated_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime({ offset: true }).optional(),
 });
 
 /**
