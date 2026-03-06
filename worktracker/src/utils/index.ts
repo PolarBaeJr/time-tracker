@@ -2,5 +2,28 @@
  * Utility functions barrel export
  */
 
-// Placeholder - utility functions will be exported as they are created
-export {};
+// Analytics utilities
+export {
+  formatDateString,
+  getStartOfDay,
+  getEndOfDay,
+  getWeekStart,
+  getMonthStart,
+  getLastNDays,
+  getLastNWeeks,
+  getLastNMonths,
+  getDayOfWeek,
+  getHourOfDay,
+  getHourFromISOString,
+  getDayOfWeekFromISOString,
+  secondsToHours,
+  formatHours,
+  formatDuration,
+  getTodayString,
+  getISOWeekNumber,
+  type DayOfWeek,
+  type DateRangeOptions,
+  type DayRange,
+  type WeekRange,
+  type MonthRange,
+} from './analytics';

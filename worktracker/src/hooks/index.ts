@@ -105,3 +105,33 @@ export {
   type UseRealtimeTimerOptions,
   type ActiveTimerConnectionStatus,
 } from './useRealtimeTimer';
+
+// Analytics hooks
+export {
+  useDailyTotals,
+  useWeeklyTotals,
+  useMonthlyTotals,
+  useHourOfDayDistribution,
+  useDayOfWeekDistribution,
+  fetchDailyTotals,
+  fetchWeeklyTotals,
+  fetchMonthlyTotals,
+  fetchHourOfDayDistribution,
+  fetchDayOfWeekDistribution,
+  AnalyticsFetchError,
+  type DailyTotal,
+  type WeeklyTotal,
+  type MonthlyTotal,
+  type HourOfDayDistribution,
+  type DayOfWeekDistribution,
+  type UseDailyTotalsOptions,
+  type UseWeeklyTotalsOptions,
+  type UseMonthlyTotalsOptions,
+  type UseHourOfDayDistributionOptions,
+  type UseDayOfWeekDistributionOptions,
+  type UseDailyTotalsResult,
+  type UseWeeklyTotalsResult,
+  type UseMonthlyTotalsResult,
+  type UseHourOfDayDistributionResult,
+  type UseDayOfWeekDistributionResult,
+} from './useAnalytics';

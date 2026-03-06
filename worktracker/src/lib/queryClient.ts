@@ -99,6 +99,27 @@ export const queryKeys = {
 
   /** Active timer */
   activeTimer: ['activeTimer'] as const,
+
+  /** Analytics query keys */
+  analytics: {
+    /** Daily totals for the last N days */
+    dailyTotals: (days: number) => ['analytics', 'daily', days] as const,
+
+    /** Weekly totals for the last N weeks */
+    weeklyTotals: (weeks: number) => ['analytics', 'weekly', weeks] as const,
+
+    /** Monthly totals for the last N months */
+    monthlyTotals: (months: number) => ['analytics', 'monthly', months] as const,
+
+    /** Hour of day distribution (last N days) */
+    hourOfDay: (days: number) => ['analytics', 'hourOfDay', days] as const,
+
+    /** Day of week distribution (last N weeks) */
+    dayOfWeek: (weeks: number) => ['analytics', 'dayOfWeek', weeks] as const,
+
+    /** All analytics queries (for invalidation) */
+    all: ['analytics'] as const,
+  },
 } as const;
 
 export type QueryKeys = typeof queryKeys;
