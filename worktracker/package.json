@@ -13,7 +13,14 @@
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
     "seed:dev": "node --experimental-strip-types scripts/seed-dev.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "electron:compile": "tsc -p electron/tsconfig.json",
+    "electron:dev": "concurrently -k \"npm run web\" \"npm run electron:compile && electron electron/main.js\"",
+    "electron:build": "npm run build:web && npm run electron:compile",
+    "electron:package": "npm run electron:build && electron-builder --config electron/electron-builder.yml",
+    "electron:package:mac": "npm run electron:build && electron-builder --config electron/electron-builder.yml --mac",
+    "electron:package:win": "npm run electron:build && electron-builder --config electron/electron-builder.yml --win",
+    "electron:package:linux": "npm run electron:build && electron-builder --config electron/electron-builder.yml --linux"
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.15.5",

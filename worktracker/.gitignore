@@ -51,6 +51,9 @@ yarn-error.*
 # Electron
 electron/dist/
 electron/out/
+electron-dist/
+electron/*.js
+electron/*.js.map
 
 # Testing
 coverage/
