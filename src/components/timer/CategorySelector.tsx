@@ -26,6 +26,7 @@ import {
   type ViewStyle,
   type ListRenderItem,
   Pressable,
+  Dimensions,
 } from 'react-native';
 
 import { Button, Card, Text, Spinner } from '@/components/ui';
@@ -236,9 +237,15 @@ export function CategorySelector({
   );
 }
 
+const windowHeight = Dimensions.get('window').height;
+
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
@@ -247,7 +254,7 @@ const styles = StyleSheet.create({
   modal: {
     width: '100%',
     maxWidth: 400,
-    maxHeight: '70%',
+    maxHeight: windowHeight * 0.7,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
   },
