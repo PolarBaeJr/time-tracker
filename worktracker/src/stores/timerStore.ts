@@ -213,3 +213,5 @@ export const useTimerStore = <T>(selector: (state: TimerStoreState) => T): T =>
     () => selector(storeState),
     () => selector(storeState)
   );
+
+export type { TimerStoreState };
