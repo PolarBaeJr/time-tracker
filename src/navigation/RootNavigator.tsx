@@ -13,7 +13,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { Text } from '@/components/ui';
 import { useAuth } from '@/hooks';
-import { LoginScreen } from '@/screens';
+import { LoginScreen, SetupScreen } from '@/screens';
 import { colors, spacing } from '@/theme';
 
 import { MainTabs } from './MainTabs';
@@ -47,7 +47,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * - EntryEdit modal (presented over both states)
  */
 export function RootNavigator(): React.ReactElement {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <Stack.Navigator
@@ -67,6 +67,12 @@ export function RootNavigator(): React.ReactElement {
           options={{
             animationTypeForReplace: 'pop',
           }}
+        />
+      ) : !user?.onboarding_complete ? (
+        // Onboarding: force settings setup before accessing the app
+        <Stack.Screen
+          name="Setup"
+          component={SetupScreen}
         />
       ) : (
         // Authenticated stack

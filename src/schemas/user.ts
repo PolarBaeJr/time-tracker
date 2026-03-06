@@ -22,6 +22,9 @@ export const UserSchema = z.object({
   /** Day of week to start weeks on (0=Sunday, 1=Monday, ..., 6=Saturday) */
   week_start_day: z.number().int().min(0).max(6).default(1),
 
+  /** Whether the user has completed initial settings setup */
+  onboarding_complete: z.boolean().default(false),
+
   /** Timestamp when user record was created */
   created_at: z.string().datetime({ offset: true }).optional(),
 
@@ -44,6 +47,9 @@ export const UpdateUserSchema = z.object({
 
   /** Day of week to start weeks on (0=Sunday through 6=Saturday) */
   week_start_day: z.number().int().min(0).max(6).optional(),
+
+  /** Whether the user has completed initial settings setup */
+  onboarding_complete: z.boolean().optional(),
 });
 
 // Inferred TypeScript types

@@ -12,6 +12,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 interface AuthProviderProps {
@@ -153,6 +154,14 @@ export function AuthProvider({
     setLoading(false);
   };
 
+  const refreshUser = async (): Promise<void> => {
+    const currentSession = await supabase.auth.getSession();
+    const userId = currentSession.data.session?.user.id;
+    if (!userId) return;
+    const profile = await fetchUserProfile(userId);
+    setUser(profile);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -162,6 +171,7 @@ export function AuthProvider({
         isAuthenticated: session !== null,
         signInWithGoogle,
         signOut,
+        refreshUser,
       }}
     >
       {children}

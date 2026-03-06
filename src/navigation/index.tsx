@@ -71,6 +71,7 @@ const linking = {
   config: {
     screens: {
       Login: 'login',
+      Setup: 'setup',
       Main: {
         path: '',
         screens: {

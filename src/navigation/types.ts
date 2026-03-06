@@ -31,6 +31,9 @@ export type RootStackParamList = {
   /** Login screen - no parameters needed */
   Login: undefined;
 
+  /** Setup screen - forced settings configuration for new users */
+  Setup: undefined;
+
   /** Main tab navigator - nested navigator params */
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
 
