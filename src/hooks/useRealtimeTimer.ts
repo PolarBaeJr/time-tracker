@@ -206,6 +206,15 @@ export function useRealtimeTimer(
   // Subscription handle ref
   const subscriptionRef = useRef<ActiveTimerSubscriptionHandle | null>(null);
 
+  // Store callbacks in refs so the subscription effect doesn't re-run when
+  // the caller passes new inline function references on each render.
+  const onTimerChangeRef = useRef(onTimerChange);
+  const onConnectionStatusChangeRef = useRef(onConnectionStatusChange);
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onTimerChangeRef.current = onTimerChange; }, [onTimerChange]);
+  useEffect(() => { onConnectionStatusChangeRef.current = onConnectionStatusChange; }, [onConnectionStatusChange]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
   // Clear sync message
   const clearSyncMessage = useCallback(() => {
     setLastSyncMessage(null);
@@ -216,78 +225,59 @@ export function useRealtimeTimer(
     setLastError(null);
   }, []);
 
-  // Handle realtime events
-  const handleEvent = useCallback(
-    (payload: ActiveTimerRealtimePayload) => {
-      const store = getTimerStoreState();
+  // Stable event handler — reads latest callbacks from refs
+  const handleEvent = useCallback((payload: ActiveTimerRealtimePayload) => {
+    const store = getTimerStoreState();
 
-      // Determine if this change was from another device
-      // If we recently performed a local action, assume it's our change
-      const timeSinceLocalAction = Date.now() - lastLocalActionTimestamp;
-      const isFromAnotherDevice = timeSinceLocalAction > 3000; // 3 second threshold
+    const timeSinceLocalAction = Date.now() - lastLocalActionTimestamp;
+    const isFromAnotherDevice = timeSinceLocalAction > 3000;
 
-      switch (payload.eventType) {
-        case 'INSERT':
-        case 'UPDATE':
-          // Update store with new timer data
-          if (payload.new_record) {
-            store.syncFromServer(payload.new_record);
-          }
-          break;
+    switch (payload.eventType) {
+      case 'INSERT':
+      case 'UPDATE':
+        if (payload.new_record) {
+          store.syncFromServer(payload.new_record);
+        }
+        break;
+      case 'DELETE':
+        store.syncFromServer(null);
+        break;
+    }
 
-        case 'DELETE':
-          // Timer was stopped - clear active timer
-          store.syncFromServer(null);
-          break;
-      }
+    const message = getTimerChangeMessage(payload.eventType, isFromAnotherDevice);
+    if (message) {
+      setLastSyncMessage(message);
+      onTimerChangeRef.current?.(message);
+    }
+  }, []);
 
-      // Generate notification message for changes from other devices
-      const message = getTimerChangeMessage(payload.eventType, isFromAnotherDevice);
-      if (message) {
-        setLastSyncMessage(message);
-        onTimerChange?.(message);
-      }
-    },
-    [onTimerChange]
-  );
+  // Stable status handler
+  const handleStatusChange = useCallback((status: ActiveTimerConnectionStatus) => {
+    setConnectionStatus(status);
+    onConnectionStatusChangeRef.current?.(status);
+  }, []);
 
-  // Handle connection status changes
-  const handleStatusChange = useCallback(
-    (status: ActiveTimerConnectionStatus) => {
-      setConnectionStatus(status);
-      onConnectionStatusChange?.(status);
-    },
-    [onConnectionStatusChange]
-  );
-
-  // Handle errors
-  const handleError = useCallback(
-    (error: Error) => {
-      setLastError(error);
-      onError?.(error);
-      console.warn('[useRealtimeTimer] Subscription error:', error.message);
-    },
-    [onError]
-  );
+  // Stable error handler
+  const handleError = useCallback((error: Error) => {
+    setLastError(error);
+    onErrorRef.current?.(error);
+    console.warn('[useRealtimeTimer] Subscription error:', error.message);
+  }, []);
 
   // Track if subscription should be active
   const shouldSubscribe = enabled && isAuthenticated && !!userId;
 
-  // Subscribe/unsubscribe based on auth state and enabled flag
+  // Subscribe/unsubscribe — only re-runs when userId or enabled flag changes,
+  // NOT when callbacks change (they're read via refs).
   useEffect(() => {
-    // Don't subscribe if conditions not met
     if (!shouldSubscribe || !userId) {
-      // Ensure we're disconnected - cleanup any existing subscription
       if (subscriptionRef.current) {
         void subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
-      // Don't call setConnectionStatus here - it's handled by handleStatusChange
-      // or the initial state is already 'disconnected'
       return;
     }
 
-    // Create subscription
     const subscription = createActiveTimerSubscription({
       userId,
       onEvent: handleEvent,
@@ -299,7 +289,6 @@ export function useRealtimeTimer(
 
     subscriptionRef.current = subscription;
 
-    // Cleanup on unmount or when dependencies change
     return () => {
       void subscription.unsubscribe();
       subscriptionRef.current = null;
