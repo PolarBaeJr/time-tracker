@@ -3,5 +3,6 @@
  */
 
 export { EntryCard, type EntryCardProps } from './EntryCard';
+export { EntryEditModal, type EntryEditModalProps } from './EntryEditModal';
 export { EntryList, type EntryListProps } from './EntryList';
 export { HistoryFilters, type HistoryFiltersProps } from './HistoryFilters';

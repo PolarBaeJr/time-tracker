@@ -21,6 +21,7 @@ export const iconMap = {
   // Navigation icons
   'time': '\u23F1', // stopwatch
   'time-outline': '\u23F0', // alarm clock
+  'clock': '\u{1F550}', // clock face
   'list': '\u2630', // hamburger menu
   'list-outline': '\u2261', // identical to
   'bar-chart': '\u2593', // dark shade
@@ -31,6 +32,9 @@ export const iconMap = {
   'flag-outline': '\u2690', // white flag
   'settings': '\u2699', // gear
   'settings-outline': '\u2638', // wheel of dharma
+  'filter': '\u2AF6', // triple horizontal bar filter
+  'search': '\u{1F50D}', // magnifying glass
+  'edit': '\u270E', // pencil
 
   // Action icons
   'play': '\u25B6',
@@ -43,6 +47,7 @@ export const iconMap = {
   'chevron-forward': '\u203A',
   'chevron-up': '\u2303',
   'chevron-down': '\u2304',
+  'alert': '\u26A0', // warning triangle
 } as const;
 
 export type IconName = keyof typeof iconMap;
