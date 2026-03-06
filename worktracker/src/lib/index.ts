@@ -4,6 +4,7 @@
  * This module exports all library utilities including:
  * - Supabase client configuration
  * - Environment constants
+ * - React Query client configuration
  */
 
 // Supabase client and types
@@ -19,6 +20,9 @@ export {
   isValidActiveTimerRealtimePayload,
   normalizeActiveTimerRealtimePayload,
 } from './realtime';
+
+// React Query client
+export { queryClient, queryKeys, type QueryKeys } from './queryClient';
 
 export type {
   SupabaseClient,
