@@ -143,3 +143,25 @@ export {
   type UseHourOfDayDistributionResult,
   type UseDayOfWeekDistributionResult,
 } from './useAnalytics';
+
+// Network status hooks
+export {
+  useNetworkStatus,
+  getNetworkStatus,
+  isDeviceOnline,
+  type NetworkStatus,
+  type UseNetworkStatusOptions,
+  type UseNetworkStatusResult,
+} from './useNetworkStatus';
+
+// Offline sync hooks
+export {
+  useOfflineSync,
+  queueCreateEntry,
+  queueUpdateEntry,
+  queueDeleteEntry,
+  type ActionResult,
+  type SyncResults,
+  type UseOfflineSyncOptions,
+  type UseOfflineSyncResult,
+} from './useOfflineSync';

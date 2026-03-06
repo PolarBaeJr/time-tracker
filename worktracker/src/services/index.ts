@@ -18,3 +18,18 @@ export {
   type StopTimerOptions,
   type SyncResult,
 } from './timerService';
+
+// Offline queue service
+export {
+  offlineQueue,
+  validateQueuedAction,
+  createQueuedAction,
+  calculateBackoffDelay,
+  OfflineQueueError,
+  MAX_RETRY_ATTEMPTS,
+  type CreateEntryPayload,
+  type UpdateEntryPayload,
+  type DeleteEntryPayload,
+  type QueuedActionPayload,
+  type ValidationResult,
+} from './offlineQueue';
