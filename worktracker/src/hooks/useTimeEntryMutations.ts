@@ -49,10 +49,9 @@
  * - RLS policies ensure users can only modify their own entries
  */
 
-import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
-import { queryKeys } from '@/lib/queryClient';
 import {
   CreateTimeEntrySchema,
   UpdateTimeEntrySchema,

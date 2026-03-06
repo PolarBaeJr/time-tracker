@@ -41,7 +41,7 @@
  * - user_id is NOT included in queries; it's enforced server-side via auth.uid()
  */
 
-import { useInfiniteQuery, type UseInfiniteQueryOptions } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';

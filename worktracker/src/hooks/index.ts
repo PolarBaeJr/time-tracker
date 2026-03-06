@@ -62,3 +62,45 @@ export {
   type UseTimeEntrySummaryWithBreakdownOptions,
   type UseTimeEntrySummaryWithBreakdownResult,
 } from './useTimeEntrySummary';
+
+// Goal hooks
+export {
+  useGoals,
+  fetchGoals,
+  GoalsFetchError,
+  type FetchGoalsParams,
+  type UseGoalsOptions,
+  type UseGoalsResult,
+} from './useGoals';
+
+export {
+  useGoalProgress,
+  fetchGoalProgress,
+  GoalProgressError,
+  type GoalProgressResult,
+  type FetchGoalProgressParams,
+  type UseGoalProgressOptions,
+  type UseGoalProgressResult,
+} from './useGoalProgress';
+
+export {
+  useSetOverallGoal,
+  useSetCategoryGoal,
+  useDeleteGoal,
+  GoalMutationError,
+  type UseSetOverallGoalOptions,
+  type UseSetCategoryGoalOptions,
+  type UseDeleteGoalOptions,
+  type UseSetOverallGoalResult,
+  type UseSetCategoryGoalResult,
+  type UseDeleteGoalResult,
+} from './useGoalMutations';
+
+// Realtime timer hooks
+export {
+  useRealtimeTimer,
+  useMarkLocalTimerAction,
+  type UseRealtimeTimerResult,
+  type UseRealtimeTimerOptions,
+  type ActiveTimerConnectionStatus,
+} from './useRealtimeTimer';

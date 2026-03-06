@@ -104,7 +104,7 @@ async function fetchTimeEntrySummary(params: TimeEntrySummaryParams): Promise<Ti
     }
   }
 
-  const { data, error, count } = await query;
+  const { data, error } = await query;
 
   if (error) {
     throw new TimeEntrySummaryError(error.message, error.code);
