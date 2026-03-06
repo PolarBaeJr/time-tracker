@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type ViewStyle,
   type TextStyle,
   type PressableProps,
@@ -186,7 +187,7 @@ export function Button({
           color={getTextColor(variant, false)}
           accessibilityLabel="Loading"
         />
-      ) : (
+      ) : typeof children === 'string' || typeof children === 'number' ? (
         <Text
           style={[
             styles.text,
@@ -199,6 +200,8 @@ export function Button({
         >
           {children}
         </Text>
+      ) : (
+        <View style={styles.content}>{children}</View>
       )}
     </Pressable>
   );
@@ -215,6 +218,11 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: fontWeights.semibold,
     textAlign: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
 });
 

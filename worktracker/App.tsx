@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Spinner, Text } from '@/components/ui';
 import { AuthProvider } from '@/contexts';
 import { useAuth } from '@/hooks';
+import { LoginScreen } from '@/screens';
 import { ThemeProvider, colors, spacing } from '@/theme';
 
 /**
@@ -22,6 +23,10 @@ function AppContent(): React.ReactElement {
     return <Spinner fullScreen size="large" message="Checking session..." />;
   }
 
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
+
   const displayName = user?.name ?? session?.user.email ?? 'WorkTracker user';
 
   return (
@@ -30,12 +35,10 @@ function AppContent(): React.ReactElement {
         WorkTracker
       </Text>
       <Text variant="body" color="secondary" center>
-        {isAuthenticated ? `Signed in as ${displayName}` : 'Authentication context is ready'}
+        {`Signed in as ${displayName}`}
       </Text>
       <Text variant="bodySmall" color="muted" center style={styles.subtitle}>
-        {isAuthenticated
-          ? 'Your Supabase session is active and the profile sync is connected.'
-          : 'Google OAuth wiring is available. Login UI lands in the next auth task.'}
+        Your Supabase session is active and the profile sync is connected.
       </Text>
       <StatusBar style="light" />
     </View>
