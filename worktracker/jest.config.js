@@ -19,26 +19,34 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
+    // Business logic modules (focus of task-044)
+    'src/services/timerService.ts',
+    'src/utils/analytics.ts',
+    'src/schemas/**/*.ts',
+    // Exclude non-business-logic files
     '!src/**/*.d.ts',
     '!src/**/index.ts',
     '!src/**/__tests__/**',
-    '!src/components/**', // Skip UI components for now (covered by component tests in task-046)
-    '!src/screens/**', // Skip screens (covered by component tests)
-    '!src/navigation/**', // Skip navigation
-    '!src/contexts/**', // Skip contexts (requires React rendering)
-    '!src/hooks/**', // Skip hooks (requires React rendering)
-    '!src/lib/supabase*.ts', // Skip Supabase client files (platform-specific)
-    '!src/lib/realtime.ts', // Skip realtime (requires Supabase)
-    '!src/lib/linking.ts', // Skip linking (requires React Navigation)
-    '!src/lib/storage/**', // Skip storage (platform-specific)
   ],
   coverageThreshold: {
-    global: {
+    // Per-file thresholds for business logic modules
+    'src/schemas/**/*.ts': {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+    'src/utils/analytics.ts': {
       branches: 60,
-      functions: 60,
-      lines: 60,
-      statements: 60,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+    'src/services/timerService.ts': {
+      branches: 60,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],

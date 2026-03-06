@@ -8,45 +8,24 @@
  * - Error handling for various scenarios
  */
 
-import {
-  mockActiveTimer,
-  mockTimeEntry,
-  createMockQueryBuilder,
-} from '../mocks/supabase';
-import type { ActiveTimer, TimeEntry } from '@/types';
-
-// Store original module
-const originalSupabase = jest.requireActual('@/lib/supabase');
+import { mockActiveTimer, mockTimeEntry } from '../mocks/supabase';
+import type { ActiveTimer } from '@/types';
 
 // Mock data
 const validTimer = mockActiveTimer();
 const validEntry = mockTimeEntry();
 
-// Create mock query builder
-const mockQueryBuilder = createMockQueryBuilder<ActiveTimer>({
-  data: validTimer,
-  error: null,
-});
+// Create mock supabase client
+const mockRpc = jest.fn();
+const mockFrom = jest.fn();
 
 // Mock Supabase before importing the service
-jest.mock('@/lib/supabase', () => {
-  return {
-    ...originalSupabase,
-    supabase: {
-      from: jest.fn().mockReturnValue({
-        insert: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn(),
-          }),
-        }),
-        select: jest.fn().mockReturnValue({
-          maybeSingle: jest.fn(),
-        }),
-      }),
-      rpc: jest.fn(),
-    },
-  };
-});
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: jest.fn(),
+    rpc: jest.fn(),
+  },
+}));
 
 // Mock timer store
 jest.mock('@/stores', () => ({
@@ -112,7 +91,7 @@ describe('timerService', () => {
     });
 
     it('should create a timer with category', async () => {
-      const categoryId = 'category-uuid-123';
+      const categoryId = '123e4567-e89b-12d3-a456-426614174000';
       const timerWithCategory = mockActiveTimer({ category_id: categoryId });
 
       const mockSingle = jest.fn().mockResolvedValue({
@@ -334,8 +313,14 @@ describe('timerService', () => {
     });
 
     it('should detect conflict when category changed', () => {
-      const localTimer = mockActiveTimer({ category_id: 'cat-1' });
-      const serverTimer = mockActiveTimer({ category_id: 'cat-2' });
+      const localTimer = mockActiveTimer({
+        id: 'timer-123-uuid',
+        category_id: '123e4567-e89b-12d3-a456-426614174001',
+      });
+      const serverTimer = mockActiveTimer({
+        id: 'timer-123-uuid',
+        category_id: '123e4567-e89b-12d3-a456-426614174002',
+      });
 
       const result = syncTimer(localTimer, serverTimer);
 
@@ -345,8 +330,8 @@ describe('timerService', () => {
     });
 
     it('should detect conflict when different timer IDs', () => {
-      const localTimer = mockActiveTimer({ id: 'timer-1' });
-      const serverTimer = mockActiveTimer({ id: 'timer-2' });
+      const localTimer = mockActiveTimer({ id: '123e4567-e89b-12d3-a456-426614174001' });
+      const serverTimer = mockActiveTimer({ id: '123e4567-e89b-12d3-a456-426614174002' });
 
       const result = syncTimer(localTimer, serverTimer);
 
