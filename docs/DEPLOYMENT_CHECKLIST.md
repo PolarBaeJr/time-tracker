@@ -1,99 +1,57 @@
 # Deployment Checklist
 
-Use this checklist before every production deployment to Raspberry Pi.
+Use this before every deployment to make sure nothing is missed.
 
-## Pre-Deployment
+---
 
-### Environment
+## First deployment
 
-- [ ] `.env.production` is configured with correct `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-- [ ] `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set in GitHub secrets
-- [ ] `PI_HOST`, `PI_USER`, and `PI_SSH_KEY` secrets are set in GitHub
+- [ ] Pi is running 64-bit Raspberry Pi OS (`uname -m` → `aarch64`)
+- [ ] Docker is installed (`docker version`)
+- [ ] Docker Compose v2 is installed (`docker compose version`)
+- [ ] Port is open in firewall: `sudo ufw allow <port>/tcp`
+- [ ] Repo cloned to `/opt/worktracker`
+- [ ] `.env` created from `.env.example` with `SUPABASE_URL` and `SUPABASE_ANON_KEY` filled in
+- [ ] `WORKTRACKER_HTTP_PORT` set to a port not used by other apps
+- [ ] `docker compose -f docker-compose.prod.yml build --pull` succeeds
+- [ ] `docker compose -f docker-compose.prod.yml up -d` succeeds
+- [ ] `curl http://localhost:<port>/health` returns `OK`
+- [ ] App loads in browser at `http://<pi-ip>:<port>`
+- [ ] Google OAuth sign-in works (redirect URL configured in Supabase)
+- [ ] Systemd service installed and enabled (auto-start on reboot)
 
-### Database
+---
 
-- [ ] All Supabase migrations are applied to production: `supabase db push --linked`
-- [ ] RLS policies are verified: run `./scripts/test-integration.sh` against production (with read-only credentials)
-- [ ] No breaking schema changes without a corresponding migration
-- [ ] Seed data removed or scoped to dev environment
+## Subsequent deployments
 
-### Code
-
-- [ ] All tests pass: `npm test`
+- [ ] All tests pass locally: `npm test`
 - [ ] No TypeScript errors: `npm run typecheck`
 - [ ] No lint errors: `npm run lint`
-- [ ] The correct branch/tag is being deployed (not a work-in-progress branch)
-- [ ] CHANGELOG or release notes updated if applicable
+- [ ] Changes committed and pushed to `main`
+- [ ] Run on Pi: `cd /opt/worktracker && ./scripts/deploy.sh`
+- [ ] Container is healthy after deploy: `docker compose -f docker-compose.prod.yml ps`
+- [ ] App loads and sign-in works
 
-### Build
+---
 
-- [ ] Web build succeeds locally: `npm run build:web`
-- [ ] Docker build succeeds locally: `docker build -t worktracker:test .`
-- [ ] Docker image runs correctly: `docker run -p 3000:3000 worktracker:test`
+## Post-deployment verification
 
-### Raspberry Pi
+- [ ] `http://<pi-ip>:<port>/health` → `OK`
+- [ ] Sign in with Google completes without error
+- [ ] Start and stop a timer — entry appears in History
+- [ ] Analytics screen loads with charts
+- [ ] No errors in logs: `docker compose -f docker-compose.prod.yml logs --tail 50 web`
 
-- [ ] Pi is reachable via SSH: `ssh $PI_USER@$PI_HOST`
-- [ ] Docker is running on Pi: `ssh $PI_USER@$PI_HOST docker ps`
-- [ ] Sufficient disk space: `ssh $PI_USER@$PI_HOST df -h` (>1 GB free)
-- [ ] SSL certificates are valid or renewal is not due within 7 days
-- [ ] Nginx config is up to date on Pi
-
-## Deployment
-
-- [ ] Trigger the [Deploy workflow](../../actions/workflows/deploy.yml) from GitHub Actions
-  - Select `production` environment
-  - Monitor the workflow run for errors
-- [ ] Or run manually:
-  ```bash
-  ssh $PI_USER@$PI_HOST
-  cd ~/worktracker
-  git pull origin main
-  ./scripts/deploy.sh
-  ```
-
-## Post-Deployment Verification
-
-- [ ] App loads at the production URL (no 502/503 errors)
-- [ ] Google OAuth sign-in completes successfully
-- [ ] Timer starts and stops without errors
-- [ ] Time entry appears in History after stopping timer
-- [ ] Realtime: open two browser tabs, start timer in one, verify it appears in the other
-- [ ] Analytics loads and displays charts
-- [ ] Docker container is running: `docker ps | grep worktracker`
-- [ ] Nginx logs show no errors: `sudo tail -f /var/log/nginx/error.log`
-- [ ] App logs show no errors: `docker logs worktracker --tail 50`
+---
 
 ## Rollback
 
-If the deployment fails or the app is broken after deployment:
+If something breaks after a deploy:
 
 ```bash
-ssh $PI_USER@$PI_HOST
-cd ~/worktracker
-
-# Roll back to previous Docker image
-docker stop worktracker
-docker run -d --name worktracker --restart unless-stopped \
-  -p 3000:3000 \
-  worktracker:previous
-
-# Or roll back via git and rebuild
-git checkout <previous-tag>
-./scripts/deploy.sh
+cd /opt/worktracker
+git log --oneline -5           # find the last good commit
+git checkout <good-commit>
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 ```
-
-To find the previous image tag:
-```bash
-docker images worktracker
-```
-
-## SSL Certificate Renewal
-
-Certificates auto-renew via the certbot cron job. To renew manually:
-
-```bash
-sudo certbot renew --nginx
-```
-
-See [SSL_SETUP.md](SSL_SETUP.md) for full SSL configuration instructions.

@@ -1,65 +1,103 @@
 # SSL Setup
 
-WorkTracker ships a ready-to-promote HTTPS template in [`nginx/ssl.conf`](../nginx/ssl.conf), but the default runtime stays HTTP-only until certificates exist.
+HTTPS options for WorkTracker on Raspberry Pi.
 
-## Paths expected by `nginx/ssl.conf`
+---
 
-- Certificates: `/etc/nginx/certs/fullchain.pem`
-- Private key: `/etc/nginx/certs/privkey.pem`
-- Diffie-Hellman params: `/etc/nginx/certs/dhparam.pem`
-- ACME challenge webroot: `/var/www/certbot`
+## Option 1: Host-level Nginx + Certbot (recommended if Nginx is already on the Pi)
 
-The HTTPS template keeps `GET /health` on plain HTTP so container health checks can stay on `:80/health`, but all other HTTP requests are redirected to HTTPS. ACME challenges under `/.well-known/acme-challenge/` are also exempt from the redirect.
+This keeps SSL termination outside the Docker container — the container just serves HTTP on its internal port, and Nginx proxies it.
 
-## Let's Encrypt
+```bash
+# Install Certbot
+sudo apt-get install -y certbot python3-certbot-nginx
 
-Use [`scripts/setup-ssl.sh`](../scripts/setup-ssl.sh) on a Debian, Ubuntu, or Raspberry Pi OS host:
+# Get a certificate for your domain
+sudo certbot --nginx -d worktracker.yourdomain.com
+
+# Auto-renewal is set up automatically by Certbot
+# Test it:
+sudo certbot renew --dry-run
+```
+
+Your Nginx site config (see `RASPBERRY_PI_DEPLOYMENT.md` Step 6) will be updated by Certbot to add the HTTPS block automatically.
+
+---
+
+## Option 2: Caddy (easiest)
+
+Caddy handles certificate provisioning and renewal with zero config. See `RASPBERRY_PI_DEPLOYMENT.md` Step 6, Option B.
+
+---
+
+## Option 3: SSL inside the Docker container
+
+The app ships an Nginx SSL config template at `nginx/ssl.conf`. To use it:
+
+**3.1 Get certificates**
+
+With a domain and Let's Encrypt:
 
 ```bash
 ./scripts/setup-ssl.sh yourdomain.com you@example.com
 ```
 
-What the script does:
-
-1. Installs Certbot (preferring the current snap-based flow, falling back to the distro package if needed).
-2. Creates the ACME webroot at `/var/www/certbot`.
-3. Runs `certbot certonly --webroot -w /var/www/certbot -d yourdomain.com`.
-4. Copies the issued certificate pair into the repo-local `certs/` directory.
-5. Generates `certs/dhparam.pem` if it does not exist yet.
-6. Writes `/etc/cron.d/worktracker-certbot-renew` to run `certbot renew --quiet` with a deploy hook that resyncs `certs/`.
-7. Runs `certbot renew --dry-run` to validate renewal.
-
-## Self-signed certificates
-
-For local development or air-gapped testing:
+For local/self-signed testing only:
 
 ```bash
 ./scripts/setup-ssl-selfsigned.sh localhost
 ```
 
-This writes:
-
+Both scripts write certificates to `certs/`:
 - `certs/fullchain.pem`
 - `certs/privkey.pem`
 - `certs/dhparam.pem`
 
-Browsers will still show a warning unless you trust the self-signed certificate locally.
+**3.2 Enable the SSL Nginx config**
 
-## Enabling HTTPS in Docker
+Replace the HTTP-only nginx config with the SSL template:
 
-The checked-in Compose files currently serve the HTTP-only nginx config. Before promoting `nginx/ssl.conf`, make sure your deployment exposes port `443` and mounts both the certificate and ACME paths into the container:
-
-```yaml
-ports:
-  - "80:80"
-  - "443:443"
-volumes:
-  - ./certs:/etc/nginx/certs:ro
-  - /var/www/certbot:/var/www/certbot:ro
+```bash
+cp nginx/ssl.conf nginx/nginx.conf
 ```
 
-Then replace the HTTP-only `server { ... }` block in [`nginx/nginx.conf`](../nginx/nginx.conf) with the two server blocks from [`nginx/ssl.conf`](../nginx/ssl.conf), rebuild the image, and restart nginx.
+**3.3 Update `docker-compose.prod.yml`**
 
-## TLS settings
+Add port `443` and mount the certificates:
 
-`nginx/ssl.conf` uses TLS 1.2 and 1.3, a Mozilla-compatible intermediate cipher list, and explicit curves/session settings suitable for modern browsers while still supporting older clients than a TLS 1.3-only setup.
+```yaml
+services:
+  web:
+    ports:
+      - "${WORKTRACKER_HTTP_PORT:-3000}:80"
+      - "443:443"
+    volumes:
+      - nginx_logs:/var/log/nginx
+      - ./certs:/etc/nginx/certs:ro
+      - /var/www/certbot:/var/www/certbot:ro
+```
+
+**3.4 Rebuild and restart**
+
+```bash
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**3.5 Certificate renewal**
+
+The `setup-ssl.sh` script installs a cron job that renews automatically. To renew manually:
+
+```bash
+sudo certbot renew
+# Then sync renewed certs to the certs/ directory:
+sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem certs/fullchain.pem
+sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem certs/privkey.pem
+docker compose -f docker-compose.prod.yml restart web
+```
+
+---
+
+## Recommendation
+
+If you already have Nginx or Caddy managing other apps on the Pi, use **Option 1 or 2** — it fits naturally into your existing setup. Only use Option 3 if you want a fully self-contained container with no host-level proxy.

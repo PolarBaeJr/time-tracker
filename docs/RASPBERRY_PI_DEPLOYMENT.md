@@ -1,260 +1,297 @@
-# Raspberry Pi Deployment
+# Raspberry Pi Deployment Guide
 
-This guide deploys the Expo web export on a Raspberry Pi using the checked-in Docker, Compose, nginx, and SSL artifacts. The current production Compose file is HTTP-first on port `80`; if you also want container-managed TLS, layer in the certificate mounts described in [`SSL_SETUP.md`](./SSL_SETUP.md).
+This guide walks through deploying WorkTracker as a Docker container on a Raspberry Pi that already has other applications running. The app runs in its own container on a dedicated port and does not interfere with other services.
 
-## 1. Flash Raspberry Pi OS 64-bit
+---
 
-1. Use Raspberry Pi Imager and choose `Raspberry Pi OS Lite (64-bit)` unless you need a desktop.
-2. In the imager advanced settings:
-   - Set a hostname such as `worktracker-pi`
-   - Enable SSH
-   - Preconfigure your Wi-Fi or Ethernet settings
-   - Create a non-default password
-3. Boot the Pi and log in over SSH.
+## Overview
 
-## 2. Initial host setup
+- WorkTracker runs as a Docker container serving the Expo web build via Nginx
+- It listens on a port you choose (default: `3000`) — not port 80, so it coexists with other apps
+- Supabase is cloud-hosted (supabase.com) — no local database to manage
+- Optional: put a reverse proxy (Nginx or Caddy) in front to serve on a domain with HTTPS
 
-Update the system and set a stable hostname:
+---
+
+## Prerequisites
+
+| Requirement | Notes |
+|-------------|-------|
+| Raspberry Pi 4 or 5 | 4 GB RAM recommended. 2 GB works but may be slow during builds. |
+| Raspberry Pi OS 64-bit | Lite or Desktop. Must be 64-bit (`aarch64`) for the Docker image. |
+| SSH access | Everything is done over SSH. |
+| Internet access | To pull Docker images and reach Supabase. |
+| A Supabase project | Created at [supabase.com](https://supabase.com). Free tier is fine. |
+
+---
+
+## Step 1 — First-time Pi setup
+
+Skip this step if Docker is already installed on your Pi.
+
+**1.1 Update the system**
 
 ```bash
-sudo apt-get update
-sudo apt-get full-upgrade -y
-sudo hostnamectl set-hostname worktracker-pi
+sudo apt-get update && sudo apt-get full-upgrade -y
 sudo reboot
 ```
 
-After the reboot, reconnect and install common admin tools:
+**1.2 Install Docker**
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y git ufw
-```
-
-## 3. Install Docker Engine
-
-The project brief uses Docker's convenience script:
-
-```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-```
-
-Docker's documentation notes that the convenience script is useful for fast provisioning, but the repository-based install gives you tighter control over production upgrades. If you need stricter version pinning, switch to Docker's Debian/Raspberry Pi OS repository flow instead of the script.
-
-Add your deployment user to the Docker group and verify the engine:
-
-```bash
-sudo usermod -aG docker "$USER"
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
 newgrp docker
 docker version
 ```
 
-## 4. Install Docker Compose
-
-If `docker compose version` already works, keep that plugin. If not, install it explicitly:
+**1.3 Install Docker Compose plugin**
 
 ```bash
-sudo apt-get update
 sudo apt-get install -y docker-compose-plugin
 docker compose version
 ```
 
-## 5. Configure the firewall
+**1.4 Open the firewall port**
 
-Allow SSH and web traffic before enabling UFW:
+Replace `3000` with whatever port you choose.
 
 ```bash
-sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw --force enable
-sudo ufw status verbose
+sudo ufw allow 3000/tcp
+sudo ufw status
 ```
 
-## 6. Clone the repository
+---
 
-Use a path without spaces so systemd units stay simple:
+## Step 2 — Clone the repository
 
 ```bash
 sudo mkdir -p /opt/worktracker
-sudo chown "$USER":"$USER" /opt/worktracker
-git clone <your-repo-url> /opt/worktracker/worktracker
-cd /opt/worktracker/worktracker
+sudo chown $USER:$USER /opt/worktracker
+git clone https://github.com/PolarBaeJr/time-tracker /opt/worktracker
+cd /opt/worktracker
 ```
 
-## 7. Configure environment variables
+---
 
-Create the production environment file from the checked-in template:
+## Step 3 — Configure environment variables
 
 ```bash
 cp .env.example .env
+nano .env
 ```
 
-At minimum, set:
+Set at minimum:
 
 ```env
+# Required — find these in Supabase → Settings → API
 SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Port WorkTracker listens on — change if 3000 is already taken
+WORKTRACKER_HTTP_PORT=3000
+
+# Docker image settings (keep these as-is for Pi)
 WORKTRACKER_IMAGE=worktracker-web:latest
 WORKTRACKER_DOCKER_PLATFORM=linux/arm64
-WORKTRACKER_HTTP_PORT=80
+
+# Log rotation
 DOCKER_LOG_MAX_SIZE=10m
 DOCKER_LOG_MAX_FILES=3
 ```
 
-If you use Google OAuth or EAS-driven runtime config, also populate:
+---
 
-- `GOOGLE_IOS_REVERSED_CLIENT_ID`
-- `EAS_PROJECT_ID`
-
-## 8. Build and start the containers
-
-Deploy with the checked-in production compose file:
+## Step 4 — Build and start the container
 
 ```bash
+cd /opt/worktracker
 docker compose -f docker-compose.prod.yml build --pull
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml ps
 ```
 
-Health checks target `http://127.0.0.1:80/health` inside the container. Review startup logs with:
+Expected output:
 
-```bash
-docker compose -f docker-compose.prod.yml logs -f web
+```
+NAME               STATUS          PORTS
+worktracker-web-1  Up (healthy)    0.0.0.0:3000->80/tcp
 ```
 
-## 9. Optional HTTPS on the Pi
-
-The checked-in `docker-compose.prod.yml` does not yet expose `443` or mount certificates. If you want nginx inside the container to terminate TLS:
-
-1. Follow [`SSL_SETUP.md`](./SSL_SETUP.md) to create `certs/fullchain.pem`, `certs/privkey.pem`, and `certs/dhparam.pem`.
-2. Extend your production compose setup to publish `443:443`.
-3. Add these mounts to the `web` service:
-
-```yaml
-volumes:
-  - ./certs:/etc/nginx/certs:ro
-  - /var/www/certbot:/var/www/certbot:ro
-```
-
-4. Promote `nginx/ssl.conf` into `nginx/nginx.conf` before rebuilding the image.
-
-## 10. Automatic deployment on boot
-
-This repository includes:
-
-- [`scripts/deploy.sh`](../scripts/deploy.sh) to update the repo and restart the production containers
-- [`scripts/systemd/worktracker.service`](../scripts/systemd/worktracker.service) as a systemd template
-
-Install the service:
+Verify it's running:
 
 ```bash
-sudo cp scripts/systemd/worktracker.service /etc/systemd/system/worktracker.service
+curl http://localhost:3000/health
+# → OK
+```
+
+Open `http://<pi-ip>:3000` in your browser.
+
+---
+
+## Step 5 — Configure Google OAuth
+
+In your Supabase project:
+
+1. Go to **Authentication → Providers → Google** and enable it
+2. Add your Pi's URL as an allowed redirect URL:
+   - Local only: `http://<pi-ip>:3000`
+   - With domain: `https://worktracker.yourdomain.com`
+3. Go to **Authentication → URL Configuration** and add the same URL to **Redirect URLs**
+4. Follow [Supabase's Google OAuth guide](https://supabase.com/docs/guides/auth/social-login/auth-google) to create a Google OAuth client and paste the credentials into Supabase
+
+---
+
+## Step 6 — (Optional) Reverse proxy with domain + HTTPS
+
+If you want to access the app via a domain name with HTTPS, put a reverse proxy in front. Pick whichever matches your existing setup:
+
+### Option A: Host-level Nginx (already installed on the Pi)
+
+```bash
+sudo nano /etc/nginx/sites-available/worktracker
+```
+
+```nginx
+server {
+    listen 80;
+    server_name worktracker.yourdomain.com;
+
+    location / {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/worktracker /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+# Add HTTPS:
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d worktracker.yourdomain.com
+```
+
+### Option B: Caddy (easiest — handles HTTPS automatically)
+
+```bash
+# Install Caddy
+sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt-get update && sudo apt-get install -y caddy
+```
+
+Add a block to `/etc/caddy/Caddyfile`:
+
+```
+worktracker.yourdomain.com {
+    reverse_proxy localhost:3000
+}
+```
+
+```bash
+sudo systemctl reload caddy
+# Caddy provisions SSL automatically — nothing else needed
+```
+
+### Option C: No domain, local network only
+
+Skip this step. Access the app at `http://<pi-ip>:3000` on your local network.
+
+---
+
+## Step 7 — Auto-start on reboot
+
+Install the systemd service so the container restarts automatically when the Pi reboots:
+
+```bash
+# Patch the service file to use your actual user and path
+sed -i "s|User=pi|User=$USER|g" /opt/worktracker/scripts/systemd/worktracker.service
+sed -i "s|Group=pi|Group=$USER|g" /opt/worktracker/scripts/systemd/worktracker.service
+sed -i "s|/opt/worktracker/worktracker|/opt/worktracker|g" /opt/worktracker/scripts/systemd/worktracker.service
+
+sudo cp /opt/worktracker/scripts/systemd/worktracker.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable worktracker.service
 sudo systemctl start worktracker.service
 sudo systemctl status worktracker.service
 ```
 
-Before enabling it, update the unit file if your deployment user or clone path differs from:
+---
 
-- `User=pi`
-- `Group=pi`
-- `WorkingDirectory=/opt/worktracker/worktracker`
-- `ExecStart=/usr/bin/env bash /opt/worktracker/worktracker/scripts/deploy.sh`
-
-## Performance tuning
-
-Recommended Pi tuning for smoother builds and fewer restarts:
-
-1. Prefer Raspberry Pi 4/5 with at least 4 GB RAM.
-2. Use wired Ethernet if possible.
-3. Put the repo and Docker data on SSD if your Pi supports it.
-4. Keep active cooling on the Pi to avoid thermal throttling during image builds.
-5. Increase swap for occasional web-image rebuilds:
+## Updating to a newer version
 
 ```bash
-sudo sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=1024/' /etc/dphys-swapfile
-sudo dphys-swapfile setup
-sudo dphys-swapfile swapon
+cd /opt/worktracker
+./scripts/deploy.sh
 ```
 
-6. Reduce swappiness so swap is only used when needed:
+The deploy script pulls the latest code, rebuilds the image, and restarts the container.
+
+---
+
+## Useful commands
 
 ```bash
-echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-worktracker.conf
-sudo sysctl --system
+# Logs (live)
+docker compose -f docker-compose.prod.yml logs -f web
+
+# Container status
+docker compose -f docker-compose.prod.yml ps
+
+# Stop
+docker compose -f docker-compose.prod.yml down
+
+# Restart
+docker compose -f docker-compose.prod.yml restart web
+
+# Shell into container
+docker compose -f docker-compose.prod.yml exec web sh
+
+# Free up disk (removes old images)
+docker image prune -a
 ```
 
-7. Keep Docker logs capped with `DOCKER_LOG_MAX_SIZE` and `DOCKER_LOG_MAX_FILES` in `.env`.
-
-## Backup strategy
-
-This deployment stores application state primarily outside the Pi because Supabase is remote. Back up these local assets anyway:
-
-1. `.env`
-2. `certs/` if you terminate TLS on the Pi
-3. Any custom compose overrides or nginx overrides you add later
-
-A simple file backup example:
-
-```bash
-tar -czf worktracker-config-backup-$(date +%F).tar.gz .env certs scripts/systemd
-```
-
-If you later add self-hosted services with persistent Docker volumes, back those volumes up separately before upgrades.
+---
 
 ## Troubleshooting
 
-### `docker compose` is missing
-
-Install the plugin:
-
+**Port already in use**
 ```bash
-sudo apt-get update
-sudo apt-get install -y docker-compose-plugin
+sudo lsof -i :3000
+# Change WORKTRACKER_HTTP_PORT in .env to a free port, then restart
 ```
 
-### Permission denied talking to Docker
-
-Re-run your shell after adding the user to the Docker group:
-
+**Container is unhealthy**
 ```bash
-newgrp docker
-docker ps
-```
-
-### The web container is unhealthy
-
-Inspect the container and the health endpoint:
-
-```bash
-docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs web
 docker compose -f docker-compose.prod.yml exec web wget -qO- http://127.0.0.1:80/health
 ```
 
-### Builds fail with low-memory or disk errors
-
-Check current usage:
-
+**Build fails — out of memory**
 ```bash
 free -h
-df -h
-docker system df
+sudo sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=1024/' /etc/dphys-swapfile
+sudo dphys-swapfile setup && sudo dphys-swapfile swapon
+# Retry the build
 ```
 
-If necessary, prune unused Docker artifacts:
-
+**Wrong architecture (32-bit OS)**
 ```bash
-docker image prune -a
-docker builder prune
+uname -m   # must print aarch64, not armv7l
+# If armv7l: re-flash with Raspberry Pi OS 64-bit Lite
 ```
 
-### `scripts/deploy.sh` refuses to run
+**Google OAuth redirect fails**
+Make sure the URL in your browser (including port) exactly matches what's added to Supabase under **Authentication → URL Configuration → Redirect URLs**.
 
-The deploy script exits when the repo has local changes. Either commit/stash them or deploy from a clean checkout:
-
+**`deploy.sh` refuses to run**
 ```bash
-git status
+git status      # check for local changes
+git stash       # stash them, then retry
+./scripts/deploy.sh
 ```

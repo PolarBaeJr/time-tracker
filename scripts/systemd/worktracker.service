@@ -8,10 +8,10 @@ Wants=network-online.target
 Type=oneshot
 User=pi
 Group=pi
-WorkingDirectory=/opt/worktracker/worktracker
+WorkingDirectory=/opt/worktracker
 Environment=COMPOSE_FILE=docker-compose.prod.yml
-ExecStart=/usr/bin/env bash /opt/worktracker/worktracker/scripts/deploy.sh
-ExecReload=/usr/bin/env bash /opt/worktracker/worktracker/scripts/deploy.sh
+ExecStart=/usr/bin/env bash /opt/worktracker/scripts/deploy.sh
+ExecReload=/usr/bin/env bash /opt/worktracker/scripts/deploy.sh
 RemainAfterExit=yes
 TimeoutStartSec=900
 
