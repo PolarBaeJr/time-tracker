@@ -3,7 +3,7 @@
   "subject": "Write Component Tests",
   "description": "Install @testing-library/react-native, @testing-library/jest-native. Create src/__tests__/components/TimerDisplay.test.tsx testing: renders elapsed time correctly, updates on interval, handles zero state. Create tests for TimerControls (button states, click handlers), CategorySelector (renders categories with name/color/type, selection works), EntryCard (displays data correctly including category type), HistoryFilters (filter changes propagate), CategoryForm (validates all three fields: name, color, type). Create src/__tests__/screens/TimerScreen.test.tsx testing full screen render with mocked hooks. Use jest.mock for Supabase client and navigation. Test accessibility: labels present, roles correct.",
   "status": "in_progress",
-  "owner": "worker-1772821510115-1",
+  "owner": "worker-1772823533861-respawn-1",
   "depends_on": [
     "task-024",
     "task-026",
@@ -16,6 +16,6 @@
   "result_summary": null,
   "files_changed": [],
   "created_at": "2026-03-05T10:12:04.173Z",
-  "started_at": "2026-03-06T18:34:45.300Z",
+  "started_at": "2026-03-06T18:59:22.316Z",
   "completed_at": null
 }

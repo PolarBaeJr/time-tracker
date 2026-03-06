@@ -9,6 +9,7 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: 'tsconfig.json',
+        useESM: false,
       },
     ],
   },
@@ -16,6 +17,9 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     // Mock React Native modules
     '^react-native$': '<rootDir>/src/__tests__/mocks/react-native.ts',
+    // Mock testing library (use jest-native builtins)
+    '^@testing-library/react-native$':
+      '<rootDir>/src/__tests__/mocks/testing-library-react-native.ts',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
