@@ -2,8 +2,8 @@
   "id": "task-044",
   "subject": "Write Unit Tests for Business Logic",
   "description": "Install jest, @types/jest, ts-jest. Create jest.config.js configured for TypeScript. Create src/__tests__/services/timerService.test.ts testing: startTimer creates correct record, stopTimer calculates duration correctly, elapsed time calculation handles timezones. Create src/__tests__/stores/timerStore.test.ts testing: all state transitions, persistence, queue operations. Create src/__tests__/utils/analytics.test.ts testing: date range calculations, week boundary calculations with different week start days, timezone conversions. Create src/__tests__/schemas/ testing all Zod schemas with valid and invalid inputs, specifically verifying Create/Update schemas reject server-managed fields. Mock Supabase client for isolated testing. Aim for >80% coverage on business logic modules.",
-  "status": "pending",
-  "owner": null,
+  "status": "in_progress",
+  "owner": "worker-1772789520511-respawn-0",
   "depends_on": [
     "task-015",
     "task-016",
@@ -15,6 +15,6 @@
   "result_summary": null,
   "files_changed": [],
   "created_at": "2026-03-05T10:12:04.171Z",
-  "started_at": null,
+  "started_at": "2026-03-06T09:32:54.209Z",
   "completed_at": null
 }

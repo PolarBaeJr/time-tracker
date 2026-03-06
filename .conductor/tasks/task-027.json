@@ -2,16 +2,20 @@
   "id": "task-027",
   "subject": "Build Entry Edit Modal",
   "description": "Create src/components/history/EntryEditModal.tsx as modal/bottom sheet for editing time entries. Pre-fill form with existing entry data. Allow editing: category, start_at, end_at, notes. Show delete button with confirmation dialog. Validate changes with UpdateTimeEntrySchema. Use useUpdateEntry and useDeleteEntry mutations. Close modal and show toast on success. Handle optimistic updates with rollback on error. Prevent editing entries from other users (should not be possible due to RLS, but defensive check).",
-  "status": "pending",
-  "owner": null,
+  "status": "completed",
+  "owner": "worker-1772789520514-respawn-1",
   "depends_on": [
     "task-006",
     "task-019"
   ],
   "blocks": [],
-  "result_summary": null,
-  "files_changed": [],
+  "result_summary": "Created EntryEditModal component (src/components/history/EntryEditModal.tsx) for editing and deleting time entries:\n\nFeatures implemented:\n- Pre-fills form with existing entry data (category, start/end date+time, notes)\n- Category selector modal for changing entry category  \n- Date inputs (YYYY-MM-DD format) and time inputs (HH:MM format) with validation\n- Automatic duration calculation displayed when start and end times are valid\n- Delete button with platform-aware confirmation dialog (Alert on native, window.confirm on web)\n- Full validation against UpdateTimeEntrySchema before mutation\n- Uses useUpdateTimeEntry and useDeleteTimeEntry hooks with optimistic updates and rollback\n- Defensive user_id check to prevent editing other users' entries (RLS also handles server-side)\n- Keyboard-aware modal using KeyboardAvoidingView on iOS\n- Loading states during mutations with disabled form controls\n- Error display for validation and server errors\n\nAlso updated:\n- Added 'alert' icon to Icon component for warning states\n- Exported EntryEditModal from history components barrel\n\nCommit: 73fbc95",
+  "files_changed": [
+    "src/components/history/EntryEditModal.tsx",
+    "src/components/history/index.ts",
+    "src/components/ui/Icon.tsx"
+  ],
   "created_at": "2026-03-05T10:12:04.162Z",
-  "started_at": null,
-  "completed_at": null
+  "started_at": "2026-03-06T09:36:17.638Z",
+  "completed_at": "2026-03-06T09:40:05.489Z"
 }

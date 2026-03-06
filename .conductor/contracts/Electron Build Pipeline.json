@@ -1,0 +1,8 @@
+{
+  "contract_id": "Electron Build Pipeline",
+  "contract_type": "type_definition",
+  "spec": "// Electron Build Scripts in package.json\ninterface ElectronScripts {\n  \"electron:compile\": \"tsc -p electron/tsconfig.json\",\n  \"electron:dev\": \"concurrently -k \\\"npm run web\\\" \\\"npm run electron:compile && electron electron/main.js\\\"\",\n  \"electron:build\": \"npm run build:web && npm run electron:compile\",\n  \"electron:package\": \"npm run electron:build && electron-builder --config electron/electron-builder.yml\",\n  \"electron:package:mac\": \"npm run electron:build && electron-builder --config electron/electron-builder.yml --mac\",\n  \"electron:package:win\": \"npm run electron:build && electron-builder --config electron/electron-builder.yml --win\",\n  \"electron:package:linux\": \"npm run electron:build && electron-builder --config electron/electron-builder.yml --linux\"\n}\n\n// Required devDependencies (escalated - need to install):\n// electron, electron-builder, concurrently, @electron/notarize\n\n// Build outputs:\n// - Development: Runs Expo web server + Electron window\n// - Package: Creates distributables in electron-dist/\n//   - macOS: DMG, ZIP (x64, arm64)\n//   - Windows: NSIS installer, Portable (x64)\n//   - Linux: AppImage, DEB (x64, arm64)\n\n// Documentation: docs/ELECTRON_BUILD.md",
+  "owner_task_id": "worker-1772788191761-respawn-1",
+  "registered_by": "worker-1772788191761-respawn-1",
+  "registered_at": "2026-03-06T09:20:30.029Z"
+}

@@ -2,7 +2,7 @@
   "id": "task-017",
   "subject": "Implement Real-time Timer Subscription",
   "description": "Create src/hooks/useRealtimeTimer.ts. Subscribe to active_timers table changes for current user using supabase.channel('active_timers').on('postgres_changes', { event: '*', schema: 'public', table: 'active_timers', filter: `user_id=eq.${userId}` }, callback).subscribe(). On INSERT/UPDATE: update timer store with new data. On DELETE: clear active timer in store. Handle subscription errors with reconnection. Clean up subscription on unmount. Show toast notification when timer changes from another device. Implement connection status indicator (connected/reconnecting/disconnected).",
-  "status": "pending",
+  "status": "completed",
   "owner": null,
   "depends_on": [
     "task-011",
@@ -11,9 +11,9 @@
   "blocks": [
     "task-024"
   ],
-  "result_summary": null,
+  "result_summary": "Completed by Codex worker. Commit: ae5fba2 ([task-017] Add useRealtimeTimer hook for real-time timer sync)",
   "files_changed": [],
   "created_at": "2026-03-05T10:12:04.154Z",
   "started_at": null,
-  "completed_at": null
+  "completed_at": "2026-03-06T09:18:25.000Z"
 }

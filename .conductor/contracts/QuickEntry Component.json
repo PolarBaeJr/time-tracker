@@ -1,0 +1,8 @@
+{
+  "contract_id": "QuickEntry Component",
+  "contract_type": "type_definition",
+  "spec": "// QuickEntry Component for manual time entry creation\n// Location: src/components/timer/QuickEntry.tsx\n\nexport interface QuickEntryProps {\n  /** Callback when entry is successfully created */\n  onSuccess?: () => void;\n  /** Callback when user cancels */\n  onCancel?: () => void;\n  /** Pre-selected category ID */\n  initialCategoryId?: string | null;\n}\n\n// Features:\n// - Category selector (optional) with modal picker\n// - Date picker (YYYY-MM-DD text input)\n// - Start/End time pickers OR duration input (toggle mode)\n// - Notes input (max 1000 chars)\n// - CreateTimeEntrySchema validation\n// - useCreateTimeEntry mutation integration\n// - Success Alert and form reset on submit\n// - Inline validation error messages\n\n// Usage:\nimport { QuickEntry } from '@/components/timer';\n<QuickEntry onSuccess={() => nav.goBack()} onCancel={() => nav.goBack()} />",
+  "owner_task_id": "worker-1772788833457-respawn-0",
+  "registered_by": "worker-1772788833457-respawn-0",
+  "registered_at": "2026-03-06T09:26:08.364Z"
+}

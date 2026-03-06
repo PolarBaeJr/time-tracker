@@ -1,0 +1,8 @@
+{
+  "session_id": "worker-1772773321754-respawn-0",
+  "state": "failed",
+  "current_task": null,
+  "tasks_completed": [],
+  "progress": "Claude Code process exited with code 1",
+  "updated_at": "2026-03-06T05:10:57.279Z"
+}

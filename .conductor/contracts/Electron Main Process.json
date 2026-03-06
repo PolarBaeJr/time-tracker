@@ -1,0 +1,8 @@
+{
+  "contract_id": "Electron Main Process",
+  "contract_type": "type_definition",
+  "spec": "// Electron Main Process Contract\n// Files: electron/main.ts, electron/preload.ts, electron/electron-builder.yml,\n//        electron/entitlements.mac.plist, electron/tsconfig.json\n\n// BrowserWindow Configuration\nconst windowConfig = {\n  width: 1200,\n  height: 800,\n  minWidth: 400,\n  minHeight: 600,\n  webPreferences: {\n    contextIsolation: true,\n    nodeIntegration: false,\n    preload: 'electron/preload.js',\n    sandbox: true,\n    webSecurity: true,\n  }\n};\n\n// URL Configuration\nconst DEV_URL = 'http://localhost:19006';\nconst PROD_URL = 'file://.../dist/index.html';\n\n// Preload API (window.desktop)\ninterface DesktopAPI {\n  versions: {\n    node: string;\n    chrome: string;\n    electron: string;\n    v8: string;\n  };\n  platform: {\n    os: NodeJS.Platform;\n    arch: string;\n    isElectron: true;\n  };\n}\n\n// Security Features:\n// - Content Security Policy for Supabase + Google OAuth\n// - Single instance lock (app.requestSingleInstanceLock)\n// - Navigation guards for external URLs\n// - Webview tag disabled\n// - Hardened runtime for macOS\n\n// Build Targets:\n// - macOS: dmg, zip (x64 + arm64), hardened runtime\n// - Windows: NSIS installer, portable (x64)\n// - Linux: AppImage, deb (x64 + arm64)\n\n// NOTE: Requires electron package (installed by task-035)",
+  "owner_task_id": "worker-1772788191761-respawn-1",
+  "registered_by": "worker-1772788191761-respawn-1",
+  "registered_at": "2026-03-06T09:16:31.956Z"
+}
