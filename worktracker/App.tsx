@@ -1,11 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
 
-import { Spinner, Text } from '@/components/ui';
+import { Spinner } from '@/components/ui';
 import { AuthProvider } from '@/contexts';
 import { useAuth } from '@/hooks';
-import { LoginScreen } from '@/screens';
-import { ThemeProvider, colors, spacing } from '@/theme';
+import { NavigationProvider } from '@/navigation';
+import { ThemeProvider } from '@/theme';
 
 /**
  * WorkTracker App - Main Entry Point
@@ -15,36 +14,39 @@ import { ThemeProvider, colors, spacing } from '@/theme';
  * - TypeScript
  * - Supabase Backend
  * - Google OAuth Authentication
+ * - React Navigation for routing
+ */
+
+/**
+ * App Content Component
+ *
+ * Handles the loading state while auth is being initialized.
+ * Once auth is ready, renders the navigation structure.
  */
 function AppContent(): React.ReactElement {
-  const { loading, isAuthenticated, user, session } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return <Spinner fullScreen size="large" message="Checking session..." />;
   }
 
-  if (!isAuthenticated) {
-    return <LoginScreen />;
-  }
-
-  const displayName = user?.name ?? session?.user.email ?? 'WorkTracker user';
-
+  // NavigationProvider renders RootNavigator which handles auth-based routing
   return (
-    <View style={styles.container}>
-      <Text variant="display" center style={styles.title}>
-        WorkTracker
-      </Text>
-      <Text variant="body" color="secondary" center>
-        {`Signed in as ${displayName}`}
-      </Text>
-      <Text variant="bodySmall" color="muted" center style={styles.subtitle}>
-        Your Supabase session is active and the profile sync is connected.
-      </Text>
+    <>
+      <NavigationProvider />
       <StatusBar style="light" />
-    </View>
+    </>
   );
 }
 
+/**
+ * App Root Component
+ *
+ * Sets up the provider hierarchy:
+ * 1. ThemeProvider - Provides theme context
+ * 2. AuthProvider - Manages authentication state
+ * 3. AppContent - Navigation and main app UI
+ */
 export default function App(): React.ReactElement {
   return (
     <ThemeProvider>
@@ -54,22 +56,5 @@ export default function App(): React.ReactElement {
     </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  title: {
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    marginTop: spacing.md,
-    maxWidth: 360,
-  },
-});
 
 export { AppContent };

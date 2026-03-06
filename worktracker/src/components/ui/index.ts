@@ -26,3 +26,6 @@ export {
   type ColorPickerProps,
   PRESET_COLORS,
 } from './ColorPicker';
+
+// Icon component
+export { Icon, type IconProps, type IconName, iconMap } from './Icon';
