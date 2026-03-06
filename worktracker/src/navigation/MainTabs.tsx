@@ -17,7 +17,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { Icon, Text, type IconName } from '@/components/ui';
 import { colors, spacing } from '@/theme';
-import { SettingsScreen as SettingsScreenComponent } from '@/screens';
+import {
+  CategoriesScreen as CategoriesScreenComponent,
+  SettingsScreen as SettingsScreenComponent,
+} from '@/screens';
 
 import type { MainTabParamList } from './types';
 
@@ -61,9 +64,7 @@ function AnalyticsScreen(): React.ReactElement {
   return <PlaceholderScreen title="Analytics" icon="bar-chart-outline" />;
 }
 
-function CategoriesScreen(): React.ReactElement {
-  return <PlaceholderScreen title="Categories" icon="folder-outline" />;
-}
+// CategoriesScreen is imported from @/screens
 
 function GoalsScreen(): React.ReactElement {
   return <PlaceholderScreen title="Goals" icon="flag-outline" />;
@@ -174,8 +175,8 @@ export function MainTabs(): React.ReactElement {
       />
       <Tab.Screen
         name="Categories"
-        component={CategoriesScreen}
-        options={{ title: 'Categories' }}
+        component={CategoriesScreenComponent}
+        options={{ title: 'Categories', headerShown: false }}
       />
       <Tab.Screen
         name="Goals"
