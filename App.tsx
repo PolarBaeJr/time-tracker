@@ -1,11 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider } from '@/contexts';
 import { useAuth, useSplashScreen } from '@/hooks';
 import { NavigationProvider } from '@/navigation';
 import { ThemeProvider } from '@/theme';
 import { colors } from '@/theme';
+
+const queryClient = new QueryClient();
 
 /**
  * WorkTracker App - Main Entry Point
@@ -65,11 +68,13 @@ const styles = StyleSheet.create({
  */
 export default function App(): React.ReactElement {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
