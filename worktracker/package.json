@@ -12,6 +12,7 @@
     "build:web": "expo export --platform web",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
+    "seed:dev": "node --experimental-strip-types scripts/seed-dev.ts",
     "prepare": "husky"
   },
   "dependencies": {
