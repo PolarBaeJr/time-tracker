@@ -80,37 +80,38 @@ const localStorageAdapter = {
  * - Persistent sessions using localStorage
  * - URL session detection for OAuth redirects
  */
-export const supabase: SupabaseClient = createClient(
-  config.supabaseUrl,
-  config.supabaseAnonKey,
-  {
-    auth: {
-      // PKCE (Proof Key for Code Exchange) is the standard for browser apps
-      // It's required for Google OAuth and other providers
-      flowType: 'pkce',
+// Electron: use implicit flow because PKCE code_verifier storage doesn't
+// survive the file:// origin context reliably. Implicit returns tokens in
+// the URL hash directly, avoiding the code exchange step entirely.
+const isElectron =
+  typeof window !== 'undefined' &&
+  (window as { desktop?: { platform?: { isElectron?: boolean } } }).desktop?.platform?.isElectron;
 
-      // Automatically refresh the session before it expires
-      autoRefreshToken: true,
+export const supabase: SupabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+  auth: {
+    flowType: isElectron ? 'implicit' : 'pkce',
 
-      // Persist the session to localStorage
-      persistSession: true,
+    // Automatically refresh the session before it expires
+    autoRefreshToken: true,
 
-      // Use our custom localStorage adapter
-      storage: localStorageAdapter,
+    // Persist the session to localStorage
+    persistSession: true,
 
-      // Enable URL detection for OAuth callback handling
-      // When user returns from OAuth provider, Supabase extracts tokens from URL
-      detectSessionInUrl: true,
+    // Use our custom localStorage adapter
+    storage: localStorageAdapter,
+
+    // Enable URL detection for OAuth callback handling
+    // When user returns from OAuth provider, Supabase extracts tokens from URL
+    detectSessionInUrl: true,
+  },
+
+  // Enable realtime subscriptions
+  realtime: {
+    params: {
+      // Include auth token in realtime connections
+      eventsPerSecond: 10,
     },
-
-    // Enable realtime subscriptions
-    realtime: {
-      params: {
-        // Include auth token in realtime connections
-        eventsPerSecond: 10,
-      },
-    },
-  }
-);
+  },
+});
 
 export default supabase;

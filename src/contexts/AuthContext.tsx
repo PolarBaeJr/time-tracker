@@ -68,10 +68,19 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   React.useEffect(() => {
     if (typeof window === 'undefined' || !window.desktop?.platform?.isElectron) return;
 
-    window.desktop.onOAuthCallback(async (callbackUrl: string) => {
-      const { error } = await supabase.auth.exchangeCodeForSession(callbackUrl);
-      if (error) {
-        console.error('[AuthContext] OAuth exchangeCodeForSession failed:', error.message);
+    window.desktop.onOAuthCallback(async (tokenJson: string) => {
+      try {
+        const tokens = JSON.parse(tokenJson);
+        const { error } = await supabase.auth.setSession({
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        });
+        if (error) {
+          console.error('[AuthContext] OAuth setSession failed:', error.message);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('[AuthContext] OAuth callback error:', err);
         setLoading(false);
       }
     });

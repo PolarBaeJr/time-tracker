@@ -28,13 +28,32 @@ function startOAuthCallbackServer(): void {
     const url = new URL(req.url ?? '/', `http://localhost:${OAUTH_CALLBACK_PORT}`);
 
     if (url.pathname === '/auth/callback') {
+      // Implicit flow: tokens are in the URL hash which browsers don't send
+      // to the server. Serve a page whose JS reads the hash and POSTs it back.
       res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end(
-        `<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>Sign-in complete!</h2><p>Returning to WorkTracker...</p><script>setTimeout(()=>{window.location.href='worktracker://close'},500)</script></div></body></html>`
-      );
-
-      const callbackUrl = `http://localhost:${OAUTH_CALLBACK_PORT}${req.url}`;
-      handleOAuthCallback(callbackUrl);
+      res.end(`<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+<div style="text-align:center"><h2>Sign-in complete!</h2><p>Returning to WorkTracker...</p></div>
+<script>
+var h=window.location.hash.substring(1);
+if(h){fetch('/auth/exchange?'+h).then(function(){setTimeout(function(){window.location.href='worktracker://close'},400)})}
+else{document.querySelector('p').textContent='Something went wrong — no tokens received.'}
+</script></body></html>`);
+    } else if (url.pathname === '/auth/exchange') {
+      // Receive tokens forwarded by the callback page's JS
+      res.writeHead(200);
+      res.end('ok');
+      const accessToken = url.searchParams.get('access_token');
+      const refreshToken = url.searchParams.get('refresh_token');
+      if (accessToken && refreshToken) {
+        handleOAuthCallback(
+          JSON.stringify({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_in: parseInt(url.searchParams.get('expires_in') ?? '3600', 10),
+            token_type: url.searchParams.get('token_type') ?? 'bearer',
+          })
+        );
+      }
     } else {
       res.writeHead(404);
       res.end();
