@@ -3,7 +3,7 @@
  */
 
 // Replace with your Spotify application client ID
-const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID';
+const SPOTIFY_CLIENT_ID = '7e7804a0fde74453bbf88a37aee4698d';
 
 const SPOTIFY_SCOPES =
   'user-read-playback-state user-modify-playback-state user-read-currently-playing streaming user-read-email user-read-private';
