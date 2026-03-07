@@ -43,9 +43,9 @@ import { useCategories } from '@/hooks/useCategories';
 import { useCreateTimeEntry } from '@/hooks/useTimeEntryMutations';
 import { CreateTimeEntrySchema } from '@/schemas';
 import type { Category } from '@/schemas';
-import { useEntryTemplates, addTemplate } from '@/stores/entryTemplateStore';
+import { useCreateEntryTemplate } from '@/hooks/useEntryTemplates';
 import { TemplateSelector } from '@/components/history/TemplateSelector';
-import type { EntryTemplate } from '@/stores/entryTemplateStore';
+import type { EntryTemplate } from '@/schemas';
 
 // ============================================================================
 // Types
@@ -638,19 +638,21 @@ export function QuickEntry({
     if (field === 'notes') setErrors(prev => ({ ...prev, notes: undefined }));
   };
 
+  // Create template mutation
+  const createTemplate = useCreateEntryTemplate();
+
   // Handle save as template
   const handleSaveAsTemplate = () => {
     const templateName = form.notes
       ? form.notes.slice(0, 30).trim()
       : `Template ${new Date().toLocaleDateString()}`;
 
-    addTemplate({
+    createTemplate.mutate({
       name: templateName,
-      categoryId: form.categoryId,
+      category_id: form.categoryId,
       notes: form.notes,
-      durationSeconds: calculatedDuration,
-      isBillable: form.isBillable,
-      tagIds: [],
+      duration_seconds: calculatedDuration,
+      is_billable: form.isBillable,
     });
 
     if (Platform.OS === 'web') {
@@ -664,12 +666,12 @@ export function QuickEntry({
   const handleLoadTemplate = (template: EntryTemplate) => {
     setForm(prev => ({
       ...prev,
-      categoryId: template.categoryId,
+      categoryId: template.category_id,
       notes: template.notes,
-      durationMinutes: String(Math.round(template.durationSeconds / 60)),
-      isBillable: template.isBillable,
+      durationMinutes: String(Math.round(template.duration_seconds / 60)),
+      isBillable: template.is_billable,
     }));
-    if (template.durationSeconds > 0) {
+    if (template.duration_seconds > 0) {
       setMode('duration');
     }
   };

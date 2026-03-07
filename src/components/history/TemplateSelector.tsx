@@ -2,7 +2,7 @@
  * TemplateSelector Component
  *
  * Dropdown/modal for selecting entry templates when creating manual entries.
- * Templates are stored locally via AsyncStorage (no DB needed).
+ * Templates are synced via Supabase.
  *
  * USAGE:
  * ```tsx
@@ -17,8 +17,8 @@ import { useState, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Modal, ScrollView } from 'react-native';
 import { Text, Button, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
-import { useEntryTemplates, removeTemplate } from '@/stores/entryTemplateStore';
-import type { EntryTemplate } from '@/stores/entryTemplateStore';
+import { useEntryTemplatesQuery, useDeleteEntryTemplate } from '@/hooks/useEntryTemplates';
+import type { EntryTemplate } from '@/schemas';
 
 export interface TemplateSelectorProps {
   onSelect: (template: EntryTemplate) => void;
@@ -38,7 +38,8 @@ export function TemplateSelector({
   onSelect,
   disabled = false,
 }: TemplateSelectorProps): React.ReactElement {
-  const templates = useEntryTemplates();
+  const { data: templates = [] } = useEntryTemplatesQuery();
+  const deleteTemplate = useDeleteEntryTemplate();
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleSelect = useCallback(
@@ -49,9 +50,12 @@ export function TemplateSelector({
     [onSelect]
   );
 
-  const handleDelete = useCallback((id: string) => {
-    removeTemplate(id);
-  }, []);
+  const handleDelete = useCallback(
+    (id: string) => {
+      deleteTemplate.mutate(id);
+    },
+    [deleteTemplate]
+  );
 
   if (templates.length === 0) {
     return <View />;
@@ -103,7 +107,7 @@ export function TemplateSelector({
                     <Text style={styles.templateName}>{template.name}</Text>
                     <View style={styles.templateMeta}>
                       <Text style={styles.templateDuration}>
-                        {formatDuration(template.durationSeconds)}
+                        {formatDuration(template.duration_seconds)}
                       </Text>
                       {template.notes ? (
                         <Text style={styles.templateNotes} numberOfLines={1}>

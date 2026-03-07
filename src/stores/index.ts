@@ -24,6 +24,8 @@ export {
 } from './timerSettingsStore';
 export type { TimerSettings, QuickPreset } from './timerSettingsStore';
 
+// @deprecated - Use useEntryTemplatesQuery and mutation hooks from '@/hooks/useEntryTemplates' instead.
+// Kept for backward compatibility during migration.
 export {
   addTemplate,
   updateTemplate,
@@ -31,5 +33,6 @@ export {
   getTemplateStoreState,
   subscribeTemplateStore,
   useEntryTemplates,
+  getLocalTemplatesAndClear,
 } from './entryTemplateStore';
 export type { EntryTemplate, TemplateStoreState } from './entryTemplateStore';

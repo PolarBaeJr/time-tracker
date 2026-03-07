@@ -108,4 +108,20 @@ export const useEntryTemplates = (): EntryTemplate[] =>
     () => state.templates
   );
 
+/**
+ * Reads the current local templates and clears the local storage key.
+ * Used for migrating local templates to Supabase.
+ */
+export const getLocalTemplatesAndClear = async (): Promise<EntryTemplate[]> => {
+  const templates = [...state.templates];
+  state = { ...DEFAULT_STATE };
+  notifyListeners();
+  try {
+    await storage.removeItem(TEMPLATE_STORAGE_KEY);
+  } catch (error) {
+    console.error('[entryTemplateStore] Failed to clear local storage:', error);
+  }
+  return templates;
+};
+
 export type { EntryTemplate, TemplateStoreState };
