@@ -105,3 +105,16 @@ export {
   type EntryComment,
   type CreateEntryCommentInput,
 } from './entryComment';
+
+// Entry attachment schemas and types
+export { EntryAttachmentSchema, type EntryAttachment } from './entryAttachment';
+
+// Entry template schemas and types
+export {
+  EntryTemplateSchema,
+  CreateEntryTemplateSchema,
+  UpdateEntryTemplateSchema,
+  type EntryTemplate,
+  type CreateEntryTemplateInput,
+  type UpdateEntryTemplateInput,
+} from './entryTemplate';

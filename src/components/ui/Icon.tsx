@@ -60,6 +60,8 @@ export const iconMap = {
   save: '\u{1F4BE}', // floppy disk
   comment: '\u{1F4AC}', // speech bubble
   tag: '\u{1F3F7}', // label/tag
+  attach: '\u{1F4CE}', // paperclip
+  file: '\u{1F4C4}', // page facing up
 } as const;
 
 export type IconName = keyof typeof iconMap;

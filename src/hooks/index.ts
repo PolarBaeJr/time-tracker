@@ -273,9 +273,49 @@ export {
   type UseDeleteEntryCommentResult,
 } from './useEntryComments';
 
+// Entry attachment hooks
+export {
+  useEntryAttachments,
+  useUploadAttachment,
+  useDeleteAttachment,
+  useAttachmentUrl,
+  EntryAttachmentError,
+  type UseEntryAttachmentsResult,
+  type UseUploadAttachmentResult,
+  type UseDeleteAttachmentResult,
+  type UseAttachmentUrlResult,
+} from './useEntryAttachments';
+
+// Entry template hooks
+export {
+  useEntryTemplatesQuery,
+  useCreateEntryTemplate,
+  useUpdateEntryTemplate,
+  useDeleteEntryTemplate,
+  useMigrateLocalTemplates,
+  EntryTemplateError,
+  type UseEntryTemplatesQueryResult,
+  type UseCreateEntryTemplateResult,
+  type UseUpdateEntryTemplateResult,
+  type UseDeleteEntryTemplateResult,
+} from './useEntryTemplates';
+
 // Splash screen hook
 export {
   useSplashScreen,
   type UseSplashScreenOptions,
   type UseSplashScreenResult,
 } from './useSplashScreen';
+
+// Spotify hooks
+export {
+  useSpotifyConnection,
+  useConnectSpotify,
+  useSpotifyCallback,
+  useDisconnectSpotify,
+  useSpotifyPlayback,
+  useSpotifyControls,
+  type SpotifyConnection,
+  type SpotifyTrack,
+  type SpotifyPlaybackState,
+} from './useSpotify';

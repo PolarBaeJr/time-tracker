@@ -45,6 +45,7 @@ import { UpdateTimeEntrySchema } from '@/schemas';
 import type { TimeEntry, Category, UpdateTimeEntryInput } from '@/schemas';
 import { TagSelector } from './TagSelector';
 import { EntryComments } from './EntryComments';
+import { EntryAttachments } from './EntryAttachments';
 
 // ============================================================================
 // TYPES
@@ -556,6 +557,11 @@ export function EntryEditModal({
 
             {/* Comments */}
             {entry && <EntryComments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />}
+
+            {/* Attachments */}
+            {entry && (
+              <EntryAttachments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />
+            )}
 
             {/* General error */}
             {errors.general && (

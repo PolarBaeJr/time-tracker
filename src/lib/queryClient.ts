@@ -137,6 +137,18 @@ export const queryKeys = {
 
   /** Comments for a specific time entry */
   entryComments: (entryId: string) => ['entryComments', entryId] as const,
+
+  /** Attachments for a specific time entry */
+  entryAttachments: (entryId: string) => ['entryAttachments', entryId] as const,
+
+  /** Entry templates for the current user */
+  entryTemplates: ['entryTemplates'] as const,
+
+  /** Spotify connection for the current user */
+  spotifyConnection: ['spotifyConnection'] as const,
+
+  /** Spotify playback state */
+  spotifyPlayback: ['spotifyPlayback'] as const,
 } as const;
 
 export type QueryKeys = typeof queryKeys;
