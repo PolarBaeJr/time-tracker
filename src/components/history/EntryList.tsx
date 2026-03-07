@@ -71,8 +71,18 @@ export interface EntryListProps {
   onEntryPress?: (entry: TimeEntry) => void;
   /** Callback when entry edit is pressed */
   onEntryEdit?: (entry: TimeEntry) => void;
+  /** Callback when entry split is pressed */
+  onEntrySplit?: (entry: TimeEntry) => void;
+  /** Callback when entry duplicate is pressed */
+  onEntryDuplicate?: (entry: TimeEntry) => void;
   /** Custom empty state message */
   emptyMessage?: string;
+  /** Whether select mode is active */
+  isSelectable?: boolean;
+  /** Set of selected entry IDs */
+  selectedIds?: Set<string>;
+  /** Callback when entry selection is toggled */
+  onToggleSelect?: (entry: TimeEntry) => void;
 }
 
 /**
@@ -206,7 +216,12 @@ export function EntryList({
   isLoading = false,
   onEntryPress,
   onEntryEdit,
+  onEntrySplit,
+  onEntryDuplicate,
   emptyMessage = 'Start tracking time to see your entries here.',
+  isSelectable = false,
+  selectedIds,
+  onToggleSelect,
 }: EntryListProps): React.ReactElement {
   // Build category lookup map
   const categoryMap = useMemo(() => {
@@ -247,12 +262,27 @@ export function EntryList({
           categoryName={category?.name || null}
           categoryColor={category?.color || null}
           categoryType={category?.type || null}
+          categoryHourlyRate={category?.hourly_rate ?? null}
           onPress={onEntryPress}
           onEdit={onEntryEdit}
+          onSplit={onEntrySplit}
+          onDuplicate={onEntryDuplicate}
+          isSelectable={isSelectable}
+          isSelected={selectedIds?.has(item.entry.id) ?? false}
+          onToggleSelect={onToggleSelect}
         />
       );
     },
-    [categoryMap, onEntryPress, onEntryEdit]
+    [
+      categoryMap,
+      onEntryPress,
+      onEntryEdit,
+      onEntrySplit,
+      onEntryDuplicate,
+      isSelectable,
+      selectedIds,
+      onToggleSelect,
+    ]
   );
 
   // Key extractor

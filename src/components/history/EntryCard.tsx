@@ -25,6 +25,15 @@ import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import type { TimeEntry } from '@/schemas';
 
 /**
+ * Tag info for display on entry cards
+ */
+export interface EntryTagInfo {
+  id: string;
+  name: string;
+  color: string;
+}
+
+/**
  * EntryCard props
  */
 export interface EntryCardProps {
@@ -36,10 +45,24 @@ export interface EntryCardProps {
   categoryColor: string | null;
   /** Category type (null if uncategorized) */
   categoryType: string | null;
+  /** Tags assigned to this entry */
+  tags?: EntryTagInfo[];
   /** Callback when edit button is pressed */
   onEdit?: (entry: TimeEntry) => void;
   /** Callback when card is pressed */
   onPress?: (entry: TimeEntry) => void;
+  /** Category hourly rate (null if not set) */
+  categoryHourlyRate?: number | null;
+  /** Callback when split button is pressed */
+  onSplit?: (entry: TimeEntry) => void;
+  /** Callback when duplicate button is pressed */
+  onDuplicate?: (entry: TimeEntry) => void;
+  /** Whether the card is in selectable mode */
+  isSelectable?: boolean;
+  /** Whether the card is currently selected */
+  isSelected?: boolean;
+  /** Callback when selection checkbox is toggled */
+  onToggleSelect?: (entry: TimeEntry) => void;
 }
 
 /**
@@ -91,6 +114,93 @@ function formatDate(isoString: string): string {
 }
 
 /**
+ * Render notes with basic markdown formatting (bold, italic, bullet lists)
+ */
+function RichNotes({ text }: { text: string }): React.ReactElement {
+  const lines = text.split('\n');
+  const elements: React.ReactElement[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isBullet = /^[-*]\s+/.test(line);
+    const content = isBullet ? line.replace(/^[-*]\s+/, '') : line;
+
+    const styledParts = renderInlineMarkdown(content, i);
+
+    if (isBullet) {
+      elements.push(
+        <View key={i} style={styles.bulletRow}>
+          <Text style={styles.bulletDot}>{'\u2022'}</Text>
+          <Text style={styles.notesPreview} numberOfLines={1}>
+            {styledParts}
+          </Text>
+        </View>
+      );
+    } else {
+      elements.push(
+        <Text key={i} style={styles.notesPreview} numberOfLines={1}>
+          {styledParts}
+        </Text>
+      );
+    }
+  }
+
+  return <View style={styles.notesContainer}>{elements}</View>;
+}
+
+/**
+ * Parse inline markdown (**bold** and *italic*) into styled Text elements
+ */
+function renderInlineMarkdown(text: string, lineKey: number): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  // Match **bold** or *italic* patterns
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let partIndex = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      // Bold
+      parts.push(
+        <Text key={`${lineKey}-${partIndex}`} style={styles.boldText}>
+          {match[2]}
+        </Text>
+      );
+    } else if (match[3]) {
+      // Italic
+      parts.push(
+        <Text key={`${lineKey}-${partIndex}`} style={styles.italicText}>
+          {match[3]}
+        </Text>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+    partIndex++;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
+
+/**
+ * Check if text contains markdown formatting
+ */
+function hasMarkdown(text: string): boolean {
+  return /(\*\*.+?\*\*|\*.+?\*|^[-*]\s+)/m.test(text);
+}
+
+/**
  * Truncate notes to a preview length
  */
 function truncateNotes(notes: string | null, maxLength: number = 80): string {
@@ -107,31 +217,72 @@ export function EntryCard({
   categoryName,
   categoryColor,
   categoryType,
+  tags,
+  categoryHourlyRate,
   onEdit,
   onPress,
+  onSplit,
+  onDuplicate,
+  isSelectable = false,
+  isSelected = false,
+  onToggleSelect,
 }: EntryCardProps): React.ReactElement {
   const handlePress = React.useCallback(() => {
-    onPress?.(entry);
-  }, [onPress, entry]);
+    if (isSelectable && onToggleSelect) {
+      onToggleSelect(entry);
+    } else {
+      onPress?.(entry);
+    }
+  }, [onPress, onToggleSelect, entry, isSelectable]);
 
   const handleEdit = React.useCallback(() => {
     onEdit?.(entry);
   }, [onEdit, entry]);
 
+  const handleSplit = React.useCallback(() => {
+    onSplit?.(entry);
+  }, [onSplit, entry]);
+
+  const handleDuplicate = React.useCallback(() => {
+    onDuplicate?.(entry);
+  }, [onDuplicate, entry]);
+
+  const handleCheckboxPress = React.useCallback(() => {
+    onToggleSelect?.(entry);
+  }, [onToggleSelect, entry]);
+
   const isBreak = entry.entry_type && entry.entry_type !== 'work';
   const breakLabel = entry.entry_type === 'long_break' ? 'Long Break' : 'Break';
+  const isBillable = entry.is_billable === true;
+  const earnings =
+    isBillable && categoryHourlyRate ? (categoryHourlyRate * entry.duration_seconds) / 3600 : null;
 
   return (
     <Card
       padding="md"
       elevation="sm"
-      style={styles.card}
-      pressable={!!onPress}
+      style={StyleSheet.flatten([styles.card, isSelected ? styles.cardSelected : undefined])}
+      pressable={!!onPress || isSelectable}
       onPress={handlePress}
     >
-      {/* Row 1: Category name + type badge + edit button */}
+      {/* Row 1: Checkbox + Category name + type badge + actions */}
       <View style={styles.header}>
         <View style={styles.categoryContainer}>
+          {isSelectable && (
+            <Pressable
+              style={styles.checkbox}
+              onPress={handleCheckboxPress}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isSelected }}
+              accessibilityLabel={isSelected ? 'Deselect entry' : 'Select entry'}
+            >
+              <Icon
+                name={isSelected ? 'checkbox-checked' : 'checkbox-blank'}
+                size={20}
+                color={isSelected ? colors.primary : colors.textSecondary}
+              />
+            </Pressable>
+          )}
           {categoryName ? (
             <>
               <View
@@ -147,24 +298,70 @@ export function EntryCard({
           )}
         </View>
 
-        {onEdit && (
-          <Pressable
-            style={styles.editButton}
-            onPress={handleEdit}
-            accessibilityRole="button"
-            accessibilityLabel="Edit entry"
-          >
-            <Icon name="edit" size={18} color={colors.textSecondary} />
-          </Pressable>
-        )}
+        <View style={styles.actionButtons}>
+          {onDuplicate && !isSelectable && (
+            <Pressable
+              style={styles.editButton}
+              onPress={handleDuplicate}
+              accessibilityRole="button"
+              accessibilityLabel="Duplicate entry"
+            >
+              <Icon name="copy" size={16} color={colors.textSecondary} />
+            </Pressable>
+          )}
+          {onSplit && !isSelectable && (
+            <Pressable
+              style={styles.editButton}
+              onPress={handleSplit}
+              accessibilityRole="button"
+              accessibilityLabel="Split entry"
+            >
+              <Icon name="scissors" size={16} color={colors.textSecondary} />
+            </Pressable>
+          )}
+          {onEdit && !isSelectable && (
+            <Pressable
+              style={styles.editButton}
+              onPress={handleEdit}
+              accessibilityRole="button"
+              accessibilityLabel="Edit entry"
+            >
+              <Icon name="edit" size={18} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
-      {/* Row 2: Notes preview */}
+      {/* Row 2: Notes preview with markdown */}
       {entry.notes ? (
-        <Text style={styles.notesPreview} numberOfLines={2}>
-          {truncateNotes(entry.notes)}
-        </Text>
+        hasMarkdown(entry.notes) ? (
+          <RichNotes text={entry.notes} />
+        ) : (
+          <Text style={styles.notesPreview} numberOfLines={2}>
+            {truncateNotes(entry.notes)}
+          </Text>
+        )
       ) : null}
+
+      {/* Row 2.5: Tags */}
+      {tags && tags.length > 0 && (
+        <View style={styles.tagRow}>
+          {tags.map(tag => (
+            <View
+              key={tag.id}
+              style={[
+                styles.tagChip,
+                { backgroundColor: tag.color + '20', borderColor: tag.color },
+              ]}
+            >
+              <View style={[styles.tagDot, { backgroundColor: tag.color }]} />
+              <Text style={StyleSheet.flatten([styles.tagText, { color: tag.color }]) as TextStyle}>
+                {tag.name}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Row 3: Date + time range */}
       <View style={styles.timeRow}>
@@ -202,6 +399,16 @@ export function EntryCard({
             Duration: {formatDuration(entry.duration_seconds)}
           </Text>
         </View>
+        {isBillable && (
+          <View style={styles.billableBadge}>
+            <Text style={styles.billableText}>$</Text>
+          </View>
+        )}
+        {earnings !== null && (
+          <View style={styles.earningsBadge}>
+            <Text style={styles.earningsText}>${earnings.toFixed(2)}</Text>
+          </View>
+        )}
       </View>
     </Card>
   );
@@ -211,6 +418,10 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
+  },
+  cardSelected: {
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   header: {
     flexDirection: 'row',
@@ -222,6 +433,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  checkbox: {
+    marginRight: spacing.sm,
+    padding: 2,
   },
   colorChip: {
     width: 12,
@@ -249,6 +464,10 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textMuted,
     fontStyle: 'italic',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   entryTypeBadge: {
     paddingHorizontal: spacing.sm,
@@ -281,6 +500,50 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: fontSizes.sm * 1.4,
     marginBottom: spacing.sm,
+  },
+  notesContainer: {
+    marginBottom: spacing.sm,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  bulletDot: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginRight: spacing.xs,
+    lineHeight: fontSizes.sm * 1.4,
+  },
+  boldText: {
+    fontWeight: '700',
+    color: colors.text,
+  },
+  italicText: {
+    fontStyle: 'italic',
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: spacing.sm,
+  },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+  },
+  tagDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
+  },
+  tagText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '500',
   },
   timeRow: {
     flexDirection: 'row',
@@ -321,6 +584,28 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: fontSizes.sm,
     color: colors.primary,
+    fontWeight: '600',
+  },
+  billableBadge: {
+    backgroundColor: colors.success + '20',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.md,
+  },
+  billableText: {
+    fontSize: fontSizes.sm,
+    color: colors.success,
+    fontWeight: '700',
+  },
+  earningsBadge: {
+    backgroundColor: colors.success + '20',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.md,
+  },
+  earningsText: {
+    fontSize: fontSizes.sm,
+    color: colors.success,
     fontWeight: '600',
   },
 });

@@ -39,6 +39,12 @@ export const TimeEntrySchema = z.object({
   /** Type of entry: work, break, or long_break */
   entry_type: EntryTypeEnum.default('work'),
 
+  /** Whether this entry is billable */
+  is_billable: z.boolean().default(false),
+
+  /** Soft delete timestamp (null if not deleted) */
+  deleted_at: z.string().datetime({ offset: true }).nullable().optional(),
+
   /** Timestamp when entry was created */
   created_at: z.string().datetime({ offset: true }),
 
@@ -68,6 +74,9 @@ export const CreateTimeEntrySchema = z
 
     /** Optional notes/description (max 1000 characters) */
     notes: z.string().max(1000).nullable().optional(),
+
+    /** Whether this entry is billable */
+    is_billable: z.boolean().optional(),
   })
   .refine(
     data => {
@@ -125,6 +134,9 @@ export const UpdateTimeEntrySchema = z
 
     /** Notes/description (max 1000 characters) */
     notes: z.string().max(1000).nullable().optional(),
+
+    /** Whether this entry is billable */
+    is_billable: z.boolean().optional(),
   })
   .refine(
     data => {

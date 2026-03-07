@@ -37,14 +37,32 @@ export {
   useCreateTimeEntry,
   useUpdateTimeEntry,
   useDeleteTimeEntry,
+  useBulkUpdateEntries,
+  useBulkDeleteEntries,
+  useSplitTimeEntry,
+  useMergeTimeEntries,
+  usePermanentlyDeleteTimeEntry,
+  useRestoreTimeEntry,
+  useDuplicateTimeEntry,
   TimeEntryMutationError,
   type UpdateTimeEntryParams,
+  type BulkUpdateParams,
+  type SplitTimeEntryParams,
   type UseCreateTimeEntryOptions,
   type UseUpdateTimeEntryOptions,
   type UseDeleteTimeEntryOptions,
+  type UseRestoreTimeEntryOptions,
+  type UseDuplicateTimeEntryOptions,
   type UseCreateTimeEntryResult,
   type UseUpdateTimeEntryResult,
   type UseDeleteTimeEntryResult,
+  type UsePermanentlyDeleteTimeEntryResult,
+  type UseRestoreTimeEntryResult,
+  type UseDuplicateTimeEntryResult,
+  type UseBulkUpdateEntriesResult,
+  type UseBulkDeleteEntriesResult,
+  type UseSplitTimeEntryResult,
+  type UseMergeTimeEntriesResult,
 } from './useTimeEntryMutations';
 
 export {
@@ -225,6 +243,35 @@ export { useIdleDetection } from './useIdleDetection';
 
 // Tray sync
 export { useTraySync } from './useTraySync';
+
+// Tag hooks
+export {
+  useTags,
+  useEntryTags,
+  useCreateTag,
+  useUpdateTag,
+  useDeleteTag,
+  useSetEntryTags,
+  TagError,
+  type UseTagsOptions,
+  type UseTagsResult,
+  type UseEntryTagsResult,
+  type UseCreateTagResult,
+  type UseUpdateTagResult,
+  type UseDeleteTagResult,
+  type UseSetEntryTagsResult,
+} from './useTags';
+
+// Entry comment hooks
+export {
+  useEntryComments,
+  useCreateEntryComment,
+  useDeleteEntryComment,
+  EntryCommentError,
+  type UseEntryCommentsResult,
+  type UseCreateEntryCommentResult,
+  type UseDeleteEntryCommentResult,
+} from './useEntryComments';
 
 // Splash screen hook
 export {

@@ -23,3 +23,13 @@ export {
   useTimerSettings,
 } from './timerSettingsStore';
 export type { TimerSettings, QuickPreset } from './timerSettingsStore';
+
+export {
+  addTemplate,
+  updateTemplate,
+  removeTemplate,
+  getTemplateStoreState,
+  subscribeTemplateStore,
+  useEntryTemplates,
+} from './entryTemplateStore';
+export type { EntryTemplate, TemplateStoreState } from './entryTemplateStore';

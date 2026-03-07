@@ -48,6 +48,18 @@ export const iconMap = {
   'chevron-up': '\u2303',
   'chevron-down': '\u2304',
   alert: '\u26A0', // warning triangle
+  trash: '\u{1F5D1}', // wastebasket
+  scissors: '\u2702', // scissors
+  merge: '\u2A2F', // vector cross product (merge icon)
+  'checkbox-blank': '\u2610', // ballot box
+  'checkbox-checked': '\u2611', // ballot box with check
+  select: '\u2610', // ballot box (select mode)
+  copy: '\u2398', // next page (copy/duplicate)
+  dollar: '$', // dollar sign
+  plus: '+', // plus sign
+  save: '\u{1F4BE}', // floppy disk
+  comment: '\u{1F4AC}', // speech bubble
+  tag: '\u{1F3F7}', // label/tag
 } as const;
 
 export type IconName = keyof typeof iconMap;

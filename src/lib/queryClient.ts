@@ -128,6 +128,15 @@ export const queryKeys = {
     /** All analytics queries (for invalidation) */
     all: ['analytics'] as const,
   },
+
+  /** Tags for the current user */
+  tags: ['tags'] as const,
+
+  /** Tags for a specific time entry */
+  entryTags: (entryId: string) => ['entryTags', entryId] as const,
+
+  /** Comments for a specific time entry */
+  entryComments: (entryId: string) => ['entryComments', entryId] as const,
 } as const;
 
 export type QueryKeys = typeof queryKeys;

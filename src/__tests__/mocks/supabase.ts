@@ -69,6 +69,7 @@ export function mockTimeEntry(overrides?: Partial<TimeEntry>): TimeEntry {
     duration_seconds: 5400,
     notes: null,
     entry_type: 'work',
+    is_billable: false,
     created_at: '2024-03-01T11:30:00.000Z',
     updated_at: '2024-03-01T11:30:00.000Z',
     ...overrides,

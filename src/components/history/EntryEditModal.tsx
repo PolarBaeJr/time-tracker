@@ -40,8 +40,11 @@ import { Button, Text, Input, Card, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import { useUpdateTimeEntry, useDeleteTimeEntry } from '@/hooks/useTimeEntryMutations';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntryTags, useSetEntryTags } from '@/hooks/useTags';
 import { UpdateTimeEntrySchema } from '@/schemas';
 import type { TimeEntry, Category, UpdateTimeEntryInput } from '@/schemas';
+import { TagSelector } from './TagSelector';
+import { EntryComments } from './EntryComments';
 
 // ============================================================================
 // TYPES
@@ -212,7 +215,7 @@ export function EntryEditModal({
       onSaveSuccess?.();
       onClose();
     },
-    onError: (error) => {
+    onError: error => {
       showErrorAlert('Update Failed', error.message);
     },
   });
@@ -222,7 +225,7 @@ export function EntryEditModal({
       onDeleteSuccess?.();
       onClose();
     },
-    onError: (error) => {
+    onError: error => {
       showErrorAlert('Delete Failed', error.message);
     },
   });
@@ -240,6 +243,11 @@ export function EntryEditModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
+  // Tag hooks
+  const { data: entryTagIds = [] } = useEntryTags(entry?.id || null);
+  const setEntryTags = useSetEntryTags();
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
   // Initialize form when entry changes
   useEffect(() => {
     if (entry) {
@@ -254,6 +262,11 @@ export function EntryEditModal({
       setErrors({});
     }
   }, [entry]);
+
+  // Sync tag selection when entry tags load
+  useEffect(() => {
+    setSelectedTagIds(entryTagIds);
+  }, [entryTagIds]);
 
   // Defensive check: ensure user owns this entry
   const isOwnEntry = useMemo(() => {
@@ -278,12 +291,12 @@ export function EntryEditModal({
 
   // Get selected category
   const selectedCategory = useMemo(() => {
-    return categories.find((c) => c.id === form.categoryId) || null;
+    return categories.find(c => c.id === form.categoryId) || null;
   }, [categories, form.categoryId]);
 
   // Handle category selection
   const handleCategorySelect = useCallback((categoryId: string | null) => {
-    setForm((prev) => ({ ...prev, categoryId }));
+    setForm(prev => ({ ...prev, categoryId }));
     setCategoryModalVisible(false);
   }, []);
 
@@ -312,9 +325,8 @@ export function EntryEditModal({
 
     try {
       const startIso = combineDateTime(form.startDate, form.startTime);
-      const endIso = form.endDate && form.endTime
-        ? combineDateTime(form.endDate, form.endTime)
-        : null;
+      const endIso =
+        form.endDate && form.endTime ? combineDateTime(form.endDate, form.endTime) : null;
 
       const duration = endIso ? calculateDuration(startIso, endIso) : 0;
 
@@ -329,7 +341,7 @@ export function EntryEditModal({
       // Validate against schema
       const validation = UpdateTimeEntrySchema.safeParse(updateData);
       if (!validation.success) {
-        const errorMessages = validation.error.issues.map((issue) => issue.message).join(', ');
+        const errorMessages = validation.error.issues.map(issue => issue.message).join(', ');
         setErrors({ general: errorMessages });
         return null;
       }
@@ -356,7 +368,15 @@ export function EntryEditModal({
     if (!updateData) return;
 
     updateEntry.mutate({ id: entry.id, data: updateData });
-  }, [entry, isOwnEntry, validateForm, updateEntry]);
+
+    // Save tags if changed
+    const tagsChanged =
+      selectedTagIds.length !== entryTagIds.length ||
+      selectedTagIds.some(id => !entryTagIds.includes(id));
+    if (tagsChanged) {
+      setEntryTags.mutate({ entryId: entry.id, tagIds: selectedTagIds });
+    }
+  }, [entry, isOwnEntry, validateForm, updateEntry, selectedTagIds, entryTagIds, setEntryTags]);
 
   // Handle delete with confirmation
   const handleDelete = useCallback(() => {
@@ -394,12 +414,7 @@ export function EntryEditModal({
   const isSubmitting = updateEntry.isPending || deleteEntry.isPending;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.modalOverlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -446,15 +461,14 @@ export function EntryEditModal({
                 {selectedCategory ? (
                   <>
                     <View
-                      style={[
-                        styles.categoryColor,
-                        { backgroundColor: selectedCategory.color },
-                      ]}
+                      style={[styles.categoryColor, { backgroundColor: selectedCategory.color }]}
                     />
                     <Text style={styles.selectorText}>{selectedCategory.name}</Text>
                   </>
                 ) : (
-                  <Text style={StyleSheet.flatten([styles.selectorText, styles.selectorPlaceholder])}>
+                  <Text
+                    style={StyleSheet.flatten([styles.selectorText, styles.selectorPlaceholder])}
+                  >
                     No category
                   </Text>
                 )}
@@ -469,7 +483,7 @@ export function EntryEditModal({
                 <Input
                   label="Date"
                   value={form.startDate}
-                  onChangeText={(text) => setForm((prev) => ({ ...prev, startDate: text }))}
+                  onChangeText={text => setForm(prev => ({ ...prev, startDate: text }))}
                   placeholder="YYYY-MM-DD"
                   error={errors.startDate}
                   disabled={isSubmitting || !isOwnEntry}
@@ -479,7 +493,7 @@ export function EntryEditModal({
                 <Input
                   label="Time"
                   value={form.startTime}
-                  onChangeText={(text) => setForm((prev) => ({ ...prev, startTime: text }))}
+                  onChangeText={text => setForm(prev => ({ ...prev, startTime: text }))}
                   placeholder="HH:MM"
                   error={errors.startTime}
                   disabled={isSubmitting || !isOwnEntry}
@@ -494,7 +508,7 @@ export function EntryEditModal({
                 <Input
                   label="Date"
                   value={form.endDate}
-                  onChangeText={(text) => setForm((prev) => ({ ...prev, endDate: text }))}
+                  onChangeText={text => setForm(prev => ({ ...prev, endDate: text }))}
                   placeholder="YYYY-MM-DD"
                   error={errors.endDate}
                   disabled={isSubmitting || !isOwnEntry}
@@ -504,7 +518,7 @@ export function EntryEditModal({
                 <Input
                   label="Time"
                   value={form.endTime}
-                  onChangeText={(text) => setForm((prev) => ({ ...prev, endTime: text }))}
+                  onChangeText={text => setForm(prev => ({ ...prev, endTime: text }))}
                   placeholder="HH:MM"
                   error={errors.endTime}
                   disabled={isSubmitting || !isOwnEntry}
@@ -526,12 +540,22 @@ export function EntryEditModal({
             <Input
               label="Notes"
               value={form.notes}
-              onChangeText={(text) => setForm((prev) => ({ ...prev, notes: text }))}
+              onChangeText={text => setForm(prev => ({ ...prev, notes: text }))}
               placeholder="Add notes about this entry..."
               multiline
               numberOfLines={4}
               disabled={isSubmitting || !isOwnEntry}
             />
+
+            {/* Tags */}
+            <TagSelector
+              selectedTagIds={selectedTagIds}
+              onTagsChange={setSelectedTagIds}
+              disabled={isSubmitting || !isOwnEntry}
+            />
+
+            {/* Comments */}
+            {entry && <EntryComments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />}
 
             {/* General error */}
             {errors.general && (
@@ -601,7 +625,7 @@ export function EntryEditModal({
               </Pressable>
 
               {/* Category list */}
-              {categories.map((category) => (
+              {categories.map(category => (
                 <Pressable
                   key={category.id}
                   style={[
@@ -611,9 +635,7 @@ export function EntryEditModal({
                   onPress={() => handleCategorySelect(category.id)}
                 >
                   <View style={styles.categoryOptionContent}>
-                    <View
-                      style={[styles.categoryColor, { backgroundColor: category.color }]}
-                    />
+                    <View style={[styles.categoryColor, { backgroundColor: category.color }]} />
                     <View style={styles.categoryInfo}>
                       <Text style={styles.categoryOptionText}>{category.name}</Text>
                       <Text style={styles.categoryTypeText}>{category.type}</Text>

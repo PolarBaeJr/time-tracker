@@ -24,6 +24,7 @@ describe('EntryCard', () => {
     duration_seconds: 5400, // 1.5 hours
     notes: 'Working on the project',
     entry_type: 'work',
+    is_billable: false,
     created_at: '2024-03-01T11:30:00.000Z',
     updated_at: '2024-03-01T11:30:00.000Z',
   };

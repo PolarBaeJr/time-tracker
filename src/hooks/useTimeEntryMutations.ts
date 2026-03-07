@@ -115,6 +115,7 @@ async function createTimeEntry(input: CreateTimeEntryInput): Promise<TimeEntry> 
       duration_seconds: validatedInput.duration_seconds,
       notes: validatedInput.notes ?? null,
       entry_type: 'work',
+      is_billable: validatedInput.is_billable ?? false,
       created_at: now,
       updated_at: now,
     } as TimeEntry;
@@ -129,6 +130,7 @@ async function createTimeEntry(input: CreateTimeEntryInput): Promise<TimeEntry> 
       end_at: validatedInput.end_at ?? null,
       duration_seconds: validatedInput.duration_seconds,
       notes: validatedInput.notes ?? null,
+      is_billable: validatedInput.is_billable ?? false,
     })
     .select()
     .single();
@@ -279,6 +281,9 @@ async function updateTimeEntry({ id, data }: UpdateTimeEntryParams): Promise<Tim
   if (validatedInput.notes !== undefined) {
     updateData.notes = validatedInput.notes;
   }
+  if (validatedInput.is_billable !== undefined) {
+    updateData.is_billable = validatedInput.is_billable;
+  }
 
   // RLS ensures user can only update their own entries
   const { data: result, error } = await supabase
@@ -418,8 +423,11 @@ async function deleteTimeEntry(id: string): Promise<void> {
     return;
   }
 
-  // RLS ensures user can only delete their own entries
-  const { error } = await supabase.from('time_entries').delete().eq('id', id);
+  // Soft delete: set deleted_at instead of hard delete
+  const { error } = await supabase
+    .from('time_entries')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
 
   if (error) {
     throw new TimeEntryMutationError(error.message, error.code, error.details);
@@ -514,9 +522,456 @@ export function useDeleteTimeEntry(options?: UseDeleteTimeEntryOptions) {
   });
 }
 
+// ============================================================================
+// PERMANENTLY DELETE TIME ENTRY
+// ============================================================================
+
+async function permanentlyDeleteTimeEntry(id: string): Promise<void> {
+  const { error } = await supabase.from('time_entries').delete().eq('id', id);
+
+  if (error) {
+    throw new TimeEntryMutationError(error.message, error.code, error.details);
+  }
+}
+
+export function usePermanentlyDeleteTimeEntry(options?: UseDeleteTimeEntryOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: permanentlyDeleteTimeEntry,
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(id);
+    },
+    onError: (error: Error, id) => {
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError, id);
+    },
+  });
+}
+
+// ============================================================================
+// RESTORE TIME ENTRY
+// ============================================================================
+
+async function restoreTimeEntry(id: string): Promise<void> {
+  const { error } = await supabase.from('time_entries').update({ deleted_at: null }).eq('id', id);
+
+  if (error) {
+    throw new TimeEntryMutationError(error.message, error.code, error.details);
+  }
+}
+
+export interface UseRestoreTimeEntryOptions {
+  onSuccess?: (id: string) => void;
+  onError?: (error: TimeEntryMutationError, id: string) => void;
+}
+
+export function useRestoreTimeEntry(options?: UseRestoreTimeEntryOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: restoreTimeEntry,
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(id);
+    },
+    onError: (error: Error, id) => {
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError, id);
+    },
+  });
+}
+
+// ============================================================================
+// DUPLICATE TIME ENTRY
+// ============================================================================
+
+async function duplicateTimeEntry(id: string): Promise<TimeEntry> {
+  const { data: original, error: fetchError } = await supabase
+    .from('time_entries')
+    .select()
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !original) {
+    throw new TimeEntryMutationError('Failed to fetch entry for duplication', fetchError?.code);
+  }
+
+  const now = new Date();
+  const durationMs = original.duration_seconds * 1000;
+  const newEndAt = now.toISOString();
+  const newStartAt = new Date(now.getTime() - durationMs).toISOString();
+
+  const { data: created, error: createError } = await supabase
+    .from('time_entries')
+    .insert({
+      category_id: original.category_id,
+      start_at: newStartAt,
+      end_at: newEndAt,
+      duration_seconds: original.duration_seconds,
+      notes: original.notes,
+      entry_type: original.entry_type,
+      is_billable: original.is_billable,
+    })
+    .select()
+    .single();
+
+  if (createError || !created) {
+    throw new TimeEntryMutationError('Failed to create duplicate entry', createError?.code);
+  }
+
+  return created as TimeEntry;
+}
+
+export interface UseDuplicateTimeEntryOptions {
+  onSuccess?: (entry: TimeEntry) => void;
+  onError?: (error: TimeEntryMutationError) => void;
+}
+
+export function useDuplicateTimeEntry(options?: UseDuplicateTimeEntryOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: duplicateTimeEntry,
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError);
+    },
+  });
+}
+
+// ============================================================================
+// BULK UPDATE ENTRIES
+// ============================================================================
+
+/**
+ * Parameters for bulk updating time entries
+ */
+export interface BulkUpdateParams {
+  ids: string[];
+  data: UpdateTimeEntryInput;
+}
+
+/**
+ * Bulk update multiple time entries
+ */
+async function bulkUpdateEntries({ ids, data }: BulkUpdateParams): Promise<TimeEntry[]> {
+  const results: TimeEntry[] = [];
+  for (const id of ids) {
+    const result = await updateTimeEntry({ id, data });
+    results.push(result);
+  }
+  return results;
+}
+
+/**
+ * Hook to bulk update time entries
+ */
+export function useBulkUpdateEntries(options?: {
+  onSuccess?: (entries: TimeEntry[]) => void;
+  onError?: (error: TimeEntryMutationError) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkUpdateEntries,
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError);
+    },
+  });
+}
+
+// ============================================================================
+// BULK DELETE ENTRIES (SOFT DELETE)
+// ============================================================================
+
+/**
+ * Soft delete multiple time entries by setting deleted_at
+ */
+async function bulkSoftDeleteEntries(ids: string[]): Promise<void> {
+  if (!isDeviceOnline()) {
+    for (const id of ids) {
+      await queueDeleteEntry(id);
+    }
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await supabase.from('time_entries').update({ deleted_at: now }).in('id', ids);
+
+  if (error) {
+    throw new TimeEntryMutationError(error.message, error.code, error.details);
+  }
+}
+
+/**
+ * Hook to bulk soft-delete time entries
+ */
+export function useBulkDeleteEntries(options?: {
+  onSuccess?: (ids: string[]) => void;
+  onError?: (error: TimeEntryMutationError) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkSoftDeleteEntries,
+    onMutate: async (ids: string[]) => {
+      await queryClient.cancelQueries({ queryKey: ['timeEntries'] });
+
+      const previousData = queryClient.getQueriesData<{ pages: TimeEntriesPage[] }>({
+        queryKey: ['timeEntries'],
+      });
+
+      queryClient.setQueriesData<{ pages: TimeEntriesPage[]; pageParams: unknown[] }>(
+        { queryKey: ['timeEntries'] },
+        old => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              data: page.data.filter(entry => !ids.includes(entry.id)),
+            })),
+          };
+        }
+      );
+
+      return { previousData };
+    },
+    onError: (error, _ids, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError);
+    },
+    onSuccess: (_data, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(ids);
+    },
+  });
+}
+
+// ============================================================================
+// SPLIT TIME ENTRY
+// ============================================================================
+
+/**
+ * Parameters for splitting a time entry
+ */
+export interface SplitTimeEntryParams {
+  id: string;
+  splitAtSeconds: number;
+}
+
+/**
+ * Split a time entry into two entries at the given point
+ */
+async function splitTimeEntry({
+  id,
+  splitAtSeconds,
+}: SplitTimeEntryParams): Promise<[TimeEntry, TimeEntry]> {
+  // Fetch the original entry
+  const { data: original, error: fetchError } = await supabase
+    .from('time_entries')
+    .select()
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !original) {
+    throw new TimeEntryMutationError('Failed to fetch entry for split', fetchError?.code);
+  }
+
+  const originalDuration = original.duration_seconds;
+  if (splitAtSeconds <= 0 || splitAtSeconds >= originalDuration) {
+    throw new TimeEntryMutationError('Split point must be between 0 and the entry duration');
+  }
+
+  const startDate = new Date(original.start_at);
+  const splitDate = new Date(startDate.getTime() + splitAtSeconds * 1000);
+
+  // Update original to end at split point
+  const { data: updated, error: updateError } = await supabase
+    .from('time_entries')
+    .update({
+      end_at: splitDate.toISOString(),
+      duration_seconds: splitAtSeconds,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateError || !updated) {
+    throw new TimeEntryMutationError(
+      'Failed to update original entry during split',
+      updateError?.code
+    );
+  }
+
+  // Create new entry from split point to original end
+  const { data: created, error: createError } = await supabase
+    .from('time_entries')
+    .insert({
+      category_id: original.category_id,
+      start_at: splitDate.toISOString(),
+      end_at: original.end_at,
+      duration_seconds: originalDuration - splitAtSeconds,
+      notes: original.notes,
+    })
+    .select()
+    .single();
+
+  if (createError || !created) {
+    throw new TimeEntryMutationError('Failed to create new entry during split', createError?.code);
+  }
+
+  return [updated as TimeEntry, created as TimeEntry];
+}
+
+/**
+ * Hook to split a time entry
+ */
+export function useSplitTimeEntry(options?: {
+  onSuccess?: (entries: [TimeEntry, TimeEntry]) => void;
+  onError?: (error: TimeEntryMutationError) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: splitTimeEntry,
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError);
+    },
+  });
+}
+
+// ============================================================================
+// MERGE TIME ENTRIES
+// ============================================================================
+
+/**
+ * Merge multiple time entries into one
+ */
+async function mergeTimeEntries(ids: string[]): Promise<TimeEntry> {
+  if (ids.length < 2) {
+    throw new TimeEntryMutationError('Must select at least 2 entries to merge');
+  }
+
+  // Fetch all entries
+  const { data: entries, error: fetchError } = await supabase
+    .from('time_entries')
+    .select()
+    .in('id', ids)
+    .order('start_at', { ascending: true });
+
+  if (fetchError || !entries || entries.length < 2) {
+    throw new TimeEntryMutationError('Failed to fetch entries for merge', fetchError?.code);
+  }
+
+  // Calculate merged values
+  const earliestStart = entries[0].start_at;
+  const latestEnd = entries.reduce(
+    (latest, e) => {
+      if (!e.end_at) return latest;
+      if (!latest) return e.end_at;
+      return new Date(e.end_at) > new Date(latest) ? e.end_at : latest;
+    },
+    entries[0].end_at as string | null
+  );
+  const totalDuration = entries.reduce((sum, e) => sum + e.duration_seconds, 0);
+  const categoryId = entries[0].category_id;
+  const notes = entries
+    .map(e => e.notes)
+    .filter(Boolean)
+    .join('\n');
+
+  // Create merged entry
+  const { data: merged, error: createError } = await supabase
+    .from('time_entries')
+    .insert({
+      category_id: categoryId,
+      start_at: earliestStart,
+      end_at: latestEnd,
+      duration_seconds: totalDuration,
+      notes: notes || null,
+    })
+    .select()
+    .single();
+
+  if (createError || !merged) {
+    throw new TimeEntryMutationError('Failed to create merged entry', createError?.code);
+  }
+
+  // Soft-delete originals
+  const now = new Date().toISOString();
+  const { error: deleteError } = await supabase
+    .from('time_entries')
+    .update({ deleted_at: now })
+    .in('id', ids);
+
+  if (deleteError) {
+    throw new TimeEntryMutationError('Failed to soft-delete original entries', deleteError?.code);
+  }
+
+  return merged as TimeEntry;
+}
+
+/**
+ * Hook to merge time entries
+ */
+export function useMergeTimeEntries(options?: {
+  onSuccess?: (entry: TimeEntry) => void;
+  onError?: (error: TimeEntryMutationError) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: mergeTimeEntries,
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      const mutationError =
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
+      options?.onError?.(mutationError);
+    },
+  });
+}
+
 /**
  * Type exports for hook return values
  */
 export type UseCreateTimeEntryResult = ReturnType<typeof useCreateTimeEntry>;
 export type UseUpdateTimeEntryResult = ReturnType<typeof useUpdateTimeEntry>;
 export type UseDeleteTimeEntryResult = ReturnType<typeof useDeleteTimeEntry>;
+export type UsePermanentlyDeleteTimeEntryResult = ReturnType<typeof usePermanentlyDeleteTimeEntry>;
+export type UseRestoreTimeEntryResult = ReturnType<typeof useRestoreTimeEntry>;
+export type UseDuplicateTimeEntryResult = ReturnType<typeof useDuplicateTimeEntry>;
+export type UseBulkUpdateEntriesResult = ReturnType<typeof useBulkUpdateEntries>;
+export type UseBulkDeleteEntriesResult = ReturnType<typeof useBulkDeleteEntries>;
+export type UseSplitTimeEntryResult = ReturnType<typeof useSplitTimeEntry>;
+export type UseMergeTimeEntriesResult = ReturnType<typeof useMergeTimeEntries>;

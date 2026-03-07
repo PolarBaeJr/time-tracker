@@ -31,6 +31,9 @@ export const CategorySchema = z.object({
    */
   type: z.string().min(1).max(50),
 
+  /** Hourly rate for billable entries (null if not set) */
+  hourly_rate: z.number().nullable().optional(),
+
   /** Timestamp when category was created */
   created_at: z.string().datetime({ offset: true }),
 });
@@ -53,6 +56,9 @@ export const CreateCategorySchema = z.object({
    * User-defined value like 'work', 'hobby', 'class', etc.
    */
   type: z.string().min(1, 'Type is required').max(50, 'Type must be 50 characters or less'),
+
+  /** Hourly rate for billable entries (null if not set) */
+  hourly_rate: z.number().nullable().optional(),
 });
 
 /**
@@ -70,6 +76,9 @@ export const UpdateCategorySchema = z.object({
 
   /** Category type/classification (1-50 characters) */
   type: z.string().min(1).max(50).optional(),
+
+  /** Hourly rate for billable entries (null if not set) */
+  hourly_rate: z.number().nullable().optional(),
 });
 
 /**

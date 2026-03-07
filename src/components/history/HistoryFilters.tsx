@@ -21,7 +21,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable, Modal, ScrollView, TextInput } from 'react-native';
 import { Button, Text, Input, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
-import type { TimeEntryFilters, EntryType, Category } from '@/schemas';
+import type { TimeEntryFilters, EntryType, Category, Tag } from '@/schemas';
 
 /**
  * HistoryFilters props
@@ -33,6 +33,12 @@ export interface HistoryFiltersProps {
   onFiltersChange: (filters: TimeEntryFilters) => void;
   /** Available categories for filtering */
   categories: Category[];
+  /** Available tags for filtering */
+  tags?: Tag[];
+  /** Currently selected tag IDs for filtering */
+  selectedTagIds?: string[];
+  /** Callback when tag filter changes */
+  onTagFilterChange?: (tagIds: string[]) => void;
   /** Whether filters are loading (disabled state) */
   disabled?: boolean;
 }
@@ -166,6 +172,9 @@ export function HistoryFilters({
   filters,
   onFiltersChange,
   categories,
+  tags = [],
+  selectedTagIds = [],
+  onTagFilterChange,
   disabled = false,
 }: HistoryFiltersProps): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
@@ -295,6 +304,18 @@ export function HistoryFilters({
     [filters, onFiltersChange]
   );
 
+  // Handle tag toggle
+  const handleTagToggle = useCallback(
+    (tagId: string) => {
+      if (!onTagFilterChange) return;
+      const updated = selectedTagIds.includes(tagId)
+        ? selectedTagIds.filter(id => id !== tagId)
+        : [...selectedTagIds, tagId];
+      onTagFilterChange(updated);
+    },
+    [selectedTagIds, onTagFilterChange]
+  );
+
   // Handle sort by selection
   const handleSortBy = useCallback(
     (sortBy: 'date' | 'duration' | 'entry_type') => {
@@ -319,7 +340,8 @@ export function HistoryFilters({
   const handleClearFilters = useCallback(() => {
     setSearchText('');
     onFiltersChange({});
-  }, [onFiltersChange]);
+    onTagFilterChange?.([]);
+  }, [onFiltersChange, onTagFilterChange]);
 
   // Check if any filters are active
   const hasActiveFilters =
@@ -331,7 +353,8 @@ export function HistoryFilters({
     filters.maxDuration ||
     (filters.entryTypes && filters.entryTypes.length > 0) ||
     filters.sortBy ||
-    (filters.sortOrder && filters.sortOrder !== 'desc');
+    (filters.sortOrder && filters.sortOrder !== 'desc') ||
+    selectedTagIds.length > 0;
 
   // Get selected category name
   const selectedCategory = categories.find(c => c.id === filters.categoryId);
@@ -526,6 +549,50 @@ export function HistoryFilters({
               })}
             </View>
           </View>
+
+          {/* Tag filter */}
+          {tags.length > 0 && onTagFilterChange && (
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Tags</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.durationPresets}
+              >
+                {tags.map(tag => {
+                  const isActive = selectedTagIds.includes(tag.id);
+                  return (
+                    <Pressable
+                      key={tag.id}
+                      style={[
+                        styles.durationChip,
+                        isActive && {
+                          backgroundColor: tag.color + '20',
+                          borderColor: tag.color,
+                        },
+                      ]}
+                      onPress={() => handleTagToggle(tag.id)}
+                      disabled={disabled}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
+                    >
+                      <View style={styles.tagFilterRow}>
+                        <View style={[styles.tagFilterDot, { backgroundColor: tag.color }]} />
+                        <Text
+                          style={StyleSheet.flatten([
+                            styles.durationChipText,
+                            isActive ? { color: tag.color, fontWeight: '500' as const } : null,
+                          ])}
+                        >
+                          {tag.name}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
 
           {/* Sort options */}
           <View style={styles.field}>
@@ -844,6 +911,16 @@ const styles = StyleSheet.create({
   categoryOptionText: {
     fontSize: fontSizes.md,
     color: colors.text,
+  },
+  tagFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  tagFilterDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   categoryTypeText: {
     fontSize: fontSizes.sm,

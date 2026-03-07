@@ -85,3 +85,23 @@ export {
   type SetTypeGoalInput,
   type GoalProgress,
 } from './goal';
+
+// Tag schemas and types
+export {
+  TagSchema,
+  CreateTagSchema,
+  UpdateTagSchema,
+  TimeEntryTagSchema,
+  type Tag,
+  type CreateTagInput,
+  type UpdateTagInput,
+  type TimeEntryTag,
+} from './tag';
+
+// Entry comment schemas and types
+export {
+  EntryCommentSchema,
+  CreateEntryCommentSchema,
+  type EntryComment,
+  type CreateEntryCommentInput,
+} from './entryComment';
