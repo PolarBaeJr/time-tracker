@@ -11,6 +11,10 @@ directories:
   output: electron-dist
   buildResources: assets
 
+# Override package.json main for Electron (Expo uses its own entry point)
+extraMetadata:
+  main: electron/main.js
+
 # Files to include in the build
 files:
   - dist/**/*
