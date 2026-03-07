@@ -53,6 +53,12 @@ interface DesktopAPI {
   openExternalUrl: (url: string) => Promise<void>;
   /** Listen for OAuth callback URL from main process (full worktracker:// URL) */
   onOAuthCallback: (callback: (url: string) => void) => void;
+  /** Check for app updates */
+  checkForUpdates: () => Promise<unknown>;
+  /** Get current app version */
+  getAppVersion: () => Promise<string>;
+  /** Listen for update status messages */
+  onUpdateStatus: (callback: (message: string) => void) => void;
 }
 
 /**
@@ -88,6 +94,11 @@ const desktopAPI: DesktopAPI = {
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url) as Promise<void>,
   onOAuthCallback: (callback: (url: string) => void) => {
     ipcRenderer.on('oauth-callback', (_event, url: string) => callback(url));
+  },
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates') as Promise<unknown>,
+  getAppVersion: () => ipcRenderer.invoke('get-app-version') as Promise<string>,
+  onUpdateStatus: (callback: (message: string) => void) => {
+    ipcRenderer.on('update-status', (_event, message: string) => callback(message));
   },
 };
 

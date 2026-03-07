@@ -12,7 +12,8 @@
  * - Content Security Policy restricts resource loading
  */
 
-import { app, BrowserWindow, session, ipcMain } from 'electron';
+import { app, BrowserWindow, session, ipcMain, dialog } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import * as http from 'http';
 import * as path from 'path';
 
@@ -90,7 +91,7 @@ const CSP_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://www.googleapis.com https://apis.google.com",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://apis.google.com https://api.github.com https://github.com",
   "frame-src 'self' https://accounts.google.com",
   "worker-src 'self' blob:",
 ].join('; ');
@@ -236,6 +237,59 @@ function handleOAuthCallback(url: string): void {
   mainWindow.webContents.send('oauth-callback', url);
 }
 
+// ============================================================================
+// AUTO-UPDATER
+// ============================================================================
+
+function setupAutoUpdater(): void {
+  // Allow updates for unsigned dev builds
+  autoUpdater.forceDevUpdateConfig = true;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', info => {
+    console.log('[updater] Update available:', info.version);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-status', `Downloading update v${info.version}...`);
+    }
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[updater] App is up to date');
+  });
+
+  autoUpdater.on('download-progress', progress => {
+    console.log(`[updater] Download: ${progress.percent.toFixed(0)}%`);
+  });
+
+  autoUpdater.on('update-downloaded', info => {
+    console.log('[updater] Update downloaded:', info.version);
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: 'Update Ready',
+        message: `Version ${info.version} has been downloaded.`,
+        detail: 'Restart now to apply the update?',
+        buttons: ['Restart', 'Later'],
+        defaultId: 0,
+      })
+      .then(({ response }) => {
+        if (response === 0) {
+          autoUpdater.quitAndInstall();
+        }
+      });
+  });
+
+  autoUpdater.on('error', error => {
+    console.error('[updater] Error:', error.message);
+  });
+
+  // Check for updates (silently — don't block startup)
+  void autoUpdater.checkForUpdates().catch(err => {
+    console.warn('[updater] Failed to check for updates:', err.message);
+  });
+}
+
 // Register worktracker:// as a protocol client for OAuth callbacks
 app.setAsDefaultProtocolClient('worktracker');
 
@@ -277,6 +331,11 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     createWindow();
 
+    // Check for updates in production builds
+    if (!isDev) {
+      setupAutoUpdater();
+    }
+
     // macOS: Re-create window when dock icon is clicked
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -290,6 +349,15 @@ if (!gotTheLock) {
     'get-oauth-redirect-url',
     () => `http://localhost:${OAUTH_CALLBACK_PORT}/auth/callback`
   );
+
+  // Check for updates manually from the renderer
+  ipcMain.handle('check-for-updates', () => {
+    if (isDev) return { updateAvailable: false };
+    return autoUpdater.checkForUpdates().catch(() => ({ updateAvailable: false }));
+  });
+
+  // Get current app version
+  ipcMain.handle('get-app-version', () => app.getVersion());
 
   // Open a URL in the system browser from the renderer
   ipcMain.handle('open-external-url', (_event, url: string) => {

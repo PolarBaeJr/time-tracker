@@ -95,8 +95,11 @@ linux:
   synopsis: Work time tracking application
   description: A cross-platform work tracking application for managing time entries and productivity goals.
 
-# Publish configuration (disabled by default)
-publish: null
+# Publish configuration — GitHub Releases for auto-updates
+publish:
+  provider: github
+  owner: PolarBaeJr
+  repo: time-tracker
 
 # Build hooks
 afterSign: null
