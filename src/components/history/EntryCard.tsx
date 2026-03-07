@@ -197,13 +197,11 @@ export function EntryCard({
             </Text>
           </View>
         )}
-        {!isBreak && (
-          <View style={styles.durationBadge}>
-            <Text style={styles.durationText}>
-              Duration: {formatDuration(entry.duration_seconds)}
-            </Text>
-          </View>
-        )}
+        <View style={styles.durationBadge}>
+          <Text style={styles.durationText}>
+            Duration: {formatDuration(entry.duration_seconds)}
+          </Text>
+        </View>
       </View>
     </Card>
   );

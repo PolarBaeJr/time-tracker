@@ -529,6 +529,7 @@ export function TimerScreen(): React.ReactElement {
                     ? countdownRemaining
                     : undefined
               }
+              showElapsed={isPomodoroActive || isCountdownActive}
             />
 
             {/* Category display */}

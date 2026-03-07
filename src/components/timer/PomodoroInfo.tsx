@@ -57,11 +57,11 @@ export function PomodoroInfo({
           <View key={i} style={[styles.dot, i < pomodorosCompleted && styles.dotCompleted]} />
         ))}
       </View>
-      <Text variant="caption" color="muted">
+      <Text variant="body" color="muted">
         {pomodorosCompleted}/{pomodorosBeforeLongBreak} pomodoros
       </Text>
       {nextPhase != null && nextPhaseDurationSeconds != null && (
-        <Text variant="caption" color="muted" style={styles.upcomingText}>
+        <Text variant="body" color="muted" style={styles.upcomingText}>
           Upcoming: {PHASE_LABELS[nextPhase]} ({formatDuration(nextPhaseDurationSeconds)})
         </Text>
       )}
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontSize: 12,
+    fontSize: 14,
   },
   dots: {
     flexDirection: 'row',

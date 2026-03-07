@@ -39,6 +39,8 @@ export interface TimerDisplayProps {
   style?: ViewStyle;
   /** If set, display countdown from this many seconds remaining instead of elapsed */
   countdownSeconds?: number;
+  /** When true and countdownSeconds is set, also show elapsed time below */
+  showElapsed?: boolean;
 }
 
 /**
@@ -47,7 +49,11 @@ export interface TimerDisplayProps {
  * Shows large formatted time (HH:MM:SS), updates every second.
  * Shows 'No active timer' when idle.
  */
-export function TimerDisplay({ style, countdownSeconds }: TimerDisplayProps): React.ReactElement {
+export function TimerDisplay({
+  style,
+  countdownSeconds,
+  showElapsed = false,
+}: TimerDisplayProps): React.ReactElement {
   // Get timer state from store - updates every second when running
   const activeTimer = useTimerStore(state => state.activeTimer);
   const localElapsed = useTimerStore(state => state.localElapsed);
@@ -90,6 +96,11 @@ export function TimerDisplay({ style, countdownSeconds }: TimerDisplayProps): Re
       <Text variant="bodySmall" color={isRunning ? 'success' : 'warning'} style={styles.statusText}>
         {isRunning ? (countdownSeconds !== undefined ? 'Countdown' : 'Running') : 'Paused'}
       </Text>
+      {showElapsed && countdownSeconds !== undefined && (
+        <Text variant="body" color="muted" style={styles.elapsedText}>
+          Elapsed: {formatTime(localElapsed)}
+        </Text>
+      )}
     </View>
   );
 }
@@ -124,6 +135,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  elapsedText: {
+    marginTop: spacing.xs,
+    fontVariant: ['tabular-nums'],
   },
 });
 
