@@ -30,7 +30,7 @@ function startOAuthCallbackServer(): void {
     if (url.pathname === '/auth/callback') {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(
-        `<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>Sign-in complete!</h2><p>You can close this tab and return to WorkTracker.</p><script>window.close();</script></div></body></html>`
+        `<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>Sign-in complete!</h2><p>Returning to WorkTracker...</p><script>setTimeout(()=>{window.location.href='worktracker://close'},500)</script></div></body></html>`
       );
 
       const callbackUrl = `http://localhost:${OAUTH_CALLBACK_PORT}${req.url}`;
@@ -189,11 +189,11 @@ function createWindow(): void {
       return;
     }
 
-    // Intercept worktracker:// OAuth callback — reload app with hash so
-    // Supabase picks up access_token/refresh_token from window.location.hash
     if (parsedUrl.protocol === 'worktracker:') {
       event.preventDefault();
-      handleOAuthCallback(url);
+      if (parsedUrl.hostname !== 'close') {
+        handleOAuthCallback(url);
+      }
       return;
     }
 
@@ -247,6 +247,7 @@ function handleOAuthCallback(url: string): void {
   if (!mainWindow) return;
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
+  app.focus({ steal: true });
   mainWindow.focus();
   mainWindow.webContents.send('oauth-callback', url);
 }
@@ -276,7 +277,16 @@ if (!gotTheLock) {
   // On macOS the deep link comes via open-url event
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    handleOAuthCallback(url);
+    const parsed = new URL(url);
+    if (parsed.hostname !== 'close') {
+      handleOAuthCallback(url);
+    }
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      app.focus({ steal: true });
+      mainWindow.focus();
+    }
   });
 
   // App is ready to create windows
