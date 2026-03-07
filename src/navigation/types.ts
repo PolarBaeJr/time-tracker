@@ -41,6 +41,9 @@ export type RootStackParamList = {
   EntryEdit: {
     entryId: string;
   };
+
+  /** Focus mode - fullscreen distraction-free timer view */
+  FocusMode: undefined;
 };
 
 /**
@@ -103,10 +106,7 @@ export type RootStackScreenProps<T extends keyof RootStackParamList> = {
  * Type helper for getting navigation prop type for a tab screen
  */
 export type MainTabScreenProps<T extends keyof MainTabParamList> = {
-  navigation: import('@react-navigation/bottom-tabs').BottomTabNavigationProp<
-    MainTabParamList,
-    T
-  >;
+  navigation: import('@react-navigation/bottom-tabs').BottomTabNavigationProp<MainTabParamList, T>;
   route: import('@react-navigation/native').RouteProp<MainTabParamList, T>;
 };
 

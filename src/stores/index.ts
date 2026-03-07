@@ -13,3 +13,13 @@ export {
   useThemePreference,
 } from './themeStore';
 export type { ThemeStoreState, ThemeMode, ResolvedTheme } from './themeStore';
+
+export {
+  updateTimerSettings,
+  addQuickPreset,
+  removeQuickPreset,
+  getTimerSettingsState,
+  subscribeTimerSettings,
+  useTimerSettings,
+} from './timerSettingsStore';
+export type { TimerSettings, QuickPreset } from './timerSettingsStore';

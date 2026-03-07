@@ -8,3 +8,4 @@ export { GoalDefaults, type GoalDefaultsProps } from './GoalDefaults';
 export { AccountSection, type AccountSectionProps } from './AccountSection';
 export { PomodoroSettings, type PomodoroSettingsProps } from './PomodoroSettings';
 export { ThemeSelector, type ThemeSelectorProps } from './ThemeSelector';
+export { TimerSoundSettings, type TimerSoundSettingsProps } from './TimerSoundSettings';

@@ -134,6 +134,16 @@ export function PomodoroSettings({ disabled = false }: PomodoroSettingsProps): R
               updateSettings({ longBreakDurationSeconds: (longBreakMinutes - 1) * 60 })
             }
           />
+          <View style={styles.toggleRow}>
+            <Text style={styles.stepperLabel}>Auto-start after break</Text>
+            <Switch
+              value={settings.autoStartAfterBreak}
+              onValueChange={(value: boolean) => updateSettings({ autoStartAfterBreak: value })}
+              disabled={disabled}
+              trackColor={{ false: colors.surfaceVariant, true: colors.primary + '80' }}
+              thumbColor={settings.autoStartAfterBreak ? colors.primary : colors.textMuted}
+            />
+          </View>
           <StepperRow
             label="Cycles Before Long Break"
             value={settings.pomodorosBeforeLongBreak}

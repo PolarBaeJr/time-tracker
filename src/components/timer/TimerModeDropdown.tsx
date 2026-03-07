@@ -35,7 +35,7 @@ export interface TimerModeDropdownProps {
     name: string,
     settings: Omit<
       PomodoroSettingsData,
-      'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+      'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds' | 'autoStartAfterBreak'
     >
   ) => void;
   onDeletePreset: (id: string) => void;

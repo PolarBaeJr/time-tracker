@@ -16,6 +16,7 @@ import {
   AccountSection,
   PomodoroSettings,
   ThemeSelector,
+  TimerSoundSettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -223,6 +224,14 @@ export function SettingsScreen(): React.ReactElement {
           <Text style={styles.sectionTitle}>Pomodoro</Text>
           <Card padding="md" elevation="none" style={styles.sectionCard}>
             <PomodoroSettings disabled={isUpdating} />
+          </Card>
+        </View>
+
+        {/* Timer Sounds */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Timer Sounds</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <TimerSoundSettings disabled={isUpdating} />
           </Card>
         </View>
 

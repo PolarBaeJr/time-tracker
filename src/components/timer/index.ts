@@ -14,3 +14,4 @@ export {
   type TimerModeDropdownProps,
   type SessionSettings,
 } from './TimerModeDropdown';
+export { QuickTimerPresets, type QuickTimerPresetsProps } from './QuickTimerPresets';

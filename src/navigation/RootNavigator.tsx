@@ -15,7 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Text } from '@/components/ui';
 import { EntryEditModal } from '@/components/history';
 import { useAuth, useCategories } from '@/hooks';
-import { LoginScreen, SetupScreen } from '@/screens';
+import { LoginScreen, SetupScreen, FocusModeScreen } from '@/screens';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
 import { TimeEntrySchema } from '@/schemas';
@@ -154,6 +154,14 @@ export function RootNavigator(): React.ReactElement {
               },
               headerTintColor: colors.text,
               headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="FocusMode"
+            component={FocusModeScreen}
+            options={{
+              presentation: 'fullScreenModal',
+              headerShown: false,
             }}
           />
         </>

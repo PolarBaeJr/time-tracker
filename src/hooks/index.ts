@@ -206,6 +206,9 @@ export {
 // Keyboard shortcuts hook
 export { useKeyboardShortcuts, type ShortcutDef } from './useKeyboardShortcuts';
 
+// Timer sounds hook
+export { useTimerSounds, type SoundEvent } from './useTimerSounds';
+
 // Splash screen hook
 export {
   useSplashScreen,

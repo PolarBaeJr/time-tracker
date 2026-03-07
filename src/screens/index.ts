@@ -10,3 +10,4 @@ export { LoginScreen } from './LoginScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { SetupScreen } from './SetupScreen';
 export { TimerScreen } from './TimerScreen';
+export { FocusModeScreen } from './FocusModeScreen';

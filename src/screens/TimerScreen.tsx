@@ -22,8 +22,12 @@ import {
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/navigation/types';
 
 import {
   TimerDisplay,
@@ -32,6 +36,7 @@ import {
   CategorySelector,
   SkipPhaseButton,
   TimerModeDropdown,
+  QuickTimerPresets,
   type SessionSettings,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
@@ -45,12 +50,14 @@ import {
   usePomodoroPresets,
   useKeyboardShortcuts,
 } from '@/hooks';
+import { useTimerSounds } from '@/hooks/useTimerSounds';
 import { startTimer, stopTimer, syncTimerWithStore } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
 import { colors, spacing, borderRadius } from '@/theme';
 import { queryKeys } from '@/lib/queryClient';
 import type { Category } from '@/schemas';
 import type { TimerMode } from '@/types';
+import type { QuickPreset } from '@/stores/timerSettingsStore';
 
 const PHASE_LABELS = {
   work: 'Focus Time',
@@ -136,6 +143,7 @@ function SelectedCategoryDisplay({
  */
 export function TimerScreen(): React.ReactElement {
   const queryClient = useQueryClient();
+  const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // State
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -143,6 +151,9 @@ export function TimerScreen(): React.ReactElement {
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [sessionLabel, setSessionLabel] = useState('');
+
+  // Timer sounds
+  const { playSound } = useTimerSounds();
 
   // Pomodoro settings (persisted)
   const { settings: pomodoroSettings, updateSettings: updatePomodoroSettings } =
@@ -287,6 +298,8 @@ export function TimerScreen(): React.ReactElement {
         } else {
           Alert.alert('Error', `Failed to start timer: ${message}`);
         }
+      } else {
+        playSound('start');
       }
       // Success - timer store will be updated by realtime subscription
     } catch (error) {
@@ -304,6 +317,7 @@ export function TimerScreen(): React.ReactElement {
     timerMode,
     effectiveSettings.workDurationSeconds,
     pomodoroSettings.countdownDurationSeconds,
+    playSound,
   ]);
 
   // Handle stop timer
@@ -324,6 +338,7 @@ export function TimerScreen(): React.ReactElement {
           Alert.alert('Error', `Failed to stop timer: ${message}`);
         }
       } else {
+        playSound('stop');
         setSessionLabel('');
         void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
         void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
@@ -338,7 +353,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStopping(false);
     }
-  }, [sessionLabel, queryClient]);
+  }, [sessionLabel, queryClient, playSound]);
 
   // Handle transitioning to next pomodoro phase
   const handleNextPhase = useCallback(async () => {
@@ -382,6 +397,8 @@ export function TimerScreen(): React.ReactElement {
         } else {
           Alert.alert('Error', `Failed to start next phase: ${message}`);
         }
+      } else {
+        playSound('phase-change');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -394,12 +411,13 @@ export function TimerScreen(): React.ReactElement {
       setIsStopping(false);
       isTransitioningRef.current = false;
     }
-  }, [activeTimer, queryClient, pomodoro, sessionLabel]);
+  }, [activeTimer, queryClient, pomodoro, sessionLabel, playSound]);
 
   // Handle skip phase (stop current, start next)
   const handleSkipPhase = handleNextPhase;
 
   // Auto-transition when phase completes (guarded by timer ID to prevent loops)
+  // Work -> Break always auto-transitions; Break -> Work only if autoStartAfterBreak is enabled
   useEffect(() => {
     if (
       pomodoro.isPhaseComplete &&
@@ -407,10 +425,22 @@ export function TimerScreen(): React.ReactElement {
       activeTimer.id !== lastTransitionedTimerIdRef.current &&
       !isTransitioningRef.current
     ) {
+      const isBreakPhase =
+        pomodoro.currentPhase === 'break' || pomodoro.currentPhase === 'long_break';
+      if (isBreakPhase && !pomodoroSettings.autoStartAfterBreak) {
+        return;
+      }
       lastTransitionedTimerIdRef.current = activeTimer.id;
       void handleNextPhase();
     }
-  }, [pomodoro.isPhaseComplete, activeTimer?.timer_mode, activeTimer?.id, handleNextPhase]);
+  }, [
+    pomodoro.isPhaseComplete,
+    pomodoro.currentPhase,
+    activeTimer?.timer_mode,
+    activeTimer?.id,
+    handleNextPhase,
+    pomodoroSettings.autoStartAfterBreak,
+  ]);
 
   // Open category selector
   const handleOpenCategorySelector = useCallback(() => {
@@ -469,13 +499,58 @@ export function TimerScreen(): React.ReactElement {
       activeTimer.id !== countdownAlertedTimerIdRef.current
     ) {
       countdownAlertedTimerIdRef.current = activeTimer.id;
+      playSound('countdown-complete');
       if (Platform.OS === 'web') {
         alert('Countdown complete!');
       } else {
         Alert.alert('Countdown Complete', 'Your countdown timer has finished.');
       }
     }
-  }, [isCountdownActive, countdownRemaining, activeTimer]);
+  }, [isCountdownActive, countdownRemaining, activeTimer, playSound]);
+
+  // Handle selecting a quick timer preset
+  const handleSelectQuickPreset = useCallback(
+    (preset: QuickPreset) => {
+      setSelectedCategoryId(preset.categoryId);
+
+      if (preset.timerMode === 'pomodoro') {
+        updatePomodoroSettings({
+          pomodoroEnabled: true,
+          countdownEnabled: false,
+        });
+      } else if (preset.timerMode === 'countdown') {
+        updatePomodoroSettings({
+          countdownEnabled: true,
+          pomodoroEnabled: false,
+          ...(preset.durationSeconds != null
+            ? { countdownDurationSeconds: preset.durationSeconds }
+            : {}),
+        });
+      } else {
+        updatePomodoroSettings({
+          pomodoroEnabled: false,
+          countdownEnabled: false,
+        });
+      }
+
+      // Brief delay to let state settle before starting
+      setTimeout(() => {
+        void handleStart();
+      }, 50);
+    },
+    [updatePomodoroSettings, handleStart]
+  );
+
+  // Current duration for saving presets
+  const currentDurationSeconds = useMemo(() => {
+    if (timerMode === 'countdown') {
+      return pomodoroSettings.countdownDurationSeconds;
+    }
+    if (timerMode === 'pomodoro') {
+      return effectiveSettings.workDurationSeconds;
+    }
+    return null;
+  }, [timerMode, pomodoroSettings.countdownDurationSeconds, effectiveSettings.workDurationSeconds]);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -503,8 +578,32 @@ export function TimerScreen(): React.ReactElement {
               onDeletePreset={handleDeletePreset}
               disabled={hasActiveTimer}
             />
-            <ConnectionIndicator status={connectionStatus} />
+            <View style={styles.headerRight}>
+              {hasActiveTimer && (
+                <Pressable
+                  onPress={() => rootNavigation.navigate('FocusMode')}
+                  style={styles.focusButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Enter focus mode"
+                >
+                  <Text variant="caption" style={styles.focusButtonText}>
+                    Focus
+                  </Text>
+                </Pressable>
+              )}
+              <ConnectionIndicator status={connectionStatus} />
+            </View>
           </View>
+
+          {/* Quick timer presets (only when no timer is active) */}
+          {!hasActiveTimer && (
+            <QuickTimerPresets
+              onSelectPreset={handleSelectQuickPreset}
+              currentMode={timerMode}
+              currentCategoryId={selectedCategoryId}
+              currentDurationSeconds={currentDurationSeconds}
+            />
+          )}
 
           {/* Main timer card */}
           <Card style={styles.timerCard} padding="lg" elevation="md">
@@ -737,6 +836,22 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     right: spacing.lg,
     backgroundColor: colors.surfaceVariant,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  focusButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceVariant,
+  },
+  focusButtonText: {
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });
 

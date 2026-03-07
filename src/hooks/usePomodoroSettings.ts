@@ -13,6 +13,7 @@ export interface PomodoroSettingsData {
   breakDurationSeconds: number;
   longBreakDurationSeconds: number;
   pomodorosBeforeLongBreak: number;
+  autoStartAfterBreak: boolean;
 }
 
 export interface PomodoroPreset {
@@ -21,7 +22,7 @@ export interface PomodoroPreset {
   builtIn?: boolean;
   settings: Omit<
     PomodoroSettingsData,
-    'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+    'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds' | 'autoStartAfterBreak'
   >;
 }
 
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: PomodoroSettingsData = {
   breakDurationSeconds: 5 * 60,
   longBreakDurationSeconds: 15 * 60,
   pomodorosBeforeLongBreak: 4,
+  autoStartAfterBreak: false,
 };
 
 type Listener = () => void;
@@ -98,6 +100,10 @@ const hydrateSettings = async (): Promise<void> => {
             typeof obj.pomodorosBeforeLongBreak === 'number'
               ? obj.pomodorosBeforeLongBreak
               : DEFAULT_SETTINGS.pomodorosBeforeLongBreak,
+          autoStartAfterBreak:
+            typeof obj.autoStartAfterBreak === 'boolean'
+              ? obj.autoStartAfterBreak
+              : DEFAULT_SETTINGS.autoStartAfterBreak,
         };
       }
     }
@@ -256,7 +262,7 @@ export function savePreset(
   name: string,
   settings: Omit<
     PomodoroSettingsData,
-    'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+    'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds' | 'autoStartAfterBreak'
   >
 ): PomodoroPreset {
   const preset: PomodoroPreset = {
@@ -290,6 +296,7 @@ export function applyServerPreferences(prefs: {
   breakDurationSeconds?: number;
   longBreakDurationSeconds?: number;
   pomodorosBeforeLongBreak?: number;
+  autoStartAfterBreak?: boolean;
   customPresets?: PomodoroPreset[];
 }): void {
   if (!prefs || typeof prefs !== 'object') return;
@@ -308,6 +315,8 @@ export function applyServerPreferences(prefs: {
     updates.longBreakDurationSeconds = prefs.longBreakDurationSeconds;
   if (typeof prefs.pomodorosBeforeLongBreak === 'number')
     updates.pomodorosBeforeLongBreak = prefs.pomodorosBeforeLongBreak;
+  if (typeof prefs.autoStartAfterBreak === 'boolean')
+    updates.autoStartAfterBreak = prefs.autoStartAfterBreak;
 
   if (Object.keys(updates).length > 0) {
     currentSettings = { ...currentSettings, ...updates };
@@ -342,6 +351,7 @@ export function getSettingsForSync(): Record<string, unknown> {
     breakDurationSeconds: currentSettings.breakDurationSeconds,
     longBreakDurationSeconds: currentSettings.longBreakDurationSeconds,
     pomodorosBeforeLongBreak: currentSettings.pomodorosBeforeLongBreak,
+    autoStartAfterBreak: currentSettings.autoStartAfterBreak,
     customPresets: customPresets,
   };
 }
@@ -358,7 +368,7 @@ export interface UsePomodoroPresetsResult {
     name: string,
     settings: Omit<
       PomodoroSettingsData,
-      'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+      'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds' | 'autoStartAfterBreak'
     >
   ) => PomodoroPreset;
   deletePreset: (id: string) => void;
@@ -393,7 +403,7 @@ export function usePomodoroPresets(): UsePomodoroPresetsResult {
       name: string,
       settings: Omit<
         PomodoroSettingsData,
-        'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+        'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds' | 'autoStartAfterBreak'
       >
     ) => {
       return savePreset(name, settings);
