@@ -1,6 +1,6 @@
 {
   "name": "worktracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -24,7 +24,7 @@
     "electron:package:mac": "npm run electron:build && electron-builder --config electron/electron-builder.yml --mac",
     "electron:package:win": "npm run electron:build && electron-builder --config electron/electron-builder.yml --win",
     "electron:package:linux": "npm run electron:build && electron-builder --config electron/electron-builder.yml --linux",
-    "electron:publish": "npm run electron:build && electron-builder --config electron/electron-builder.yml --mac --publish always"
+    "electron:publish": "export $(grep GH_TOKEN .env | xargs) && npm run electron:build && electron-builder --config electron/electron-builder.yml --mac --publish always"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
