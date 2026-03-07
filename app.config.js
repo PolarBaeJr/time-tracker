@@ -9,7 +9,7 @@ module.exports = () => {
     'com.googleusercontent.apps.YOUR_IOS_REVERSED_CLIENT_ID';
 
   const easProjectId =
-    process.env.EAS_PROJECT_ID || expoConfig.extra?.eas?.projectId || 'your-project-id';
+    process.env.EAS_PROJECT_ID || expoConfig.extra?.eas?.projectId || '29ee1370-b8ab-4bd3-9cd7-3da465732d29';
 
   return {
     ...expoConfig,

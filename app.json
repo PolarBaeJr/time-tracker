@@ -19,7 +19,9 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "google-signin",
-            "CFBundleURLSchemes": ["com.googleusercontent.apps.YOUR_IOS_REVERSED_CLIENT_ID"]
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.YOUR_IOS_REVERSED_CLIENT_ID"
+            ]
           }
         ]
       }
@@ -48,7 +50,10 @@
               "pathPrefix": "/auth/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -68,7 +73,7 @@
     "plugins": [],
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "29ee1370-b8ab-4bd3-9cd7-3da465732d29"
       }
     }
   }
