@@ -275,8 +275,16 @@ function setupAutoUpdater(): void {
       })
       .then(({ response }) => {
         if (response === 0) {
-          // Force quit all windows and install update
-          autoUpdater.quitAndInstall(false, true);
+          // Use setImmediate to avoid race conditions with the dialog
+          setImmediate(() => {
+            // Prevent the window close from being intercepted
+            app.removeAllListeners('window-all-closed');
+            if (mainWindow) {
+              mainWindow.removeAllListeners('close');
+              mainWindow.close();
+            }
+            autoUpdater.quitAndInstall(false, true);
+          });
         }
       });
   });

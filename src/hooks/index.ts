@@ -188,8 +188,13 @@ export {
 
 export {
   usePomodoroSettings,
+  usePomodoroPresets,
+  savePreset,
+  deletePreset,
   type PomodoroSettingsData,
+  type PomodoroPreset,
   type UsePomodoroSettingsResult,
+  type UsePomodoroPresetsResult,
 } from './usePomodoroSettings';
 
 // Splash screen hook

@@ -31,6 +31,8 @@ import {
   PomodoroInfo,
   CategorySelector,
   SkipPhaseButton,
+  TimerModeDropdown,
+  type SessionSettings,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,6 +42,7 @@ import {
   markLocalTimerAction,
   usePomodoro,
   usePomodoroSettings,
+  usePomodoroPresets,
 } from '@/hooks';
 import { startTimer, stopTimer } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
@@ -142,8 +145,40 @@ export function TimerScreen(): React.ReactElement {
   const [showNotesInput, setShowNotesInput] = useState(false);
 
   // Pomodoro settings (persisted)
-  const { settings: pomodoroSettings } = usePomodoroSettings();
+  const { settings: pomodoroSettings, updateSettings: updatePomodoroSettings } =
+    usePomodoroSettings();
+  const {
+    presets,
+    savePreset: handleSavePreset,
+    deletePreset: handleDeletePreset,
+  } = usePomodoroPresets();
+
+  // Session override settings (null = use defaults)
+  const [sessionSettings, setSessionSettings] = useState<SessionSettings | null>(null);
+
+  const effectiveSettings: SessionSettings = useMemo(
+    () =>
+      sessionSettings ?? {
+        workDurationSeconds: pomodoroSettings.workDurationSeconds,
+        breakDurationSeconds: pomodoroSettings.breakDurationSeconds,
+        longBreakDurationSeconds: pomodoroSettings.longBreakDurationSeconds,
+        pomodorosBeforeLongBreak: pomodoroSettings.pomodorosBeforeLongBreak,
+      },
+    [sessionSettings, pomodoroSettings]
+  );
+
   const timerMode: TimerMode = pomodoroSettings.pomodoroEnabled ? 'pomodoro' : 'normal';
+
+  const handlePomodoroEnabledChange = useCallback(
+    (enabled: boolean) => {
+      updatePomodoroSettings({ pomodoroEnabled: enabled });
+    },
+    [updatePomodoroSettings]
+  );
+
+  const handleSessionSettingsChange = useCallback((settings: SessionSettings) => {
+    setSessionSettings(settings);
+  }, []);
 
   // Timer store state
   const activeTimer = useTimerStore(state => state.activeTimer);
@@ -204,7 +239,7 @@ export function TimerScreen(): React.ReactElement {
       if (timerMode === 'pomodoro') {
         options.timerMode = 'pomodoro';
         options.pomodoroPhase = 'work';
-        options.phaseDurationSeconds = pomodoro.settings.workDurationSeconds;
+        options.phaseDurationSeconds = effectiveSettings.workDurationSeconds;
         options.pomodorosCompleted = 0;
       }
 
@@ -229,7 +264,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStarting(false);
     }
-  }, [selectedCategoryId, timerMode, pomodoro.settings.workDurationSeconds]);
+  }, [selectedCategoryId, timerMode, effectiveSettings.workDurationSeconds]);
 
   // Handle stop timer
   const handleStop = useCallback(async () => {
@@ -412,9 +447,16 @@ export function TimerScreen(): React.ReactElement {
         >
           {/* Header with connection status */}
           <View style={styles.header}>
-            <Text variant="display" style={styles.headerTitle}>
-              Timer
-            </Text>
+            <TimerModeDropdown
+              pomodoroEnabled={pomodoroSettings.pomodoroEnabled}
+              onPomodoroEnabledChange={handlePomodoroEnabledChange}
+              effectiveSettings={effectiveSettings}
+              onSettingsChange={handleSessionSettingsChange}
+              presets={presets}
+              onSavePreset={handleSavePreset}
+              onDeletePreset={handleDeletePreset}
+              disabled={hasActiveTimer}
+            />
             <ConnectionIndicator status={connectionStatus} />
           </View>
 

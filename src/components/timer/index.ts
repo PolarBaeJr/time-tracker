@@ -9,3 +9,8 @@ export { PomodoroInfo, type PomodoroInfoProps } from './PomodoroInfo';
 export { CategorySelector, type CategorySelectorProps } from './CategorySelector';
 export { QuickEntry, type QuickEntryProps } from './QuickEntry';
 export { SkipPhaseButton, type SkipPhaseButtonProps } from './SkipPhaseButton';
+export {
+  TimerModeDropdown,
+  type TimerModeDropdownProps,
+  type SessionSettings,
+} from './TimerModeDropdown';
