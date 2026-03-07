@@ -118,6 +118,9 @@ export function EntryCard({
     onEdit?.(entry);
   }, [onEdit, entry]);
 
+  const isBreak = entry.entry_type && entry.entry_type !== 'work';
+  const breakLabel = entry.entry_type === 'long_break' ? 'Long Break' : 'Break';
+
   return (
     <Card
       padding="md"
@@ -126,8 +129,8 @@ export function EntryCard({
       pressable={!!onPress}
       onPress={handlePress}
     >
+      {/* Row 1: Category name + type badge + edit button */}
       <View style={styles.header}>
-        {/* Category info */}
         <View style={styles.categoryContainer}>
           {categoryName ? (
             <>
@@ -144,8 +147,38 @@ export function EntryCard({
           )}
         </View>
 
-        {/* Entry type badge for break entries */}
-        {entry.entry_type && entry.entry_type !== 'work' && (
+        {onEdit && (
+          <Pressable
+            style={styles.editButton}
+            onPress={handleEdit}
+            accessibilityRole="button"
+            accessibilityLabel="Edit entry"
+          >
+            <Icon name="edit" size={18} color={colors.textSecondary} />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Row 2: Notes preview */}
+      {entry.notes ? (
+        <Text style={styles.notesPreview} numberOfLines={2}>
+          {truncateNotes(entry.notes)}
+        </Text>
+      ) : null}
+
+      {/* Row 3: Date + time range */}
+      <View style={styles.timeRow}>
+        <Text style={styles.date}>{formatDate(entry.start_at)}</Text>
+        <View style={styles.timeRange}>
+          <Text style={styles.time}>{formatTime(entry.start_at)}</Text>
+          <Text style={styles.timeSeparator}>-</Text>
+          <Text style={styles.time}>{entry.end_at ? formatTime(entry.end_at) : 'Ongoing'}</Text>
+        </View>
+      </View>
+
+      {/* Row 4: Break badge + Duration */}
+      <View style={styles.metaRow}>
+        {isBreak && (
           <View
             style={[
               styles.entryTypeBadge,
@@ -160,45 +193,18 @@ export function EntryCard({
                 ]) as TextStyle
               }
             >
-              {entry.entry_type === 'long_break' ? 'Long Break' : 'Break'}
+              {breakLabel}: {formatDuration(entry.duration_seconds)}
             </Text>
           </View>
         )}
-
-        {/* Edit button */}
-        {onEdit && (
-          <Pressable
-            style={styles.editButton}
-            onPress={handleEdit}
-            accessibilityRole="button"
-            accessibilityLabel="Edit entry"
-          >
-            <Icon name="edit" size={18} color={colors.textSecondary} />
-          </Pressable>
+        {!isBreak && (
+          <View style={styles.durationBadge}>
+            <Text style={styles.durationText}>
+              Duration: {formatDuration(entry.duration_seconds)}
+            </Text>
+          </View>
         )}
       </View>
-
-      {/* Time info */}
-      <View style={styles.timeRow}>
-        <Text style={styles.date}>{formatDate(entry.start_at)}</Text>
-        <View style={styles.timeRange}>
-          <Text style={styles.time}>{formatTime(entry.start_at)}</Text>
-          <Text style={styles.timeSeparator}>-</Text>
-          <Text style={styles.time}>{entry.end_at ? formatTime(entry.end_at) : 'Ongoing'}</Text>
-        </View>
-        <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{formatDuration(entry.duration_seconds)}</Text>
-        </View>
-      </View>
-
-      {/* Notes preview */}
-      {entry.notes && (
-        <View style={styles.notesContainer}>
-          <Text style={styles.notesPreview} numberOfLines={2}>
-            {truncateNotes(entry.notes)}
-          </Text>
-        </View>
-      )}
     </Card>
   );
 }
@@ -272,10 +278,16 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     marginLeft: spacing.sm,
   },
+  notesPreview: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    lineHeight: fontSizes.sm * 1.4,
+    marginBottom: spacing.sm,
+  },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   date: {
     fontSize: fontSizes.sm,
@@ -297,28 +309,21 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginHorizontal: spacing.xs,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   durationBadge: {
     backgroundColor: colors.primary + '20',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: borderRadius.md,
-    marginLeft: spacing.sm,
   },
   durationText: {
     fontSize: fontSizes.sm,
     color: colors.primary,
     fontWeight: '600',
-  },
-  notesContainer: {
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  notesPreview: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
-    lineHeight: fontSizes.sm * 1.4,
   },
 });
 
