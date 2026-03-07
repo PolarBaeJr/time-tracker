@@ -630,16 +630,30 @@ export function TimerScreen(): React.ReactElement {
             />
             <View style={styles.headerRight}>
               {hasActiveTimer && (
-                <Pressable
-                  onPress={() => rootNavigation.navigate('FocusMode')}
-                  style={styles.focusButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Enter focus mode"
-                >
-                  <Text variant="caption" style={styles.focusButtonText}>
-                    Focus
-                  </Text>
-                </Pressable>
+                <>
+                  {Platform.OS === 'web' && window.desktop && (
+                    <Pressable
+                      onPress={() => window.desktop?.toggleFloatingWidget()}
+                      style={styles.focusButton}
+                      accessibilityRole="button"
+                      accessibilityLabel="Toggle floating timer widget"
+                    >
+                      <Text variant="caption" style={styles.focusButtonText}>
+                        PiP
+                      </Text>
+                    </Pressable>
+                  )}
+                  <Pressable
+                    onPress={() => rootNavigation.navigate('FocusMode')}
+                    style={styles.focusButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Enter focus mode"
+                  >
+                    <Text variant="caption" style={styles.focusButtonText}>
+                      Focus
+                    </Text>
+                  </Pressable>
+                </>
               )}
               <ConnectionIndicator status={connectionStatus} />
             </View>

@@ -89,6 +89,11 @@ const PROD_URL = `file://${path.join(__dirname, '../dist/index.html')}`;
 let mainWindow: BrowserWindow | null = null;
 
 /**
+ * Floating timer widget window reference
+ */
+let floatingWindow: BrowserWindow | null = null;
+
+/**
  * System tray reference
  * Stored globally to prevent garbage collection
  */
@@ -292,6 +297,44 @@ function createTray(): void {
 }
 
 /**
+ * Create or destroy the floating timer widget
+ */
+function toggleFloatingWidget(): void {
+  if (floatingWindow) {
+    floatingWindow.close();
+    return;
+  }
+
+  floatingWindow = new BrowserWindow({
+    width: 220,
+    height: 80,
+    alwaysOnTop: true,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    skipTaskbar: true,
+    hasShadow: true,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'floatingPreload.js'),
+      sandbox: true,
+    },
+  });
+
+  void floatingWindow.loadFile(path.join(__dirname, 'floatingWidget.html'));
+
+  floatingWindow.once('ready-to-show', () => {
+    floatingWindow?.show();
+  });
+
+  floatingWindow.on('closed', () => {
+    floatingWindow = null;
+  });
+}
+
+/**
  * Handle OAuth deep link: worktracker://auth/callback?code=...
  * Sends the full callback URL to the renderer via IPC so the Supabase SDK
  * can call exchangeCodeForSession() with the stored PKCE code_verifier.
@@ -445,21 +488,39 @@ if (!gotTheLock) {
     notification.show();
   });
 
-  // Update tray tooltip with timer state
+  // Update tray tooltip with timer state and forward to floating widget
   ipcMain.on(
     'update-tray',
     (_event, state: { isRunning: boolean; elapsed: string; phase?: string }) => {
-      if (!tray) return;
-      const parts = ['WorkTracker'];
-      if (state.isRunning) {
-        parts.push(`${state.elapsed}`);
-        if (state.phase) {
-          parts.push(`(${state.phase})`);
+      if (tray) {
+        const parts = ['WorkTracker'];
+        if (state.isRunning) {
+          parts.push(`${state.elapsed}`);
+          if (state.phase) {
+            parts.push(`(${state.phase})`);
+          }
         }
+        tray.setToolTip(parts.join(' - '));
       }
-      tray.setToolTip(parts.join(' - '));
+
+      // Forward timer state to floating widget
+      if (floatingWindow && !floatingWindow.isDestroyed()) {
+        floatingWindow.webContents.send('floating-timer-update', state);
+      }
     }
   );
+
+  // Toggle floating timer widget
+  ipcMain.on('toggle-floating-widget', () => {
+    toggleFloatingWidget();
+  });
+
+  // Close floating timer widget (from widget's close button)
+  ipcMain.on('close-floating-widget', () => {
+    if (floatingWindow) {
+      floatingWindow.close();
+    }
+  });
 
   // Open a URL in the system browser from the renderer
   ipcMain.handle('open-external-url', (_event, url: string) => {

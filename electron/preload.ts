@@ -63,6 +63,8 @@ interface DesktopAPI {
   showNotification: (title: string, body: string) => void;
   /** Update tray timer state */
   updateTray: (state: { isRunning: boolean; elapsed: string; phase?: string }) => void;
+  /** Toggle the floating timer widget */
+  toggleFloatingWidget: () => void;
   /** Listen for global shortcut toggle */
   onGlobalShortcut: (callback: () => void) => void;
 }
@@ -111,6 +113,9 @@ const desktopAPI: DesktopAPI = {
   },
   updateTray: (state: { isRunning: boolean; elapsed: string; phase?: string }) => {
     ipcRenderer.send('update-tray', state);
+  },
+  toggleFloatingWidget: () => {
+    ipcRenderer.send('toggle-floating-widget');
   },
   onGlobalShortcut: (callback: () => void) => {
     ipcRenderer.on('global-shortcut-toggle', () => callback());

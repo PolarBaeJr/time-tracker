@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>WorkTracker Timer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      overflow: hidden;
+      background: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-app-region: drag;
+    }
+    .widget {
+      background: rgba(15, 15, 15, 0.92);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 60px;
+    }
+    .timer-display {
+      font-size: 28px;
+      font-weight: 600;
+      color: #FFFFFF;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .phase {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+    .close-btn {
+      -webkit-app-region: no-drag;
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .close-btn:hover {
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .idle {
+      color: rgba(255, 255, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="info">
+      <div class="timer-display" id="timer">00:00:00</div>
+      <div class="phase" id="phase"></div>
+    </div>
+    <button class="close-btn" id="closeBtn" title="Close widget">&times;</button>
+  </div>
+  <script>
+    const timerEl = document.getElementById('timer');
+    const phaseEl = document.getElementById('phase');
+    const closeBtn = document.getElementById('closeBtn');
+
+    closeBtn.addEventListener('click', () => {
+      window.electronAPI.closeWidget();
+    });
+
+    window.electronAPI.onTimerUpdate((state) => {
+      timerEl.textContent = state.elapsed;
+      if (state.isRunning) {
+        timerEl.classList.remove('idle');
+        phaseEl.textContent = state.phase || '';
+      } else {
+        timerEl.classList.add('idle');
+        phaseEl.textContent = '';
+      }
+    });
+  </script>
+</body>
+</html>
