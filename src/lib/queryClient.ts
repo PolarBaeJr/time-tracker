@@ -28,8 +28,10 @@
 
 import { QueryClient, onlineManager } from '@tanstack/react-query';
 
-// Sync TanStack Query's online state with the browser's navigator.onLine
-if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+// Sync TanStack Query's online state with the browser's navigator.onLine (web only)
+import { Platform } from 'react-native';
+
+if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof navigator !== 'undefined') {
   onlineManager.setOnline(navigator.onLine);
 
   window.addEventListener('online', () => onlineManager.setOnline(true));

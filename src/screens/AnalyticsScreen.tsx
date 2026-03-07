@@ -26,17 +26,8 @@ import {
   StyleSheet,
   useWindowDimensions,
   RefreshControl,
+  Platform,
 } from 'react-native';
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 import {
   KPICards,
@@ -98,6 +89,43 @@ const HEATMAP_DAYS = 30;
  * - Various time visualization charts
  * - Drag-and-drop widget reordering
  */
+// Web-only: lazy-load @dnd-kit to avoid crashing on native
+function useDndKit(widgets: { id: string; visible: boolean }[]) {
+  if (Platform.OS !== 'web') {
+    return { DndContext: null, SortableContext: null, sensors: null, handleDragEnd: () => {} };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dndCore = require('@dnd-kit/core');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dndSortable = require('@dnd-kit/sortable');
+
+  const sensors = dndCore.useSensors(
+    dndCore.useSensor(dndCore.PointerSensor, { activationConstraint: { distance: 8 } }),
+    dndCore.useSensor(dndCore.KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: { active: { id: string }; over: { id: string } | null }) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = widgets.findIndex(w => w.id === active.id);
+    const newIndex = widgets.findIndex(w => w.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    setWidgetOrder(dndSortable.arrayMove(widgets, oldIndex, newIndex));
+  };
+
+  return {
+    DndContext: dndCore.DndContext,
+    SortableContext: dndSortable.SortableContext,
+    verticalListSortingStrategy: dndSortable.verticalListSortingStrategy,
+    closestCenter: dndCore.closestCenter,
+    sensors,
+    handleDragEnd,
+  };
+}
+
 export function AnalyticsScreen(): React.ReactElement {
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_BREAKPOINT;
@@ -105,10 +133,7 @@ export function AnalyticsScreen(): React.ReactElement {
   const { widgets, isEditMode } = useDashboardLayout();
   const visibleWidgets = widgets.filter(w => w.visible);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor)
-  );
+  const dnd = useDndKit(widgets);
 
   // Track refresh state
   const [refreshing, setRefreshing] = React.useState(false);
@@ -139,20 +164,6 @@ export function AnalyticsScreen(): React.ReactElement {
     const monthlyEmpty = !monthlyQuery.data?.some(m => m.totalSeconds > 0);
     return dailyEmpty && weeklyEmpty && monthlyEmpty;
   }, [dailyQuery.data, weeklyQuery.data, monthlyQuery.data]);
-
-  const handleDragEnd = React.useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-
-      const oldIndex = widgets.findIndex(w => w.id === active.id);
-      const newIndex = widgets.findIndex(w => w.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      setWidgetOrder(arrayMove(widgets, oldIndex, newIndex));
-    },
-    [widgets]
-  );
 
   const renderWidget = (id: DashboardWidgetId): React.ReactNode => {
     switch (id) {
@@ -297,18 +308,30 @@ export function AnalyticsScreen(): React.ReactElement {
       >
         {isEditMode && <DashboardEditPanel />}
 
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={visibleWidgets.map(w => w.id)}
-            strategy={verticalListSortingStrategy}
+        {Platform.OS === 'web' && dnd.DndContext ? (
+          <dnd.DndContext
+            sensors={dnd.sensors}
+            collisionDetection={dnd.closestCenter}
+            onDragEnd={dnd.handleDragEnd}
           >
-            {visibleWidgets.map(widget => (
-              <DashboardWidgetWrapper key={widget.id} id={widget.id} isEditMode={isEditMode}>
-                {renderWidget(widget.id)}
-              </DashboardWidgetWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
+            <dnd.SortableContext
+              items={visibleWidgets.map(w => w.id)}
+              strategy={dnd.verticalListSortingStrategy}
+            >
+              {visibleWidgets.map(widget => (
+                <DashboardWidgetWrapper key={widget.id} id={widget.id} isEditMode={isEditMode}>
+                  {renderWidget(widget.id)}
+                </DashboardWidgetWrapper>
+              ))}
+            </dnd.SortableContext>
+          </dnd.DndContext>
+        ) : (
+          visibleWidgets.map(widget => (
+            <DashboardWidgetWrapper key={widget.id} id={widget.id} isEditMode={isEditMode}>
+              {renderWidget(widget.id)}
+            </DashboardWidgetWrapper>
+          ))
+        )}
 
         {/* Empty state tip */}
         {isAllDataEmpty && !dailyQuery.isLoading && (

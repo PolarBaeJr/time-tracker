@@ -14,6 +14,7 @@ import {
   StyleSheet,
   Pressable,
   Image,
+  Platform,
   type ViewStyle,
   type LayoutChangeEvent,
 } from 'react-native';
@@ -41,7 +42,7 @@ export interface SpotifyMiniPlayerProps {
   style?: object;
 }
 
-export function SpotifyMiniPlayer({ style }: SpotifyMiniPlayerProps): React.ReactElement | null {
+function SpotifyMiniPlayerWeb({ style }: SpotifyMiniPlayerProps): React.ReactElement | null {
   const { colors, borderRadius } = useTheme();
   const { data: connection, isConnected } = useSpotifyConnection();
   const { isReady, isPremium } = useSpotifyPlayer(connection);
@@ -285,5 +286,10 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
 });
+
+export function SpotifyMiniPlayer(props: SpotifyMiniPlayerProps): React.ReactElement | null {
+  if (Platform.OS !== 'web') return null;
+  return <SpotifyMiniPlayerWeb {...props} />;
+}
 
 export default SpotifyMiniPlayer;

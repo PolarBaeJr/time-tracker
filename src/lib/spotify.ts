@@ -121,9 +121,13 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 }
 
 /**
- * Load the Spotify Web Playback SDK script
+ * Load the Spotify Web Playback SDK script (web only)
  */
 export function loadSpotifyPlaybackSDK(): Promise<void> {
+  if (typeof document === 'undefined') {
+    return Promise.reject(new Error('Spotify Web Playback SDK requires a browser environment'));
+  }
+
   if (typeof window !== 'undefined' && window.Spotify) {
     return Promise.resolve();
   }

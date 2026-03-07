@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { View, Platform } from 'react-native';
 
 import { useTheme } from '@/theme';
 
@@ -10,18 +9,22 @@ interface DashboardWidgetWrapperProps {
   children: React.ReactNode;
 }
 
-export function DashboardWidgetWrapper({
+// Web-only: lazy-load @dnd-kit to avoid crashing on native
+function WebSortableWrapper({
   id,
   isEditMode,
   children,
 }: DashboardWidgetWrapperProps): React.ReactElement {
-  const { colors, spacing } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useSortable } = require('@dnd-kit/sortable');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { CSS } = require('@dnd-kit/utilities');
+  const { colors } = useTheme();
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    marginBottom: spacing.md,
   };
 
   return (
@@ -47,6 +50,15 @@ export function DashboardWidgetWrapper({
       {children}
     </div>
   );
+}
+
+export function DashboardWidgetWrapper(props: DashboardWidgetWrapperProps): React.ReactElement {
+  if (Platform.OS === 'web') {
+    return <WebSortableWrapper {...props} />;
+  }
+
+  // Native: just render children in a View (no drag-and-drop)
+  return <View>{props.children}</View>;
 }
 
 export default DashboardWidgetWrapper;

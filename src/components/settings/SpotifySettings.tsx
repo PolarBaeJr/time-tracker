@@ -3,10 +3,11 @@
  *
  * Settings component for Spotify integration.
  * Allows connecting/disconnecting Spotify account.
+ * Web/Electron only — hidden on native platforms.
  */
 
 import * as React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { Text } from '@/components/ui';
 import { useSpotifyConnection, useConnectSpotify, useDisconnectSpotify } from '@/hooks/useSpotify';
 import { useTheme } from '@/theme';
@@ -17,7 +18,7 @@ export interface SpotifySettingsProps {
   disabled?: boolean;
 }
 
-export function SpotifySettings({ disabled = false }: SpotifySettingsProps): React.ReactElement {
+function SpotifySettingsWeb({ disabled = false }: SpotifySettingsProps): React.ReactElement {
   const { colors, spacing, borderRadius, fontSizes } = useTheme();
   const { data: connection, isConnected, isLoading } = useSpotifyConnection();
   const connectMutation = useConnectSpotify();
@@ -90,6 +91,11 @@ export function SpotifySettings({ disabled = false }: SpotifySettingsProps): Rea
       </Pressable>
     </View>
   );
+}
+
+export function SpotifySettings(props: SpotifySettingsProps): React.ReactElement | null {
+  if (Platform.OS !== 'web') return null;
+  return <SpotifySettingsWeb {...props} />;
 }
 
 const styles = StyleSheet.create({
