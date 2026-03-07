@@ -25,13 +25,7 @@
 
 import * as React from 'react';
 import { useMemo, useCallback } from 'react';
-import {
-  View,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { EntryCard } from './EntryCard';
 import { Text, Spinner, Card, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
@@ -85,7 +79,11 @@ export interface EntryListProps {
  * Get date string from ISO timestamp (YYYY-MM-DD)
  */
 function getDateKey(isoString: string): string {
-  return isoString.split('T')[0];
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -120,7 +118,7 @@ function formatDateLabel(dateKey: string): string {
 function groupEntriesByDate(entries: TimeEntry[]): EntrySection[] {
   const groups = new Map<string, TimeEntry[]>();
 
-  entries.forEach((entry) => {
+  entries.forEach(entry => {
     const dateKey = getDateKey(entry.start_at);
     const existing = groups.get(dateKey) || [];
     groups.set(dateKey, [...existing, entry]);
@@ -129,7 +127,7 @@ function groupEntriesByDate(entries: TimeEntry[]): EntrySection[] {
   // Sort groups by date descending
   const sortedKeys = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
 
-  return sortedKeys.map((date) => ({
+  return sortedKeys.map(date => ({
     date,
     dateLabel: formatDateLabel(date),
     entries: groups.get(date) || [],
@@ -142,14 +140,14 @@ function groupEntriesByDate(entries: TimeEntry[]): EntrySection[] {
 function flattenSections(sections: EntrySection[]): ListItem[] {
   const items: ListItem[] = [];
 
-  sections.forEach((section) => {
+  sections.forEach(section => {
     items.push({
       type: 'header',
       date: section.date,
       dateLabel: section.dateLabel,
     });
 
-    section.entries.forEach((entry) => {
+    section.entries.forEach(entry => {
       items.push({ type: 'entry', entry });
     });
   });
@@ -163,7 +161,7 @@ function flattenSections(sections: EntrySection[]): ListItem[] {
 function LoadingSkeleton(): React.ReactElement {
   return (
     <View style={styles.skeletonContainer}>
-      {[1, 2, 3, 4, 5].map((i) => (
+      {[1, 2, 3, 4, 5].map(i => (
         <Card key={i} padding="md" style={styles.skeletonCard}>
           <View style={styles.skeletonHeader}>
             <View style={styles.skeletonChip} />
@@ -208,12 +206,12 @@ export function EntryList({
   isLoading = false,
   onEntryPress,
   onEntryEdit,
-  emptyMessage = "Start tracking time to see your entries here.",
+  emptyMessage = 'Start tracking time to see your entries here.',
 }: EntryListProps): React.ReactElement {
   // Build category lookup map
   const categoryMap = useMemo(() => {
     const map = new Map<string, Category>();
-    categories.forEach((cat) => map.set(cat.id, cat));
+    categories.forEach(cat => map.set(cat.id, cat));
     return map;
   }, [categories]);
 
@@ -241,9 +239,7 @@ export function EntryList({
         );
       }
 
-      const category = item.entry.category_id
-        ? categoryMap.get(item.entry.category_id)
-        : null;
+      const category = item.entry.category_id ? categoryMap.get(item.entry.category_id) : null;
 
       return (
         <EntryCard

@@ -30,6 +30,7 @@ export function mockUser(overrides?: Partial<User>): User {
     name: 'Test User',
     timezone: 'UTC',
     week_start_day: 1,
+    onboarding_complete: true,
     created_at: '2024-01-01T00:00:00.000Z',
     updated_at: '2024-01-01T00:00:00.000Z',
     ...overrides,
@@ -46,6 +47,10 @@ export function mockActiveTimer(overrides?: Partial<ActiveTimer>): ActiveTimer {
     category_id: null,
     started_at: '2024-03-01T10:00:00.000Z',
     running: true,
+    timer_mode: 'normal',
+    pomodoro_phase: 'work',
+    phase_duration_seconds: null,
+    pomodoros_completed: 0,
     ...overrides,
   };
 }
@@ -62,6 +67,7 @@ export function mockTimeEntry(overrides?: Partial<TimeEntry>): TimeEntry {
     end_at: '2024-03-01T11:30:00.000Z',
     duration_seconds: 5400,
     notes: null,
+    entry_type: 'work',
     created_at: '2024-03-01T11:30:00.000Z',
     updated_at: '2024-03-01T11:30:00.000Z',
     ...overrides,

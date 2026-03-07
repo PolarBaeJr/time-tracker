@@ -8,31 +8,95 @@
  */
 
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useQuery } from '@tanstack/react-query';
 
 import { Text } from '@/components/ui';
-import { useAuth } from '@/hooks';
+import { EntryEditModal } from '@/components/history';
+import { useAuth, useCategories } from '@/hooks';
 import { LoginScreen, SetupScreen } from '@/screens';
+import { supabase } from '@/lib/supabase';
+import { queryKeys } from '@/lib/queryClient';
+import { TimeEntrySchema } from '@/schemas';
 import { colors, spacing } from '@/theme';
 
 import { MainTabs } from './MainTabs';
-import type { RootStackParamList } from './types';
+import type { RootStackParamList, RootStackScreenProps } from './types';
 
 /**
- * Placeholder EntryEdit screen
- * TODO: Replace with actual EntryEditScreen when task-027 is implemented
+ * EntryEdit screen
+ *
+ * Fetches a single time entry by ID from route params and renders
+ * the EntryEditModal as a full-screen modal.
  */
-function EntryEditScreen(): React.ReactElement {
+function EntryEditScreen({
+  route,
+  navigation,
+}: RootStackScreenProps<'EntryEdit'>): React.ReactElement {
+  const { entryId } = route.params;
+
+  // Fetch the single time entry by ID
+  const {
+    data: entry,
+    isLoading: entryLoading,
+    error: entryError,
+  } = useQuery({
+    queryKey: queryKeys.timeEntry(entryId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('id', entryId)
+        .single();
+
+      if (error) throw new Error(error.message);
+      return TimeEntrySchema.parse(data);
+    },
+  });
+
+  // Fetch categories for the category picker
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+
+  const handleClose = React.useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  // Loading state
+  if (entryLoading || categoriesLoading) {
+    return (
+      <View style={styles.placeholderContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text variant="body" color="muted" center style={styles.placeholderSubtext}>
+          Loading entry...
+        </Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (entryError || !entry) {
+    return (
+      <View style={styles.placeholderContainer}>
+        <Text variant="heading" center>
+          Entry not found
+        </Text>
+        <Text variant="body" color="muted" center style={styles.placeholderSubtext}>
+          {entryError?.message || 'The entry could not be loaded.'}
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.placeholderContainer}>
-      <Text variant="heading" center>
-        Entry Edit Screen
-      </Text>
-      <Text variant="body" color="muted" center style={styles.placeholderSubtext}>
-        Coming soon...
-      </Text>
-    </View>
+    <EntryEditModal
+      entry={entry}
+      categories={categories}
+      visible={true}
+      onClose={handleClose}
+      onSaveSuccess={handleClose}
+      onDeleteSuccess={handleClose}
+    />
   );
 }
 
@@ -70,10 +134,7 @@ export function RootNavigator(): React.ReactElement {
         />
       ) : !user?.onboarding_complete ? (
         // Onboarding: force settings setup before accessing the app
-        <Stack.Screen
-          name="Setup"
-          component={SetupScreen}
-        />
+        <Stack.Screen name="Setup" component={SetupScreen} />
       ) : (
         // Authenticated stack
         <>

@@ -40,6 +40,10 @@ describe('TimerScreen', () => {
     category_id: 'cat-1',
     started_at: new Date().toISOString(),
     running: true,
+    timer_mode: 'normal',
+    pomodoro_phase: 'work',
+    phase_duration_seconds: null,
+    pomodoros_completed: 0,
   };
 
   describe('connection status display', () => {
@@ -79,15 +83,12 @@ describe('TimerScreen', () => {
   });
 
   describe('category display', () => {
-    function getCategoryName(
-      activeTimer: ActiveTimer | null,
-      categories: Category[]
-    ): string {
+    function getCategoryName(activeTimer: ActiveTimer | null, categories: Category[]): string {
       if (!activeTimer || !activeTimer.category_id) {
         return 'No category';
       }
 
-      const category = categories.find((c) => c.id === activeTimer.category_id);
+      const category = categories.find(c => c.id === activeTimer.category_id);
       return category?.name || 'Unknown';
     }
 

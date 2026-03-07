@@ -66,9 +66,7 @@ export class TimerServiceError extends Error {
  * Result type for timer operations
  * Uses a discriminated union pattern for type-safe error handling
  */
-export type TimerResult<T> =
-  | { data: T; error: null }
-  | { data: null; error: TimerServiceError };
+export type TimerResult<T> = { data: T; error: null } | { data: null; error: TimerServiceError };
 
 // ============================================================================
 // START TIMER
@@ -83,6 +81,18 @@ export interface StartTimerOptions {
    * Must be a valid UUID belonging to the current user
    */
   categoryId?: string | null;
+
+  /** Timer mode: 'normal' or 'pomodoro' */
+  timerMode?: 'normal' | 'pomodoro';
+
+  /** Pomodoro phase to start */
+  pomodoroPhase?: 'work' | 'break' | 'long_break';
+
+  /** Target duration for this phase in seconds */
+  phaseDurationSeconds?: number;
+
+  /** Number of pomodoros already completed */
+  pomodorosCompleted?: number;
 }
 
 /**
@@ -109,9 +119,7 @@ export interface StartTimerOptions {
  * }
  * ```
  */
-export async function startTimer(
-  options?: StartTimerOptions
-): Promise<TimerResult<ActiveTimer>> {
+export async function startTimer(options?: StartTimerOptions): Promise<TimerResult<ActiveTimer>> {
   try {
     // Validate category_id if provided using CategoryIdSchema
     // This validates UUID format but does NOT validate category entity fields
@@ -120,10 +128,18 @@ export async function startTimer(
 
     // Insert new timer - DO NOT include started_at (server sets it)
     // The database DEFAULT now() ensures accurate server-side timestamp
-    const insertData: { category_id: string | null | undefined; running: boolean } = {
+    const insertData: Record<string, unknown> = {
       category_id: validatedCategoryId,
       running: true,
     };
+
+    // Add pomodoro fields if in pomodoro mode
+    if (options?.timerMode === 'pomodoro') {
+      insertData.timer_mode = 'pomodoro';
+      insertData.pomodoro_phase = options.pomodoroPhase ?? 'work';
+      insertData.phase_duration_seconds = options.phaseDurationSeconds ?? 1500;
+      insertData.pomodoros_completed = options.pomodorosCompleted ?? 0;
+    }
 
     const { data, error } = await supabase
       .from('active_timers')
@@ -217,9 +233,7 @@ export interface StopTimerOptions {
  * }
  * ```
  */
-export async function stopTimer(
-  options?: StopTimerOptions
-): Promise<TimerResult<TimeEntry>> {
+export async function stopTimer(options?: StopTimerOptions): Promise<TimerResult<TimeEntry>> {
   try {
     // Validate input with StopTimerSchema
     const input: StopTimerInput = {
@@ -237,11 +251,7 @@ export async function stopTimer(
       if (error.message.includes('No active timer found')) {
         return {
           data: null,
-          error: new TimerServiceError(
-            'No active timer to stop',
-            error.code,
-            'stop'
-          ),
+          error: new TimerServiceError('No active timer to stop', error.code, 'stop'),
         };
       }
 
@@ -302,10 +312,7 @@ export async function stopTimer(
  */
 export async function getActiveTimer(): Promise<TimerResult<ActiveTimer | null>> {
   try {
-    const { data, error } = await supabase
-      .from('active_timers')
-      .select('*')
-      .maybeSingle(); // Returns null if no rows, instead of error
+    const { data, error } = await supabase.from('active_timers').select('*').maybeSingle(); // Returns null if no rows, instead of error
 
     if (error) {
       return {
@@ -490,11 +497,7 @@ export async function syncTimerWithStore(): Promise<TimerResult<SyncResult>> {
     if (serverResult.error) {
       return {
         data: null,
-        error: new TimerServiceError(
-          serverResult.error.message,
-          serverResult.error.code,
-          'sync'
-        ),
+        error: new TimerServiceError(serverResult.error.message, serverResult.error.code, 'sync'),
       };
     }
 
@@ -517,4 +520,3 @@ export async function syncTimerWithStore(): Promise<TimerResult<SyncResult>> {
     };
   }
 }
-

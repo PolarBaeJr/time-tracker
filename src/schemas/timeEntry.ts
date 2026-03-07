@@ -6,6 +6,8 @@ import { z } from 'zod';
  * Represents a completed time tracking entry with start/end times and duration.
  * Time entries are created when the timer is stopped or via manual entry.
  */
+export const EntryTypeEnum = z.enum(['work', 'break', 'long_break']);
+
 export const TimeEntrySchema = z.object({
   /** UUID primary key */
   id: z.string().uuid(),
@@ -33,6 +35,9 @@ export const TimeEntrySchema = z.object({
 
   /** Optional notes/description for the entry (max 1000 characters) */
   notes: z.string().max(1000).nullable(),
+
+  /** Type of entry: work, break, or long_break */
+  entry_type: EntryTypeEnum.default('work'),
 
   /** Timestamp when entry was created */
   created_at: z.string().datetime({ offset: true }),
@@ -65,7 +70,7 @@ export const CreateTimeEntrySchema = z
     notes: z.string().max(1000).nullable().optional(),
   })
   .refine(
-    (data) => {
+    data => {
       // If both start_at and end_at are provided, end_at must be after start_at
       if (data.start_at && data.end_at) {
         return new Date(data.end_at) > new Date(data.start_at);
@@ -78,7 +83,7 @@ export const CreateTimeEntrySchema = z
     }
   )
   .refine(
-    (data) => {
+    data => {
       // Duration must be positive for completed entries
       return data.duration_seconds > 0;
     },
@@ -88,7 +93,7 @@ export const CreateTimeEntrySchema = z
     }
   )
   .refine(
-    (data) => {
+    data => {
       // Start time should not be in the future
       return new Date(data.start_at) <= new Date();
     },
@@ -122,7 +127,7 @@ export const UpdateTimeEntrySchema = z
     notes: z.string().max(1000).nullable().optional(),
   })
   .refine(
-    (data) => {
+    data => {
       // If both start_at and end_at are provided, end_at must be after start_at
       if (data.start_at && data.end_at) {
         return new Date(data.end_at) > new Date(data.start_at);
@@ -136,6 +141,7 @@ export const UpdateTimeEntrySchema = z
   );
 
 // Inferred TypeScript types
+export type EntryType = z.infer<typeof EntryTypeEnum>;
 export type TimeEntry = z.infer<typeof TimeEntrySchema>;
 export type CreateTimeEntryInput = z.infer<typeof CreateTimeEntrySchema>;
 export type UpdateTimeEntryInput = z.infer<typeof UpdateTimeEntrySchema>;

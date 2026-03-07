@@ -37,6 +37,8 @@ function formatTime(totalSeconds: number): string {
 export interface TimerDisplayProps {
   /** Additional styles for the container */
   style?: ViewStyle;
+  /** If set, display countdown from this many seconds remaining instead of elapsed */
+  countdownSeconds?: number;
 }
 
 /**
@@ -45,14 +47,19 @@ export interface TimerDisplayProps {
  * Shows large formatted time (HH:MM:SS), updates every second.
  * Shows 'No active timer' when idle.
  */
-export function TimerDisplay({ style }: TimerDisplayProps): React.ReactElement {
+export function TimerDisplay({ style, countdownSeconds }: TimerDisplayProps): React.ReactElement {
   // Get timer state from store - updates every second when running
-  const activeTimer = useTimerStore((state) => state.activeTimer);
-  const localElapsed = useTimerStore((state) => state.localElapsed);
-  const isRunning = useTimerStore((state) => state.isRunning);
+  const activeTimer = useTimerStore(state => state.activeTimer);
+  const localElapsed = useTimerStore(state => state.localElapsed);
+  const isRunning = useTimerStore(state => state.isRunning);
 
-  // Format the elapsed time
-  const displayTime = useMemo(() => formatTime(localElapsed), [localElapsed]);
+  // Format the elapsed time or countdown
+  const displayTime = useMemo(() => {
+    if (countdownSeconds !== undefined) {
+      return formatTime(countdownSeconds);
+    }
+    return formatTime(localElapsed);
+  }, [localElapsed, countdownSeconds]);
 
   // If no active timer, show idle state
   if (!activeTimer) {
@@ -72,17 +79,15 @@ export function TimerDisplay({ style }: TimerDisplayProps): React.ReactElement {
     <View style={[styles.container, style]}>
       <Text
         variant="display"
-        style={StyleSheet.flatten(
-          isRunning ? [styles.time, styles.runningTime] : [styles.time]
-        ) as TextStyle}
+        style={
+          StyleSheet.flatten(
+            isRunning ? [styles.time, styles.runningTime] : [styles.time]
+          ) as TextStyle
+        }
       >
         {displayTime}
       </Text>
-      <Text
-        variant="bodySmall"
-        color={isRunning ? 'success' : 'warning'}
-        style={styles.statusText}
-      >
+      <Text variant="bodySmall" color={isRunning ? 'success' : 'warning'} style={styles.statusText}>
         {isRunning ? 'Running' : 'Paused'}
       </Text>
     </View>

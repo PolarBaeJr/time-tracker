@@ -28,16 +28,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   TimerDisplay,
   TimerControls,
+  TimerModeToggle,
+  PomodoroInfo,
   CategorySelector,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRealtimeTimer, useCategories, markLocalTimerAction } from '@/hooks';
+import { useRealtimeTimer, useCategories, markLocalTimerAction, usePomodoro } from '@/hooks';
 import { startTimer, stopTimer } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
 import { colors, spacing, borderRadius } from '@/theme';
 import { queryKeys } from '@/lib/queryClient';
 import type { Category } from '@/schemas';
+import type { TimerMode } from '@/types';
 
 /**
  * Connection status indicator component
@@ -61,12 +64,7 @@ function ConnectionIndicator({
 
   return (
     <View style={styles.connectionIndicator}>
-      <View
-        style={[
-          styles.connectionDot,
-          { backgroundColor: statusColors[status] },
-        ]}
-      />
+      <View style={[styles.connectionDot, { backgroundColor: statusColors[status] }]} />
       <Text variant="caption" color="muted">
         {statusLabels[status]}
       </Text>
@@ -85,21 +83,11 @@ function SelectedCategoryDisplay({
   onPress: () => void;
 }): React.ReactElement {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onPress={onPress}
-      style={styles.categoryButton}
-    >
+    <Button variant="ghost" size="sm" onPress={onPress} style={styles.categoryButton}>
       <View style={styles.categoryButtonContent}>
         {category ? (
           <>
-            <View
-              style={[
-                styles.categoryDot,
-                { backgroundColor: category.color },
-              ]}
-            />
+            <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
             <Text variant="body">{category.name}</Text>
             <Text variant="caption" color="muted" style={styles.categoryType}>
               {category.type}
@@ -107,23 +95,13 @@ function SelectedCategoryDisplay({
           </>
         ) : (
           <>
-            <View
-              style={[
-                styles.categoryDot,
-                { backgroundColor: colors.textMuted },
-              ]}
-            />
+            <View style={[styles.categoryDot, { backgroundColor: colors.textMuted }]} />
             <Text variant="body" color="muted">
               No category
             </Text>
           </>
         )}
-        <Icon
-          name="chevron-down"
-          size={16}
-          color={colors.textMuted}
-          style={styles.chevron}
-        />
+        <Icon name="chevron-down" size={16} color={colors.textMuted} style={styles.chevron} />
       </View>
     </Button>
   );
@@ -144,25 +122,23 @@ export function TimerScreen(): React.ReactElement {
   const queryClient = useQueryClient();
 
   // State
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
-  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [stopNotes, setStopNotes] = useState('');
   const [showNotesInput, setShowNotesInput] = useState(false);
+  const [timerMode, setTimerMode] = useState<TimerMode>('normal');
 
   // Timer store state
-  const activeTimer = useTimerStore((state) => state.activeTimer);
+  const activeTimer = useTimerStore(state => state.activeTimer);
+
+  // Pomodoro state
+  const pomodoro = usePomodoro();
 
   // Realtime timer subscription
-  const {
-    connectionStatus,
-    lastSyncMessage,
-    clearSyncMessage,
-  } = useRealtimeTimer({
-    onTimerChange: (message) => {
+  const { connectionStatus, lastSyncMessage, clearSyncMessage } = useRealtimeTimer({
+    onTimerChange: message => {
       // Show platform-appropriate notification
       if (Platform.OS !== 'web') {
         Alert.alert('Timer Sync', message);
@@ -185,13 +161,13 @@ export function TimerScreen(): React.ReactElement {
   // Get the selected category object
   const selectedCategory = useMemo(() => {
     if (!selectedCategoryId) return null;
-    return categories.find((c) => c.id === selectedCategoryId) ?? null;
+    return categories.find(c => c.id === selectedCategoryId) ?? null;
   }, [selectedCategoryId, categories]);
 
   // Get the active timer's category
   const activeTimerCategory = useMemo(() => {
     if (!activeTimer?.category_id) return null;
-    return categories.find((c) => c.id === activeTimer.category_id) ?? null;
+    return categories.find(c => c.id === activeTimer.category_id) ?? null;
   }, [activeTimer, categories]);
 
   // Handle start timer
@@ -200,7 +176,18 @@ export function TimerScreen(): React.ReactElement {
     markLocalTimerAction();
 
     try {
-      const result = await startTimer({ categoryId: selectedCategoryId });
+      const options: Parameters<typeof startTimer>[0] = {
+        categoryId: selectedCategoryId,
+      };
+
+      if (timerMode === 'pomodoro') {
+        options.timerMode = 'pomodoro';
+        options.pomodoroPhase = 'work';
+        options.phaseDurationSeconds = pomodoro.settings.workDurationSeconds;
+        options.pomodorosCompleted = 0;
+      }
+
+      const result = await startTimer(options);
 
       if (result.error) {
         const message = result.error.message;
@@ -212,8 +199,7 @@ export function TimerScreen(): React.ReactElement {
       }
       // Success - timer store will be updated by realtime subscription
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : 'Unknown error';
       if (Platform.OS === 'web') {
         alert(`Failed to start timer: ${message}`);
       } else {
@@ -222,7 +208,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStarting(false);
     }
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, timerMode, pomodoro.settings.workDurationSeconds]);
 
   // Handle stop timer
   const handleStop = useCallback(async () => {
@@ -255,8 +241,7 @@ export function TimerScreen(): React.ReactElement {
         void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : 'Unknown error';
       if (Platform.OS === 'web') {
         alert(`Failed to stop timer: ${message}`);
       } else {
@@ -289,8 +274,7 @@ export function TimerScreen(): React.ReactElement {
         void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
       }
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : 'Unknown error';
       if (Platform.OS === 'web') {
         alert(`Failed to stop timer: ${message}`);
       } else {
@@ -306,6 +290,60 @@ export function TimerScreen(): React.ReactElement {
     setShowNotesInput(false);
     setStopNotes('');
   }, []);
+
+  // Handle transitioning to next pomodoro phase
+  const handleNextPhase = useCallback(async () => {
+    if (!activeTimer || activeTimer.timer_mode !== 'pomodoro') return;
+
+    setIsStopping(true);
+    markLocalTimerAction();
+
+    try {
+      // Stop the current phase (creates an entry)
+      const result = await stopTimer({ notes: null });
+      if (result.error) {
+        const message = result.error.message;
+        if (Platform.OS === 'web') {
+          alert(`Failed to complete phase: ${message}`);
+        } else {
+          Alert.alert('Error', `Failed to complete phase: ${message}`);
+        }
+        setIsStopping(false);
+        return;
+      }
+
+      void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
+
+      // Start the next phase
+      const nextInfo = pomodoro.getNextPhaseInfo();
+      const nextResult = await startTimer({
+        categoryId: activeTimer.category_id,
+        timerMode: 'pomodoro',
+        pomodoroPhase: nextInfo.phase,
+        phaseDurationSeconds: nextInfo.duration,
+        pomodorosCompleted: nextInfo.pomodorosCompleted,
+      });
+
+      if (nextResult.error) {
+        const message = nextResult.error.message;
+        if (Platform.OS === 'web') {
+          alert(`Failed to start next phase: ${message}`);
+        } else {
+          Alert.alert('Error', `Failed to start next phase: ${message}`);
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (Platform.OS === 'web') {
+        alert(`Failed to transition phase: ${message}`);
+      } else {
+        Alert.alert('Error', `Failed to transition phase: ${message}`);
+      }
+    } finally {
+      setIsStopping(false);
+    }
+  }, [activeTimer, queryClient, pomodoro]);
 
   // Open category selector
   const handleOpenCategorySelector = useCallback(() => {
@@ -342,10 +380,33 @@ export function TimerScreen(): React.ReactElement {
             <ConnectionIndicator status={connectionStatus} />
           </View>
 
+          {/* Timer mode toggle (only when no timer is active) */}
+          {!hasActiveTimer && (
+            <TimerModeToggle
+              mode={timerMode}
+              onModeChange={setTimerMode}
+              style={styles.modeToggle}
+            />
+          )}
+
           {/* Main timer card */}
           <Card style={styles.timerCard} padding="lg" elevation="md">
-            {/* Timer display */}
-            <TimerDisplay />
+            {/* Pomodoro info (when in pomodoro mode) */}
+            {activeTimer?.timer_mode === 'pomodoro' && (
+              <PomodoroInfo
+                phase={pomodoro.currentPhase}
+                pomodorosCompleted={pomodoro.pomodorosCompleted}
+                pomodorosBeforeLongBreak={pomodoro.settings.pomodorosBeforeLongBreak}
+                style={styles.pomodoroInfo}
+              />
+            )}
+
+            {/* Timer display - countdown for pomodoro, elapsed for normal */}
+            <TimerDisplay
+              countdownSeconds={
+                activeTimer?.timer_mode === 'pomodoro' ? pomodoro.timeRemainingSeconds : undefined
+              }
+            />
 
             {/* Category display */}
             <View style={styles.categorySection}>
@@ -355,28 +416,16 @@ export function TimerScreen(): React.ReactElement {
                   {activeTimerCategory ? (
                     <>
                       <View
-                        style={[
-                          styles.categoryDot,
-                          { backgroundColor: activeTimerCategory.color },
-                        ]}
+                        style={[styles.categoryDot, { backgroundColor: activeTimerCategory.color }]}
                       />
                       <Text variant="body">{activeTimerCategory.name}</Text>
-                      <Text
-                        variant="caption"
-                        color="muted"
-                        style={styles.categoryType}
-                      >
+                      <Text variant="caption" color="muted" style={styles.categoryType}>
                         {activeTimerCategory.type}
                       </Text>
                     </>
                   ) : (
                     <>
-                      <View
-                        style={[
-                          styles.categoryDot,
-                          { backgroundColor: colors.textMuted },
-                        ]}
-                      />
+                      <View style={[styles.categoryDot, { backgroundColor: colors.textMuted }]} />
                       <Text variant="body" color="muted">
                         No category
                       </Text>
@@ -406,23 +455,32 @@ export function TimerScreen(): React.ReactElement {
                   autoFocus
                 />
                 <View style={styles.notesActions}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onPress={handleCancelNotes}
-                  >
+                  <Button variant="ghost" size="sm" onPress={handleCancelNotes}>
                     Cancel
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onPress={handleQuickStop}
-                    disabled={isStopping}
-                  >
+                  <Button variant="ghost" size="sm" onPress={handleQuickStop} disabled={isStopping}>
                     Skip Notes
                   </Button>
                 </View>
               </View>
+            )}
+
+            {/* Pomodoro phase complete - show next phase button */}
+            {pomodoro.isPhaseComplete && activeTimer?.timer_mode === 'pomodoro' && (
+              <Button
+                variant="primary"
+                size="lg"
+                onPress={handleNextPhase}
+                loading={isStopping}
+                disabled={isStopping}
+                style={styles.nextPhaseButton}
+              >
+                {pomodoro.nextPhase === 'work'
+                  ? 'Start Focus'
+                  : pomodoro.nextPhase === 'long_break'
+                    ? 'Start Long Break'
+                    : 'Start Break'}
+              </Button>
             )}
 
             {/* Timer controls */}
@@ -490,9 +548,20 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
+  modeToggle: {
+    marginBottom: spacing.md,
+  },
   timerCard: {
     alignItems: 'center',
     backgroundColor: colors.surface,
+  },
+  pomodoroInfo: {
+    marginBottom: spacing.sm,
+  },
+  nextPhaseButton: {
+    marginBottom: spacing.md,
+    minWidth: 200,
+    borderRadius: 999,
   },
   categorySection: {
     marginBottom: spacing.lg,

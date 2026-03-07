@@ -19,7 +19,7 @@
  */
 
 import * as React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, type TextStyle } from 'react-native';
 import { Card, Text, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import type { TimeEntry } from '@/schemas';
@@ -144,6 +144,27 @@ export function EntryCard({
           )}
         </View>
 
+        {/* Entry type badge for break entries */}
+        {entry.entry_type && entry.entry_type !== 'work' && (
+          <View
+            style={[
+              styles.entryTypeBadge,
+              entry.entry_type === 'long_break' ? styles.longBreakBadge : styles.breakBadge,
+            ]}
+          >
+            <Text
+              style={
+                StyleSheet.flatten([
+                  styles.entryTypeText,
+                  entry.entry_type === 'long_break' ? styles.longBreakText : styles.breakText,
+                ]) as TextStyle
+              }
+            >
+              {entry.entry_type === 'long_break' ? 'Long Break' : 'Break'}
+            </Text>
+          </View>
+        )}
+
         {/* Edit button */}
         {onEdit && (
           <Pressable
@@ -163,9 +184,7 @@ export function EntryCard({
         <View style={styles.timeRange}>
           <Text style={styles.time}>{formatTime(entry.start_at)}</Text>
           <Text style={styles.timeSeparator}>-</Text>
-          <Text style={styles.time}>
-            {entry.end_at ? formatTime(entry.end_at) : 'Ongoing'}
-          </Text>
+          <Text style={styles.time}>{entry.end_at ? formatTime(entry.end_at) : 'Ongoing'}</Text>
         </View>
         <View style={styles.durationBadge}>
           <Text style={styles.durationText}>{formatDuration(entry.duration_seconds)}</Text>
@@ -226,6 +245,28 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textMuted,
     fontStyle: 'italic',
+  },
+  entryTypeBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    marginRight: spacing.xs,
+  },
+  breakBadge: {
+    backgroundColor: colors.success + '20',
+  },
+  longBreakBadge: {
+    backgroundColor: colors.warning + '20',
+  },
+  entryTypeText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+  },
+  breakText: {
+    color: colors.success,
+  },
+  longBreakText: {
+    color: colors.warning,
   },
   editButton: {
     padding: spacing.xs,

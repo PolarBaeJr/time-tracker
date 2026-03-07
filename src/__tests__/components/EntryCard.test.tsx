@@ -23,6 +23,7 @@ describe('EntryCard', () => {
     end_at: '2024-03-01T11:30:00.000Z',
     duration_seconds: 5400, // 1.5 hours
     notes: 'Working on the project',
+    entry_type: 'work',
     created_at: '2024-03-01T11:30:00.000Z',
     updated_at: '2024-03-01T11:30:00.000Z',
   };

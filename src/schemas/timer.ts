@@ -12,6 +12,9 @@ import { z } from 'zod';
  * - Elapsed time is calculated as: now() - started_at
  * - Timer survives app restarts and syncs across devices via Supabase Realtime
  */
+export const TimerModeEnum = z.enum(['normal', 'pomodoro']);
+export const PomodoroPhaseEnum = z.enum(['work', 'break', 'long_break']);
+
 export const ActiveTimerSchema = z.object({
   /** UUID primary key */
   id: z.string().uuid(),
@@ -34,6 +37,18 @@ export const ActiveTimerSchema = z.object({
 
   /** Whether the timer is currently running */
   running: z.boolean(),
+
+  /** Timer mode: normal (stopwatch) or pomodoro (timed phases) */
+  timer_mode: TimerModeEnum.default('normal'),
+
+  /** Current pomodoro phase */
+  pomodoro_phase: PomodoroPhaseEnum.default('work'),
+
+  /** Target duration for current phase in seconds */
+  phase_duration_seconds: z.number().int().positive().nullable().default(null),
+
+  /** Work phases completed in current pomodoro cycle */
+  pomodoros_completed: z.number().int().nonnegative().default(0),
 });
 
 /**
@@ -49,6 +64,18 @@ export const StartTimerSchema = z.object({
    * If not provided, timer runs without a category
    */
   category_id: z.string().uuid().nullable().optional(),
+
+  /** Timer mode: normal or pomodoro */
+  timer_mode: TimerModeEnum.optional(),
+
+  /** Pomodoro phase to start (for pomodoro mode) */
+  pomodoro_phase: PomodoroPhaseEnum.optional(),
+
+  /** Target duration in seconds for the phase */
+  phase_duration_seconds: z.number().int().positive().optional(),
+
+  /** Number of pomodoros already completed in this cycle */
+  pomodoros_completed: z.number().int().nonnegative().optional(),
 });
 
 /**
@@ -63,6 +90,8 @@ export const StopTimerSchema = z.object({
 });
 
 // Inferred TypeScript types
+export type TimerMode = z.infer<typeof TimerModeEnum>;
+export type PomodoroPhase = z.infer<typeof PomodoroPhaseEnum>;
 export type ActiveTimer = z.infer<typeof ActiveTimerSchema>;
 export type StartTimerInput = z.infer<typeof StartTimerSchema>;
 export type StopTimerInput = z.infer<typeof StopTimerSchema>;

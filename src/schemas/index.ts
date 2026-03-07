@@ -18,12 +18,7 @@
  */
 
 // User schemas and types
-export {
-  UserSchema,
-  UpdateUserSchema,
-  type User,
-  type UpdateUserInput,
-} from './user';
+export { UserSchema, UpdateUserSchema, type User, type UpdateUserInput } from './user';
 
 // Category schemas and types
 export {
@@ -38,10 +33,12 @@ export {
 
 // Time entry schemas and types
 export {
+  EntryTypeEnum,
   TimeEntrySchema,
   CreateTimeEntrySchema,
   UpdateTimeEntrySchema,
   TimeEntryFiltersSchema,
+  type EntryType,
   type TimeEntry,
   type CreateTimeEntryInput,
   type UpdateTimeEntryInput,
@@ -50,10 +47,14 @@ export {
 
 // Timer schemas and types
 export {
+  TimerModeEnum,
+  PomodoroPhaseEnum,
   ActiveTimerSchema,
   StartTimerSchema,
   StopTimerSchema,
   QueuedActionSchema,
+  type TimerMode,
+  type PomodoroPhase,
   type ActiveTimer,
   type StartTimerInput,
   type StopTimerInput,

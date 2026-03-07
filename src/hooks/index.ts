@@ -178,6 +178,14 @@ export {
   type UseUpdateUserSettingsResult,
 } from './useUserSettings';
 
+// Pomodoro hooks
+export {
+  usePomodoro,
+  DEFAULT_POMODORO_SETTINGS,
+  type PomodoroSettings,
+  type PomodoroState,
+} from './usePomodoro';
+
 // Splash screen hook
 export {
   useSplashScreen,

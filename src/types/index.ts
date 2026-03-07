@@ -18,11 +18,14 @@ export type {
   CreateCategoryInput,
   UpdateCategoryInput,
   // Time entry types
+  EntryType,
   TimeEntry,
   CreateTimeEntryInput,
   UpdateTimeEntryInput,
   TimeEntryFilters,
   // Timer types
+  TimerMode,
+  PomodoroPhase,
   ActiveTimer,
   StartTimerInput,
   StopTimerInput,
