@@ -37,6 +37,7 @@ import {
   SkipPhaseButton,
   TimerModeDropdown,
   QuickTimerPresets,
+  SpotifyMiniPlayer,
   type SessionSettings,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
@@ -779,6 +780,9 @@ export function TimerScreen(): React.ReactElement {
               style={styles.controls}
             />
           </Card>
+
+          {/* Spotify mini player (only when timer is active) */}
+          {hasActiveTimer && <SpotifyMiniPlayer />}
 
           {/* Sync message toast */}
           {lastSyncMessage && (

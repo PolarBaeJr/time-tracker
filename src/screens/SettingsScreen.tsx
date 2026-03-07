@@ -18,6 +18,7 @@ import {
   ThemeSelector,
   TimerSoundSettings,
   IdleDetectionSettings,
+  SpotifySettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -249,6 +250,14 @@ export function SettingsScreen(): React.ReactElement {
           <Text style={styles.sectionTitle}>Goals</Text>
           <Card padding="md" elevation="none" style={styles.sectionCard}>
             <GoalDefaults />
+          </Card>
+        </View>
+
+        {/* Integrations */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Integrations</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <SpotifySettings disabled={isUpdating} />
           </Card>
         </View>
 

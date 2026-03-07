@@ -15,3 +15,4 @@ export {
   type SessionSettings,
 } from './TimerModeDropdown';
 export { QuickTimerPresets, type QuickTimerPresetsProps } from './QuickTimerPresets';
+export { SpotifyMiniPlayer, type SpotifyMiniPlayerProps } from './SpotifyMiniPlayer';
