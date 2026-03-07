@@ -6,14 +6,7 @@
 
 import * as React from 'react';
 import { useCallback, useState } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Platform,
-  RefreshControl,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, Spinner } from '@/components/ui';
 import {
@@ -21,6 +14,7 @@ import {
   WeekStartSelector,
   GoalDefaults,
   AccountSection,
+  PomodoroSettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -32,9 +26,10 @@ import Constants from 'expo-constants';
  */
 function getAppVersion(): string {
   const version = Constants.expoConfig?.version ?? '1.0.0';
-  const buildNumber = Constants.expoConfig?.ios?.buildNumber
-    ?? Constants.expoConfig?.android?.versionCode?.toString()
-    ?? '';
+  const buildNumber =
+    Constants.expoConfig?.ios?.buildNumber ??
+    Constants.expoConfig?.android?.versionCode?.toString() ??
+    '';
 
   if (buildNumber) {
     return `${version} (${buildNumber})`;
@@ -57,12 +52,7 @@ export function SettingsScreen(): React.ReactElement {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch user settings
-  const {
-    settings,
-    isLoading,
-    error,
-    refetch,
-  } = useUserSettings({
+  const { settings, isLoading, error, refetch } = useUserSettings({
     userId: user?.id,
     enabled: !!user?.id,
   });
@@ -72,7 +62,7 @@ export function SettingsScreen(): React.ReactElement {
     onSuccess: () => {
       // Optionally show success feedback
     },
-    onError: (err) => {
+    onError: err => {
       const message = err.message || 'Failed to update settings';
       if (Platform.OS === 'web') {
         alert(message);
@@ -139,7 +129,9 @@ export function SettingsScreen(): React.ReactElement {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
-          <Text variant="display" style={styles.headerTitle}>Settings</Text>
+          <Text variant="display" style={styles.headerTitle}>
+            Settings
+          </Text>
         </View>
         <View style={styles.loadingContainer}>
           <Spinner size="large" message="Loading settings..." />
@@ -153,7 +145,9 @@ export function SettingsScreen(): React.ReactElement {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
-          <Text variant="display" style={styles.headerTitle}>Settings</Text>
+          <Text variant="display" style={styles.headerTitle}>
+            Settings
+          </Text>
         </View>
         <View style={styles.errorContainer}>
           <Text variant="body" color="error">
@@ -170,7 +164,9 @@ export function SettingsScreen(): React.ReactElement {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="display" style={styles.headerTitle}>Settings</Text>
+        <Text variant="display" style={styles.headerTitle}>
+          Settings
+        </Text>
       </View>
 
       <ScrollView
@@ -203,6 +199,14 @@ export function SettingsScreen(): React.ReactElement {
               disabled={isUpdating}
               loading={isUpdating}
             />
+          </Card>
+        </View>
+
+        {/* Pomodoro Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Pomodoro</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <PomodoroSettings disabled={isUpdating} />
           </Card>
         </View>
 

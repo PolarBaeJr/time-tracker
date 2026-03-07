@@ -13,7 +13,7 @@
  */
 
 import * as React from 'react';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -28,19 +28,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   TimerDisplay,
   TimerControls,
-  TimerModeToggle,
   PomodoroInfo,
   CategorySelector,
+  SkipPhaseButton,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRealtimeTimer, useCategories, markLocalTimerAction, usePomodoro } from '@/hooks';
+import {
+  useRealtimeTimer,
+  useCategories,
+  markLocalTimerAction,
+  usePomodoro,
+  usePomodoroSettings,
+} from '@/hooks';
 import { startTimer, stopTimer } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
 import { colors, spacing, borderRadius } from '@/theme';
 import { queryKeys } from '@/lib/queryClient';
 import type { Category } from '@/schemas';
 import type { TimerMode } from '@/types';
+
+const PHASE_LABELS = {
+  work: 'Focus Time',
+  break: 'Short Break',
+  long_break: 'Long Break',
+} as const;
 
 /**
  * Connection status indicator component
@@ -128,13 +140,19 @@ export function TimerScreen(): React.ReactElement {
   const [isStopping, setIsStopping] = useState(false);
   const [stopNotes, setStopNotes] = useState('');
   const [showNotesInput, setShowNotesInput] = useState(false);
-  const [timerMode, setTimerMode] = useState<TimerMode>('normal');
+
+  // Pomodoro settings (persisted)
+  const { settings: pomodoroSettings } = usePomodoroSettings();
+  const timerMode: TimerMode = pomodoroSettings.pomodoroEnabled ? 'pomodoro' : 'normal';
 
   // Timer store state
   const activeTimer = useTimerStore(state => state.activeTimer);
 
   // Pomodoro state
   const pomodoro = usePomodoro();
+
+  // Guard for auto-transition
+  const isTransitioningRef = useRef(false);
 
   // Realtime timer subscription
   const { connectionStatus, lastSyncMessage, clearSyncMessage } = useRealtimeTimer({
@@ -169,6 +187,9 @@ export function TimerScreen(): React.ReactElement {
     if (!activeTimer?.category_id) return null;
     return categories.find(c => c.id === activeTimer.category_id) ?? null;
   }, [activeTimer, categories]);
+
+  // Next phase info for display
+  const nextPhaseInfo = pomodoro.getNextPhaseInfo();
 
   // Handle start timer
   const handleStart = useCallback(async () => {
@@ -294,7 +315,9 @@ export function TimerScreen(): React.ReactElement {
   // Handle transitioning to next pomodoro phase
   const handleNextPhase = useCallback(async () => {
     if (!activeTimer || activeTimer.timer_mode !== 'pomodoro') return;
+    if (isTransitioningRef.current) return;
 
+    isTransitioningRef.current = true;
     setIsStopping(true);
     markLocalTimerAction();
 
@@ -308,7 +331,6 @@ export function TimerScreen(): React.ReactElement {
         } else {
           Alert.alert('Error', `Failed to complete phase: ${message}`);
         }
-        setIsStopping(false);
         return;
       }
 
@@ -316,13 +338,13 @@ export function TimerScreen(): React.ReactElement {
       void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
 
       // Start the next phase
-      const nextInfo = pomodoro.getNextPhaseInfo();
+      const info = pomodoro.getNextPhaseInfo();
       const nextResult = await startTimer({
         categoryId: activeTimer.category_id,
         timerMode: 'pomodoro',
-        pomodoroPhase: nextInfo.phase,
-        phaseDurationSeconds: nextInfo.duration,
-        pomodorosCompleted: nextInfo.pomodorosCompleted,
+        pomodoroPhase: info.phase,
+        phaseDurationSeconds: info.duration,
+        pomodorosCompleted: info.pomodorosCompleted,
       });
 
       if (nextResult.error) {
@@ -342,8 +364,23 @@ export function TimerScreen(): React.ReactElement {
       }
     } finally {
       setIsStopping(false);
+      isTransitioningRef.current = false;
     }
   }, [activeTimer, queryClient, pomodoro]);
+
+  // Handle skip phase (stop current, start next)
+  const handleSkipPhase = handleNextPhase;
+
+  // Auto-transition when phase completes
+  useEffect(() => {
+    if (
+      pomodoro.isPhaseComplete &&
+      activeTimer?.timer_mode === 'pomodoro' &&
+      !isTransitioningRef.current
+    ) {
+      void handleNextPhase();
+    }
+  }, [pomodoro.isPhaseComplete, activeTimer?.timer_mode, handleNextPhase]);
 
   // Open category selector
   const handleOpenCategorySelector = useCallback(() => {
@@ -361,6 +398,7 @@ export function TimerScreen(): React.ReactElement {
   }, []);
 
   const hasActiveTimer = activeTimer !== null;
+  const isPomodoroActive = activeTimer?.timer_mode === 'pomodoro';
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -380,32 +418,23 @@ export function TimerScreen(): React.ReactElement {
             <ConnectionIndicator status={connectionStatus} />
           </View>
 
-          {/* Timer mode toggle (only when no timer is active) */}
-          {!hasActiveTimer && (
-            <TimerModeToggle
-              mode={timerMode}
-              onModeChange={setTimerMode}
-              style={styles.modeToggle}
-            />
-          )}
-
           {/* Main timer card */}
           <Card style={styles.timerCard} padding="lg" elevation="md">
             {/* Pomodoro info (when in pomodoro mode) */}
-            {activeTimer?.timer_mode === 'pomodoro' && (
+            {isPomodoroActive && (
               <PomodoroInfo
                 phase={pomodoro.currentPhase}
                 pomodorosCompleted={pomodoro.pomodorosCompleted}
                 pomodorosBeforeLongBreak={pomodoro.settings.pomodorosBeforeLongBreak}
+                nextPhase={nextPhaseInfo.phase}
+                nextPhaseDurationSeconds={nextPhaseInfo.duration}
                 style={styles.pomodoroInfo}
               />
             )}
 
             {/* Timer display - countdown for pomodoro, elapsed for normal */}
             <TimerDisplay
-              countdownSeconds={
-                activeTimer?.timer_mode === 'pomodoro' ? pomodoro.timeRemainingSeconds : undefined
-              }
+              countdownSeconds={isPomodoroActive ? pomodoro.timeRemainingSeconds : undefined}
             />
 
             {/* Category display */}
@@ -465,8 +494,18 @@ export function TimerScreen(): React.ReactElement {
               </View>
             )}
 
+            {/* Skip phase button (when pomodoro active and phase not complete) */}
+            {isPomodoroActive && !pomodoro.isPhaseComplete && (
+              <SkipPhaseButton
+                onPress={handleSkipPhase}
+                loading={isStopping}
+                disabled={isStopping}
+                nextPhaseLabel={PHASE_LABELS[nextPhaseInfo.phase]}
+              />
+            )}
+
             {/* Pomodoro phase complete - show next phase button */}
-            {pomodoro.isPhaseComplete && activeTimer?.timer_mode === 'pomodoro' && (
+            {pomodoro.isPhaseComplete && isPomodoroActive && (
               <Button
                 variant="primary"
                 size="lg"
@@ -547,9 +586,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  modeToggle: {
-    marginBottom: spacing.md,
   },
   timerCard: {
     alignItems: 'center',

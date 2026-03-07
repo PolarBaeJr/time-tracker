@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
+import { usePomodoroSettings } from './usePomodoroSettings';
 import { useTimerStore } from '@/stores';
 import type { PomodoroPhase } from '@/types';
 
@@ -19,7 +20,6 @@ export const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
 
 export interface PomodoroState {
   settings: PomodoroSettings;
-  updateSettings: (partial: Partial<PomodoroSettings>) => void;
   currentPhase: PomodoroPhase;
   pomodorosCompleted: number;
   phaseDurationSeconds: number;
@@ -30,7 +30,22 @@ export interface PomodoroState {
 }
 
 export function usePomodoro(): PomodoroState {
-  const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_POMODORO_SETTINGS);
+  const { settings: pomodoroSettings } = usePomodoroSettings();
+
+  const settings: PomodoroSettings = useMemo(
+    () => ({
+      workDurationSeconds: pomodoroSettings.workDurationSeconds,
+      breakDurationSeconds: pomodoroSettings.breakDurationSeconds,
+      longBreakDurationSeconds: pomodoroSettings.longBreakDurationSeconds,
+      pomodorosBeforeLongBreak: pomodoroSettings.pomodorosBeforeLongBreak,
+    }),
+    [
+      pomodoroSettings.workDurationSeconds,
+      pomodoroSettings.breakDurationSeconds,
+      pomodoroSettings.longBreakDurationSeconds,
+      pomodoroSettings.pomodorosBeforeLongBreak,
+    ]
+  );
 
   const activeTimer = useTimerStore(state => state.activeTimer);
   const localElapsed = useTimerStore(state => state.localElapsed);
@@ -87,13 +102,8 @@ export function usePomodoro(): PomodoroState {
     return { phase, duration, pomodorosCompleted: nextPomodorosCompleted };
   }, [currentPhase, pomodorosCompleted, settings]);
 
-  const updateSettings = useCallback((partial: Partial<PomodoroSettings>) => {
-    setSettings(prev => ({ ...prev, ...partial }));
-  }, []);
-
   return {
     settings,
-    updateSettings,
     currentPhase,
     pomodorosCompleted,
     phaseDurationSeconds,

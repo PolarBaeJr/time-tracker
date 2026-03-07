@@ -9,11 +9,13 @@ export interface PomodoroInfoProps {
   phase: PomodoroPhase;
   pomodorosCompleted: number;
   pomodorosBeforeLongBreak: number;
+  nextPhase?: PomodoroPhase;
+  nextPhaseDurationSeconds?: number;
   style?: ViewStyle;
 }
 
 const PHASE_LABELS: Record<PomodoroPhase, string> = {
-  work: 'Focus',
+  work: 'Focus Time',
   break: 'Short Break',
   long_break: 'Long Break',
 };
@@ -24,10 +26,18 @@ const PHASE_COLORS: Record<PomodoroPhase, string> = {
   long_break: colors.warning,
 };
 
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
 export function PomodoroInfo({
   phase,
   pomodorosCompleted,
   pomodorosBeforeLongBreak,
+  nextPhase,
+  nextPhaseDurationSeconds,
   style,
 }: PomodoroInfoProps): React.ReactElement {
   return (
@@ -50,6 +60,11 @@ export function PomodoroInfo({
       <Text variant="caption" color="muted">
         {pomodorosCompleted}/{pomodorosBeforeLongBreak} pomodoros
       </Text>
+      {nextPhase != null && nextPhaseDurationSeconds != null && (
+        <Text variant="caption" color="muted" style={styles.upcomingText}>
+          Upcoming: {PHASE_LABELS[nextPhase]} ({formatDuration(nextPhaseDurationSeconds)})
+        </Text>
+      )}
     </View>
   );
 }
@@ -85,6 +100,10 @@ const styles = StyleSheet.create({
   dotCompleted: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  upcomingText: {
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
   },
 });
 

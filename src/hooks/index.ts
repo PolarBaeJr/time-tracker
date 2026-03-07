@@ -186,6 +186,12 @@ export {
   type PomodoroState,
 } from './usePomodoro';
 
+export {
+  usePomodoroSettings,
+  type PomodoroSettingsData,
+  type UsePomodoroSettingsResult,
+} from './usePomodoroSettings';
+
 // Splash screen hook
 export {
   useSplashScreen,
