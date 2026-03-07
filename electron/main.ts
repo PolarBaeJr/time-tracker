@@ -13,7 +13,36 @@
  */
 
 import { app, BrowserWindow, session, ipcMain } from 'electron';
+import * as http from 'http';
 import * as path from 'path';
+
+// Local HTTP server port for receiving the OAuth callback in the system browser.
+// Add http://localhost:54321/auth/callback to Supabase redirect allow-list.
+const OAUTH_CALLBACK_PORT = 54321;
+let callbackServer: http.Server | null = null;
+
+function startOAuthCallbackServer(): void {
+  if (callbackServer) return;
+
+  callbackServer = http.createServer((req, res) => {
+    const url = new URL(req.url ?? '/', `http://localhost:${OAUTH_CALLBACK_PORT}`);
+
+    if (url.pathname === '/auth/callback') {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(
+        `<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>Sign-in complete!</h2><p>You can close this tab and return to WorkTracker.</p><script>window.close();</script></div></body></html>`
+      );
+
+      const callbackUrl = `http://localhost:${OAUTH_CALLBACK_PORT}${req.url}`;
+      handleOAuthCallback(callbackUrl);
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+
+  callbackServer.listen(OAUTH_CALLBACK_PORT, '127.0.0.1');
+}
 
 // Development mode detection
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -48,32 +77,15 @@ const CSP_POLICY = [
 ].join('; ');
 
 /**
- * Open a dedicated popup window for the OAuth flow.
- * Monitors navigations inside the popup for the worktracker:// callback,
- * closes the popup automatically, and forwards the callback to the main window.
+ * Open the OAuth flow in the system browser.
+ * A local HTTP server receives the callback so the browser can show a
+ * "Sign-in complete" page and close itself. Passkeys and Touch ID work
+ * because the system browser has full OS authenticator integration.
  */
-function openOAuthPopup(url: string): void {
-  const popup = new BrowserWindow({
-    width: 500,
-    height: 700,
-    title: 'Sign in with Google',
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-  });
-
-  void popup.loadURL(url);
-
-  const handleNav = (navUrl: string): void => {
-    if (navUrl.startsWith('worktracker://')) {
-      popup.close();
-      handleOAuthCallback(navUrl);
-    }
-  };
-
-  popup.webContents.on('will-navigate', (_event, navUrl) => handleNav(navUrl));
-  popup.webContents.on('will-redirect', (_event, navUrl) => handleNav(navUrl));
+function openOAuthInBrowser(url: string): void {
+  startOAuthCallbackServer();
+  const { shell } = require('electron');
+  void shell.openExternal(url);
 }
 
 /**
@@ -199,7 +211,7 @@ function createWindow(): void {
       parsedUrl.hostname === 'oauth2.googleapis.com'
     ) {
       event.preventDefault();
-      openOAuthPopup(url);
+      openOAuthInBrowser(url);
       return;
     }
 
@@ -217,7 +229,7 @@ function createWindow(): void {
       parsedUrl.hostname === 'accounts.google.com' ||
       parsedUrl.hostname === 'oauth2.googleapis.com'
     ) {
-      openOAuthPopup(url);
+      openOAuthInBrowser(url);
     } else {
       const { shell } = require('electron');
       void shell.openExternal(url);

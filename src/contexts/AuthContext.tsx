@@ -22,9 +22,10 @@ interface AuthProviderProps {
 export const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
 function getAuthRedirectUrl(): string {
-  // Electron: use custom protocol so deep link returns tokens to the app
+  // Electron: use localhost callback server so the system browser handles
+  // the OAuth flow (including passkeys/Touch ID) and auto-closes after sign-in.
   if (typeof window !== 'undefined' && window.desktop?.platform?.isElectron) {
-    return 'worktracker://auth/callback';
+    return 'http://localhost:54321/auth/callback';
   }
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
