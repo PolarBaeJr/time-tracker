@@ -141,8 +141,7 @@ export function TimerScreen(): React.ReactElement {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
-  const [stopNotes, setStopNotes] = useState('');
-  const [showNotesInput, setShowNotesInput] = useState(false);
+  const [sessionLabel, setSessionLabel] = useState('');
 
   // Pomodoro settings (persisted)
   const { settings: pomodoroSettings, updateSettings: updatePomodoroSettings } =
@@ -308,18 +307,12 @@ export function TimerScreen(): React.ReactElement {
 
   // Handle stop timer
   const handleStop = useCallback(async () => {
-    // If notes input isn't showing, show it first
-    if (!showNotesInput) {
-      setShowNotesInput(true);
-      return;
-    }
-
     setIsStopping(true);
     markLocalTimerAction();
 
     try {
       const result = await stopTimer({
-        notes: stopNotes.trim() || null,
+        notes: sessionLabel.trim() || null,
       });
 
       if (result.error) {
@@ -330,9 +323,7 @@ export function TimerScreen(): React.ReactElement {
           Alert.alert('Error', `Failed to stop timer: ${message}`);
         }
       } else {
-        // Success - clear notes input and refresh history/analytics
-        setStopNotes('');
-        setShowNotesInput(false);
+        setSessionLabel('');
         void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
         void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
       }
@@ -346,46 +337,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStopping(false);
     }
-  }, [showNotesInput, stopNotes, queryClient]);
-
-  // Handle quick stop (without notes)
-  const handleQuickStop = useCallback(async () => {
-    setIsStopping(true);
-    markLocalTimerAction();
-
-    try {
-      const result = await stopTimer({ notes: null });
-
-      if (result.error) {
-        const message = result.error.message;
-        if (Platform.OS === 'web') {
-          alert(`Failed to stop timer: ${message}`);
-        } else {
-          Alert.alert('Error', `Failed to stop timer: ${message}`);
-        }
-      } else {
-        setStopNotes('');
-        setShowNotesInput(false);
-        void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      if (Platform.OS === 'web') {
-        alert(`Failed to stop timer: ${message}`);
-      } else {
-        Alert.alert('Error', `Failed to stop timer: ${message}`);
-      }
-    } finally {
-      setIsStopping(false);
-    }
-  }, [queryClient]);
-
-  // Cancel notes input
-  const handleCancelNotes = useCallback(() => {
-    setShowNotesInput(false);
-    setStopNotes('');
-  }, []);
+  }, [sessionLabel, queryClient]);
 
   // Handle transitioning to next pomodoro phase
   const handleNextPhase = useCallback(async () => {
@@ -398,7 +350,7 @@ export function TimerScreen(): React.ReactElement {
 
     try {
       // Stop the current phase (creates an entry)
-      const result = await stopTimer({ notes: null });
+      const result = await stopTimer({ notes: sessionLabel.trim() || null });
       if (result.error) {
         const message = result.error.message;
         if (Platform.OS === 'web') {
@@ -441,7 +393,7 @@ export function TimerScreen(): React.ReactElement {
       setIsStopping(false);
       isTransitioningRef.current = false;
     }
-  }, [activeTimer, queryClient, pomodoro]);
+  }, [activeTimer, queryClient, pomodoro, sessionLabel]);
 
   // Handle skip phase (stop current, start next)
   const handleSkipPhase = handleNextPhase;
@@ -590,27 +542,17 @@ export function TimerScreen(): React.ReactElement {
               )}
             </View>
 
-            {/* Quick notes input (shown when stopping) */}
-            {showNotesInput && hasActiveTimer && (
-              <View style={styles.notesSection}>
+            {/* Session label input (visible when timer is running) */}
+            {hasActiveTimer && (
+              <View style={styles.sessionLabelSection}>
                 <TextInput
-                  style={styles.notesInput}
-                  placeholder="Add notes (optional)..."
+                  style={styles.sessionLabelInput}
+                  placeholder="Label this session..."
                   placeholderTextColor={colors.textMuted}
-                  value={stopNotes}
-                  onChangeText={setStopNotes}
-                  multiline
+                  value={sessionLabel}
+                  onChangeText={setSessionLabel}
                   maxLength={1000}
-                  autoFocus
                 />
-                <View style={styles.notesActions}>
-                  <Button variant="ghost" size="sm" onPress={handleCancelNotes}>
-                    Cancel
-                  </Button>
-                  <Button variant="ghost" size="sm" onPress={handleQuickStop} disabled={isStopping}>
-                    Skip Notes
-                  </Button>
-                </View>
               </View>
             )}
 
@@ -694,9 +636,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     paddingHorizontal: spacing.xs,
   },
-  headerTitle: {
-    fontSize: 28,
-  },
   connectionIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -753,24 +692,17 @@ const styles = StyleSheet.create({
   chevron: {
     marginLeft: spacing.xs,
   },
-  notesSection: {
+  sessionLabelSection: {
     width: '100%',
     marginBottom: spacing.md,
   },
-  notesInput: {
+  sessionLabelInput: {
     backgroundColor: colors.surfaceVariant,
     color: colors.text,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
-    minHeight: 80,
-    textAlignVertical: 'top',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     fontSize: 16,
-  },
-  notesActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
   },
   controls: {
     marginTop: spacing.md,

@@ -18,17 +18,10 @@
 
 import * as React from 'react';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  Modal,
-  ScrollView,
-  TextInput,
-} from 'react-native';
-import { Button, Text, Input, Card, Icon } from '@/components/ui';
+import { View, StyleSheet, Pressable, Modal, ScrollView, TextInput } from 'react-native';
+import { Button, Text, Input, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
-import type { TimeEntryFilters, Category } from '@/schemas';
+import type { TimeEntryFilters, EntryType, Category } from '@/schemas';
 
 /**
  * HistoryFilters props
@@ -45,17 +38,114 @@ export interface HistoryFiltersProps {
 }
 
 /**
- * Format date for display
+ * Date range presets
  */
-function formatDateForDisplay(isoString: string | undefined): string {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+const DATE_PRESETS = [
+  {
+    label: 'Today',
+    getRange: () => {
+      const now = new Date();
+      const y = now.getFullYear(),
+        m = String(now.getMonth() + 1).padStart(2, '0'),
+        d = String(now.getDate()).padStart(2, '0');
+      return { dateStart: `${y}-${m}-${d}T00:00:00.000Z`, dateEnd: `${y}-${m}-${d}T23:59:59.999Z` };
+    },
+  },
+  {
+    label: 'Yesterday',
+    getRange: () => {
+      const now = new Date();
+      now.setDate(now.getDate() - 1);
+      const y = now.getFullYear(),
+        m = String(now.getMonth() + 1).padStart(2, '0'),
+        d = String(now.getDate()).padStart(2, '0');
+      return { dateStart: `${y}-${m}-${d}T00:00:00.000Z`, dateEnd: `${y}-${m}-${d}T23:59:59.999Z` };
+    },
+  },
+  {
+    label: 'This Week',
+    getRange: () => {
+      const now = new Date();
+      const day = now.getDay();
+      const start = new Date(now);
+      start.setDate(now.getDate() - day);
+      const sy = start.getFullYear(),
+        sm = String(start.getMonth() + 1).padStart(2, '0'),
+        sd = String(start.getDate()).padStart(2, '0');
+      const ey = now.getFullYear(),
+        em = String(now.getMonth() + 1).padStart(2, '0'),
+        ed = String(now.getDate()).padStart(2, '0');
+      return {
+        dateStart: `${sy}-${sm}-${sd}T00:00:00.000Z`,
+        dateEnd: `${ey}-${em}-${ed}T23:59:59.999Z`,
+      };
+    },
+  },
+  {
+    label: 'This Month',
+    getRange: () => {
+      const now = new Date();
+      const y = now.getFullYear(),
+        m = String(now.getMonth() + 1).padStart(2, '0');
+      const ed = String(now.getDate()).padStart(2, '0');
+      return { dateStart: `${y}-${m}-01T00:00:00.000Z`, dateEnd: `${y}-${m}-${ed}T23:59:59.999Z` };
+    },
+  },
+  {
+    label: 'Last 7 Days',
+    getRange: () => {
+      const now = new Date();
+      const start = new Date(now);
+      start.setDate(now.getDate() - 6);
+      const sy = start.getFullYear(),
+        sm = String(start.getMonth() + 1).padStart(2, '0'),
+        sd = String(start.getDate()).padStart(2, '0');
+      const ey = now.getFullYear(),
+        em = String(now.getMonth() + 1).padStart(2, '0'),
+        ed = String(now.getDate()).padStart(2, '0');
+      return {
+        dateStart: `${sy}-${sm}-${sd}T00:00:00.000Z`,
+        dateEnd: `${ey}-${em}-${ed}T23:59:59.999Z`,
+      };
+    },
+  },
+  {
+    label: 'Last 30 Days',
+    getRange: () => {
+      const now = new Date();
+      const start = new Date(now);
+      start.setDate(now.getDate() - 29);
+      const sy = start.getFullYear(),
+        sm = String(start.getMonth() + 1).padStart(2, '0'),
+        sd = String(start.getDate()).padStart(2, '0');
+      const ey = now.getFullYear(),
+        em = String(now.getMonth() + 1).padStart(2, '0'),
+        ed = String(now.getDate()).padStart(2, '0');
+      return {
+        dateStart: `${sy}-${sm}-${sd}T00:00:00.000Z`,
+        dateEnd: `${ey}-${em}-${ed}T23:59:59.999Z`,
+      };
+    },
+  },
+];
+
+/**
+ * Entry type filter options
+ */
+const ENTRY_TYPE_OPTIONS: { label: string; value: EntryType; color: string }[] = [
+  { label: 'Work', value: 'work', color: colors.primary },
+  { label: 'Break', value: 'break', color: colors.success },
+  { label: 'Long Break', value: 'long_break', color: colors.warning },
+];
+
+/**
+ * Sort options
+ */
+const SORT_OPTIONS: { label: string; value: 'date' | 'duration' | 'entry_type' }[] = [
+  { label: 'Date', value: 'date' },
+  { label: 'Duration', value: 'duration' },
+  { label: 'Type', value: 'entry_type' },
+];
 
 /**
  * Duration presets in hours
@@ -80,16 +170,12 @@ export function HistoryFilters({
 }: HistoryFiltersProps): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [dateFromInput, setDateFromInput] = useState('');
-  const [dateToInput, setDateToInput] = useState('');
   const [searchText, setSearchText] = useState(filters.searchNotes || '');
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync date inputs with filters
-  useEffect(() => {
-    setDateFromInput(filters.dateStart ? filters.dateStart.split('T')[0] : '');
-    setDateToInput(filters.dateEnd ? filters.dateEnd.split('T')[0] : '');
-  }, [filters.dateStart, filters.dateEnd]);
+  // Derive date inputs from filters (no separate state needed)
+  const dateFromInput = filters.dateStart ? filters.dateStart.split('T')[0] : '';
+  const dateToInput = filters.dateEnd ? filters.dateEnd.split('T')[0] : '';
 
   // Debounced search
   useEffect(() => {
@@ -97,8 +183,9 @@ export function HistoryFilters({
       clearTimeout(searchDebounceRef.current);
     }
 
+    const currentSearchNotes = filters.searchNotes || '';
     searchDebounceRef.current = setTimeout(() => {
-      if (searchText !== (filters.searchNotes || '')) {
+      if (searchText !== currentSearchNotes) {
         onFiltersChange({
           ...filters,
           searchNotes: searchText || undefined,
@@ -111,13 +198,12 @@ export function HistoryFilters({
         clearTimeout(searchDebounceRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText]);
 
   // Handle date from change
   const handleDateFromChange = useCallback(
     (text: string) => {
-      setDateFromInput(text);
-      // Parse YYYY-MM-DD format
       const match = text.match(/^\d{4}-\d{2}-\d{2}$/);
       if (match) {
         const date = new Date(text);
@@ -140,7 +226,6 @@ export function HistoryFilters({
   // Handle date to change
   const handleDateToChange = useCallback(
     (text: string) => {
-      setDateToInput(text);
       const match = text.match(/^\d{4}-\d{2}-\d{2}$/);
       if (match) {
         const date = new Date(text);
@@ -184,11 +269,55 @@ export function HistoryFilters({
     [filters, onFiltersChange]
   );
 
+  // Handle date preset selection
+  const handleDatePreset = useCallback(
+    (getRange: () => { dateStart: string; dateEnd: string }) => {
+      const { dateStart, dateEnd } = getRange();
+      onFiltersChange({
+        ...filters,
+        dateStart,
+        dateEnd,
+      });
+    },
+    [filters, onFiltersChange]
+  );
+
+  // Handle entry type toggle
+  const handleEntryTypeToggle = useCallback(
+    (type: EntryType) => {
+      const current = filters.entryTypes ?? [];
+      const updated = current.includes(type) ? current.filter(t => t !== type) : [...current, type];
+      onFiltersChange({
+        ...filters,
+        entryTypes: updated.length > 0 ? updated : undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
+
+  // Handle sort by selection
+  const handleSortBy = useCallback(
+    (sortBy: 'date' | 'duration' | 'entry_type') => {
+      onFiltersChange({
+        ...filters,
+        sortBy: sortBy === 'date' ? undefined : sortBy,
+      });
+    },
+    [filters, onFiltersChange]
+  );
+
+  // Handle sort order toggle
+  const handleSortOrderToggle = useCallback(() => {
+    const current = filters.sortOrder ?? 'desc';
+    onFiltersChange({
+      ...filters,
+      sortOrder: current === 'desc' ? 'asc' : 'desc',
+    });
+  }, [filters, onFiltersChange]);
+
   // Clear all filters
   const handleClearFilters = useCallback(() => {
     setSearchText('');
-    setDateFromInput('');
-    setDateToInput('');
     onFiltersChange({});
   }, [onFiltersChange]);
 
@@ -199,19 +328,15 @@ export function HistoryFilters({
     filters.categoryId !== undefined ||
     filters.searchNotes ||
     filters.minDuration ||
-    filters.maxDuration;
+    filters.maxDuration ||
+    (filters.entryTypes && filters.entryTypes.length > 0) ||
+    filters.sortBy ||
+    (filters.sortOrder && filters.sortOrder !== 'desc');
 
   // Get selected category name
-  const selectedCategory = categories.find((c) => c.id === filters.categoryId);
+  const selectedCategory = categories.find(c => c.id === filters.categoryId);
   const categoryLabel =
-    filters.categoryId === null
-      ? 'Uncategorized'
-      : selectedCategory?.name || 'All Categories';
-
-  // Get current duration preset label
-  const durationLabel = DURATION_PRESETS.find(
-    (p) => p.min === filters.minDuration && p.max === filters.maxDuration
-  )?.label || 'Custom';
+    filters.categoryId === null ? 'Uncategorized' : selectedCategory?.name || 'All Categories';
 
   return (
     <View style={styles.container}>
@@ -256,7 +381,42 @@ export function HistoryFilters({
             )}
           </View>
 
-          {/* Date range */}
+          {/* Date range presets */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Date Range</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.durationPresets}
+            >
+              {DATE_PRESETS.map(preset => {
+                const range = preset.getRange();
+                const isActive =
+                  filters.dateStart === range.dateStart && filters.dateEnd === range.dateEnd;
+                return (
+                  <Pressable
+                    key={preset.label}
+                    style={[styles.durationChip, isActive && styles.durationChipActive]}
+                    onPress={() => handleDatePreset(preset.getRange)}
+                    disabled={disabled}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <Text
+                      style={StyleSheet.flatten([
+                        styles.durationChipText,
+                        isActive ? styles.durationChipTextActive : null,
+                      ])}
+                    >
+                      {preset.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Date range manual inputs */}
           <View style={styles.dateRow}>
             <View style={styles.dateField}>
               <Text style={styles.fieldLabel}>From</Text>
@@ -291,12 +451,7 @@ export function HistoryFilters({
               accessibilityLabel="Select category filter"
             >
               {selectedCategory && (
-                <View
-                  style={[
-                    styles.categoryColor,
-                    { backgroundColor: selectedCategory.color },
-                  ]}
-                />
+                <View style={[styles.categoryColor, { backgroundColor: selectedCategory.color }]} />
               )}
               <Text style={styles.selectorText}>{categoryLabel}</Text>
               <Icon name="chevron-down" size={16} color={colors.textSecondary} />
@@ -335,6 +490,92 @@ export function HistoryFilters({
                 );
               })}
             </ScrollView>
+          </View>
+
+          {/* Entry type filter */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Entry Type</Text>
+            <View style={styles.durationPresets}>
+              {ENTRY_TYPE_OPTIONS.map(option => {
+                const isActive = filters.entryTypes?.includes(option.value) ?? false;
+                return (
+                  <Pressable
+                    key={option.value}
+                    style={[
+                      styles.durationChip,
+                      isActive && {
+                        backgroundColor: option.color + '20',
+                        borderColor: option.color,
+                      },
+                    ]}
+                    onPress={() => handleEntryTypeToggle(option.value)}
+                    disabled={disabled}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <Text
+                      style={StyleSheet.flatten([
+                        styles.durationChipText,
+                        isActive ? { color: option.color, fontWeight: '500' as const } : null,
+                      ])}
+                    >
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Sort options */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Sort by</Text>
+            <View style={styles.sortRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.durationPresets}
+              >
+                {SORT_OPTIONS.map(option => {
+                  const isActive = (filters.sortBy ?? 'date') === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      style={[styles.durationChip, isActive && styles.durationChipActive]}
+                      onPress={() => handleSortBy(option.value)}
+                      disabled={disabled}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
+                    >
+                      <Text
+                        style={StyleSheet.flatten([
+                          styles.durationChipText,
+                          isActive ? styles.durationChipTextActive : null,
+                        ])}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+              <Pressable
+                style={styles.sortOrderButton}
+                onPress={handleSortOrderToggle}
+                disabled={disabled}
+                accessibilityRole="button"
+                accessibilityLabel={`Sort ${(filters.sortOrder ?? 'desc') === 'desc' ? 'descending' : 'ascending'}`}
+              >
+                <Icon
+                  name={(filters.sortOrder ?? 'desc') === 'desc' ? 'chevron-down' : 'chevron-up'}
+                  size={16}
+                  color={colors.text}
+                />
+                <Text style={styles.sortOrderText}>
+                  {(filters.sortOrder ?? 'desc') === 'desc' ? 'DESC' : 'ASC'}
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Clear filters button */}
@@ -389,7 +630,7 @@ export function HistoryFilters({
               </Pressable>
 
               {/* Category list */}
-              {categories.map((category) => (
+              {categories.map(category => (
                 <Pressable
                   key={category.id}
                   style={[
@@ -399,9 +640,7 @@ export function HistoryFilters({
                   onPress={() => handleCategorySelect(category.id)}
                 >
                   <View style={styles.categoryOptionContent}>
-                    <View
-                      style={[styles.categoryColor, { backgroundColor: category.color }]}
-                    />
+                    <View style={[styles.categoryColor, { backgroundColor: category.color }]} />
                     <View style={styles.categoryInfo}>
                       <Text style={styles.categoryOptionText}>{category.name}</Text>
                       <Text style={styles.categoryTypeText}>{category.type}</Text>
@@ -537,6 +776,27 @@ const styles = StyleSheet.create({
   },
   durationChipTextActive: {
     color: colors.primary,
+    fontWeight: '500',
+  },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  sortOrderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surfaceVariant,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sortOrderText: {
+    fontSize: fontSizes.sm,
+    color: colors.text,
     fontWeight: '500',
   },
   clearButton: {

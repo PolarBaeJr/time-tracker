@@ -45,7 +45,12 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
-import { TimeEntrySchema, TimeEntryFiltersSchema, type TimeEntry, type TimeEntryFilters } from '@/schemas';
+import {
+  TimeEntrySchema,
+  TimeEntryFiltersSchema,
+  type TimeEntry,
+  type TimeEntryFilters,
+} from '@/schemas';
 
 /**
  * Default page size for paginated queries
@@ -110,7 +115,23 @@ async function fetchTimeEntries({
   }
 
   // Build the query
-  let query = supabase.from('time_entries').select('*').order('created_at', { ascending: false });
+  const sortByMap: Record<string, string> = {
+    date: 'created_at',
+    duration: 'duration_seconds',
+    entry_type: 'entry_type',
+  };
+  const sortColumn = sortByMap[filters?.sortBy ?? 'date'] ?? 'created_at';
+  const sortAscending = (filters?.sortOrder ?? 'desc') === 'asc';
+
+  let query = supabase
+    .from('time_entries')
+    .select('*')
+    .order(sortColumn, { ascending: sortAscending });
+
+  // Add secondary sort for stable pagination (skip if already sorting by created_at desc)
+  if (sortColumn !== 'created_at' || sortAscending) {
+    query = query.order('created_at', { ascending: false });
+  }
 
   // Apply cursor-based pagination
   if (cursor) {
@@ -132,6 +153,10 @@ async function fetchTimeEntries({
     } else {
       query = query.eq('category_id', filters.categoryId);
     }
+  }
+
+  if (filters?.entryTypes && filters.entryTypes.length > 0) {
+    query = query.in('entry_type', filters.entryTypes);
   }
 
   if (filters?.searchNotes) {
@@ -168,7 +193,7 @@ async function fetchTimeEntries({
   const pageData = hasMore ? data.slice(0, pageSize) : data;
 
   // Validate each entry against the schema
-  const validatedEntries = pageData.map((entry) => {
+  const validatedEntries = pageData.map(entry => {
     const parsed = TimeEntrySchema.safeParse(entry);
     if (!parsed.success) {
       console.warn('[useTimeEntries] Invalid entry data:', entry, parsed.error);
@@ -179,7 +204,8 @@ async function fetchTimeEntries({
   });
 
   // Get the cursor for the next page (created_at of the last item)
-  const nextCursor = validatedEntries.length > 0 ? validatedEntries[validatedEntries.length - 1].created_at : null;
+  const nextCursor =
+    validatedEntries.length > 0 ? validatedEntries[validatedEntries.length - 1].created_at : null;
 
   return {
     data: validatedEntries,
@@ -262,7 +288,7 @@ export function useTimeEntries(options?: UseTimeEntriesOptions) {
         cursor: pageParam as string | undefined,
       }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
     enabled,
     staleTime,
   });

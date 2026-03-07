@@ -167,6 +167,15 @@ export const TimeEntryFiltersSchema = z.object({
 
   /** Maximum duration in seconds */
   maxDuration: z.number().int().nonnegative().optional(),
+
+  /** Filter by entry types */
+  entryTypes: z.array(EntryTypeEnum).optional(),
+
+  /** Sort field */
+  sortBy: z.enum(['date', 'duration', 'entry_type']).optional(),
+
+  /** Sort order */
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type TimeEntryFilters = z.infer<typeof TimeEntryFiltersSchema>;
