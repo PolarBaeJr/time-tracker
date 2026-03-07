@@ -275,7 +275,8 @@ function setupAutoUpdater(): void {
       })
       .then(({ response }) => {
         if (response === 0) {
-          autoUpdater.quitAndInstall();
+          // Force quit all windows and install update
+          autoUpdater.quitAndInstall(false, true);
         }
       });
   });
