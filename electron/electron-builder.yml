@@ -16,10 +16,26 @@ extraMetadata:
   main: electron/main.js
 
 # Files to include in the build
+# The web app is fully bundled in dist/. Only electron-updater is needed at runtime.
 files:
+  - "!**/*"
   - dist/**/*
   - electron/**/*.js
   - package.json
+  - node_modules/electron-updater/**
+  - node_modules/builder-util-runtime/**
+  - node_modules/fs-extra/**
+  - node_modules/graceful-fs/**
+  - node_modules/jsonfile/**
+  - node_modules/universalify/**
+  - node_modules/js-yaml/**
+  - node_modules/argparse/**
+  - node_modules/lazy-val/**
+  - node_modules/lodash.escaperegexp/**
+  - node_modules/lodash.isequal/**
+  - node_modules/semver/**
+  - node_modules/tiny-typed-emitter/**
+  - node_modules/sax/**
 
 # Files to exclude from the build
 extraResources: []
