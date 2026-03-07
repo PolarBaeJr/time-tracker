@@ -155,13 +155,18 @@ function createWindow(): void {
       return;
     }
 
-    // Allow Supabase OAuth initiation and Google sign-in
+    // OAuth URLs must open in the system browser so the Electron window stays
+    // on our React app. macOS fires open-url when the worktracker:// callback
+    // comes back, which we handle in handleOAuthCallback.
     if (
       parsedUrl.hostname.endsWith('.supabase.co') ||
       parsedUrl.hostname.endsWith('.supabase.in') ||
       parsedUrl.hostname === 'accounts.google.com' ||
       parsedUrl.hostname === 'oauth2.googleapis.com'
     ) {
+      event.preventDefault();
+      const { shell } = require('electron');
+      void shell.openExternal(url);
       return;
     }
 
@@ -170,14 +175,9 @@ function createWindow(): void {
     console.warn(`Blocked navigation to: ${url}`);
   });
 
-  // Handle new window requests (e.g., target="_blank" links)
+  // Handle new window requests — always open in system browser so our app
+  // window is never navigated away from the React bundle.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // Open OAuth URLs in the same window
-    if (url.includes('accounts.google.com') || url.includes('supabase')) {
-      return { action: 'allow' };
-    }
-
-    // For other external URLs, open in default browser
     const { shell } = require('electron');
     void shell.openExternal(url);
     return { action: 'deny' };
@@ -186,13 +186,26 @@ function createWindow(): void {
 
 /**
  * Handle OAuth deep link: worktracker://auth/callback#access_token=...
- * Loads the app with the hash fragment so Supabase picks up the session.
+ * Extracts tokens and sends them to the renderer via IPC so Supabase
+ * can call setSession() without a full page reload.
  */
 function handleOAuthCallback(url: string): void {
   if (!mainWindow) return;
-  const hash = url.includes('#') ? url.substring(url.indexOf('#')) : '';
-  const distPath = path.join(__dirname, '../dist/index.html');
-  void mainWindow.loadURL(`file://${distPath}${hash}`);
+  const hash = url.includes('#') ? url.substring(url.indexOf('#') + 1) : '';
+  const params = new URLSearchParams(hash);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  const expiresIn = params.get('expires_in');
+  const tokenType = params.get('token_type');
+
+  if (accessToken && refreshToken) {
+    mainWindow.webContents.send('oauth-callback', {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: expiresIn ? parseInt(expiresIn, 10) : 3600,
+      token_type: tokenType ?? 'bearer',
+    });
+  }
 }
 
 // Register worktracker:// as a protocol client for OAuth callbacks
