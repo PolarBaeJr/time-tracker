@@ -48,6 +48,35 @@ const CSP_POLICY = [
 ].join('; ');
 
 /**
+ * Open a dedicated popup window for the OAuth flow.
+ * Monitors navigations inside the popup for the worktracker:// callback,
+ * closes the popup automatically, and forwards the callback to the main window.
+ */
+function openOAuthPopup(url: string): void {
+  const popup = new BrowserWindow({
+    width: 500,
+    height: 700,
+    title: 'Sign in with Google',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  void popup.loadURL(url);
+
+  const handleNav = (navUrl: string): void => {
+    if (navUrl.startsWith('worktracker://')) {
+      popup.close();
+      handleOAuthCallback(navUrl);
+    }
+  };
+
+  popup.webContents.on('will-navigate', (_event, navUrl) => handleNav(navUrl));
+  popup.webContents.on('will-redirect', (_event, navUrl) => handleNav(navUrl));
+}
+
+/**
  * Create the main application window
  */
 function createWindow(): void {
@@ -109,9 +138,15 @@ function createWindow(): void {
     mainWindow?.show();
   });
 
-  // Open DevTools in development
+  // Open DevTools in development, or via Cmd+Option+I in production
   if (isDev) {
     mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.webContents.on('before-input-event', (_event, input) => {
+      if (input.meta && input.alt && input.key === 'i') {
+        mainWindow?.webContents.openDevTools();
+      }
+    });
   }
 
   // Handle window close
@@ -155,9 +190,8 @@ function createWindow(): void {
       return;
     }
 
-    // OAuth URLs must open in the system browser so the Electron window stays
-    // on our React app. macOS fires open-url when the worktracker:// callback
-    // comes back, which we handle in handleOAuthCallback.
+    // OAuth URLs open in a dedicated popup window so the main window stays
+    // on our React app and the popup closes automatically after sign-in.
     if (
       parsedUrl.hostname.endsWith('.supabase.co') ||
       parsedUrl.hostname.endsWith('.supabase.in') ||
@@ -165,8 +199,7 @@ function createWindow(): void {
       parsedUrl.hostname === 'oauth2.googleapis.com'
     ) {
       event.preventDefault();
-      const { shell } = require('electron');
-      void shell.openExternal(url);
+      openOAuthPopup(url);
       return;
     }
 
@@ -175,11 +208,20 @@ function createWindow(): void {
     console.warn(`Blocked navigation to: ${url}`);
   });
 
-  // Handle new window requests — always open in system browser so our app
-  // window is never navigated away from the React bundle.
+  // Handle new window requests — open OAuth in popup, others in system browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    const { shell } = require('electron');
-    void shell.openExternal(url);
+    const parsedUrl = new URL(url);
+    if (
+      parsedUrl.hostname.endsWith('.supabase.co') ||
+      parsedUrl.hostname.endsWith('.supabase.in') ||
+      parsedUrl.hostname === 'accounts.google.com' ||
+      parsedUrl.hostname === 'oauth2.googleapis.com'
+    ) {
+      openOAuthPopup(url);
+    } else {
+      const { shell } = require('electron');
+      void shell.openExternal(url);
+    }
     return { action: 'deny' };
   });
 }
@@ -191,6 +233,9 @@ function createWindow(): void {
  */
 function handleOAuthCallback(url: string): void {
   if (!mainWindow) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
   mainWindow.webContents.send('oauth-callback', url);
 }
 
