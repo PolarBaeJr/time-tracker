@@ -3,14 +3,9 @@
  */
 
 import * as React from 'react';
-import {
-  View,
-  Pressable,
-  StyleSheet,
-  type ViewStyle,
-  type PressableProps,
-} from 'react-native';
-import { colors, spacing, borderRadius, shadows, type ShadowKey } from '@/theme';
+import { View, Pressable, StyleSheet, type ViewStyle, type PressableProps } from 'react-native';
+import { useTheme } from '@/theme';
+import { spacing, borderRadius, shadows, type ShadowKey } from '@/theme';
 
 /**
  * Padding size options for Card
@@ -50,38 +45,30 @@ const paddingValues: Record<CardPadding, number> = {
   lg: spacing.lg,
 };
 
-/**
- * Card component for grouping related content
- *
- * @example
- * ```tsx
- * <Card>
- *   <Text>Basic card content</Text>
- * </Card>
- *
- * <Card elevation="md" padding="lg">
- *   <Text>Elevated card with large padding</Text>
- * </Card>
- *
- * <Card pressable onPress={() => console.log('pressed')}>
- *   <Text>Pressable card</Text>
- * </Card>
- * ```
- */
 export function Card({
   children,
   padding = 'md',
   elevation = 'sm',
   pressable = false,
   style,
-  backgroundColor = colors.surface,
+  backgroundColor,
   onPress,
   ...pressableProps
 }: CardProps): React.ReactElement {
+  const { colors } = useTheme();
+  const bgColor = backgroundColor ?? colors.surface;
+
   const cardStyle: ViewStyle = {
     padding: paddingValues[padding],
-    backgroundColor,
+    backgroundColor: bgColor,
     ...shadows[elevation],
+  };
+
+  const baseStyle: ViewStyle = {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
   };
 
   if (pressable && onPress) {
@@ -90,32 +77,17 @@ export function Card({
         {...pressableProps}
         onPress={onPress}
         accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.base,
-          cardStyle,
-          pressed && styles.pressed,
-          style,
-        ]}
+        style={({ pressed }) => [baseStyle, cardStyle, pressed && styles.pressed, style]}
       >
         {children}
       </Pressable>
     );
   }
 
-  return (
-    <View style={[styles.base, cardStyle, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[baseStyle, cardStyle, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.99 }],

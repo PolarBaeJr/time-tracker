@@ -203,6 +203,9 @@ export {
   type UsePomodoroPresetsResult,
 } from './usePomodoroSettings';
 
+// Keyboard shortcuts hook
+export { useKeyboardShortcuts, type ShortcutDef } from './useKeyboardShortcuts';
+
 // Splash screen hook
 export {
   useSplashScreen,

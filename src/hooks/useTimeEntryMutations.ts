@@ -52,6 +52,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
+import { isDeviceOnline } from './useNetworkStatus';
+import { queueCreateEntry, queueUpdateEntry, queueDeleteEntry } from './useOfflineSync';
 import {
   CreateTimeEntrySchema,
   UpdateTimeEntrySchema,
@@ -99,6 +101,24 @@ async function createTimeEntry(input: CreateTimeEntryInput): Promise<TimeEntry> 
   }
 
   const validatedInput = validationResult.data;
+
+  // If offline, queue the action and return a synthetic entry
+  if (!isDeviceOnline()) {
+    await queueCreateEntry(validatedInput);
+    const now = new Date().toISOString();
+    return {
+      id: crypto.randomUUID(),
+      user_id: '00000000-0000-0000-0000-000000000000',
+      category_id: validatedInput.category_id ?? null,
+      start_at: validatedInput.start_at,
+      end_at: validatedInput.end_at ?? null,
+      duration_seconds: validatedInput.duration_seconds,
+      notes: validatedInput.notes ?? null,
+      entry_type: 'work',
+      created_at: now,
+      updated_at: now,
+    } as TimeEntry;
+  }
 
   // Insert the entry - user_id is set server-side via DEFAULT auth.uid()
   const { data, error } = await supabase
@@ -175,7 +195,7 @@ export function useCreateTimeEntry(options?: UseCreateTimeEntryOptions) {
 
   return useMutation({
     mutationFn: createTimeEntry,
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate all time entry queries to refetch with new data
       queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
 
@@ -183,9 +203,7 @@ export function useCreateTimeEntry(options?: UseCreateTimeEntryOptions) {
     },
     onError: (error: Error) => {
       const mutationError =
-        error instanceof TimeEntryMutationError
-          ? error
-          : new TimeEntryMutationError(error.message);
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
 
       options?.onError?.(mutationError);
     },
@@ -223,6 +241,25 @@ async function updateTimeEntry({ id, data }: UpdateTimeEntryParams): Promise<Tim
   }
 
   const validatedInput = validationResult.data;
+
+  // If offline, queue the update and return optimistic data
+  if (!isDeviceOnline()) {
+    await queueUpdateEntry(id, validatedInput);
+    const now = new Date().toISOString();
+    return {
+      id,
+      user_id: '00000000-0000-0000-0000-000000000000',
+      category_id: null,
+      start_at: now,
+      end_at: null,
+      duration_seconds: 0,
+      notes: null,
+      entry_type: 'work',
+      created_at: now,
+      updated_at: now,
+      ...validatedInput,
+    } as TimeEntry;
+  }
 
   // Build the update object, only including defined fields
   const updateData: Record<string, unknown> = {};
@@ -322,15 +359,17 @@ export function useUpdateTimeEntry(options?: UseUpdateTimeEntryOptions) {
       // Optimistically update the cache
       queryClient.setQueriesData<{ pages: TimeEntriesPage[]; pageParams: unknown[] }>(
         { queryKey: ['timeEntries'] },
-        (old) => {
+        old => {
           if (!old) return old;
 
           return {
             ...old,
-            pages: old.pages.map((page) => ({
+            pages: old.pages.map(page => ({
               ...page,
-              data: page.data.map((entry) =>
-                entry.id === id ? { ...entry, ...data, updated_at: new Date().toISOString() } : entry
+              data: page.data.map(entry =>
+                entry.id === id
+                  ? { ...entry, ...data, updated_at: new Date().toISOString() }
+                  : entry
               ),
             })),
           };
@@ -348,13 +387,11 @@ export function useUpdateTimeEntry(options?: UseUpdateTimeEntryOptions) {
       }
 
       const mutationError =
-        error instanceof TimeEntryMutationError
-          ? error
-          : new TimeEntryMutationError(error.message);
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
 
       options?.onError?.(mutationError);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate to ensure cache consistency
       queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
 
@@ -375,6 +412,12 @@ export function useUpdateTimeEntry(options?: UseUpdateTimeEntryOptions) {
  * @throws TimeEntryMutationError if deletion fails
  */
 async function deleteTimeEntry(id: string): Promise<void> {
+  // If offline, queue the deletion
+  if (!isDeviceOnline()) {
+    await queueDeleteEntry(id);
+    return;
+  }
+
   // RLS ensures user can only delete their own entries
   const { error } = await supabase.from('time_entries').delete().eq('id', id);
 
@@ -422,7 +465,7 @@ export function useDeleteTimeEntry(options?: UseDeleteTimeEntryOptions) {
 
   return useMutation({
     mutationFn: deleteTimeEntry,
-    onMutate: async (id) => {
+    onMutate: async id => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['timeEntries'] });
 
@@ -434,14 +477,14 @@ export function useDeleteTimeEntry(options?: UseDeleteTimeEntryOptions) {
       // Optimistically remove from cache
       queryClient.setQueriesData<{ pages: TimeEntriesPage[]; pageParams: unknown[] }>(
         { queryKey: ['timeEntries'] },
-        (old) => {
+        old => {
           if (!old) return old;
 
           return {
             ...old,
-            pages: old.pages.map((page) => ({
+            pages: old.pages.map(page => ({
               ...page,
-              data: page.data.filter((entry) => entry.id !== id),
+              data: page.data.filter(entry => entry.id !== id),
             })),
           };
         }
@@ -458,9 +501,7 @@ export function useDeleteTimeEntry(options?: UseDeleteTimeEntryOptions) {
       }
 
       const mutationError =
-        error instanceof TimeEntryMutationError
-          ? error
-          : new TimeEntryMutationError(error.message);
+        error instanceof TimeEntryMutationError ? error : new TimeEntryMutationError(error.message);
 
       options?.onError?.(mutationError, id);
     },

@@ -3,14 +3,10 @@
  */
 
 import * as React from 'react';
-import {
-  View,
-  ActivityIndicator,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, ActivityIndicator, StyleSheet, type ViewStyle } from 'react-native';
 import { Text } from './Text';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/theme';
+import { spacing } from '@/theme';
 
 /**
  * Spinner size options
@@ -35,45 +31,32 @@ export interface SpinnerProps {
   style?: ViewStyle;
 }
 
-/**
- * Spinner component for indicating loading states
- *
- * @example
- * ```tsx
- * <Spinner />
- *
- * <Spinner size="large" message="Loading data..." />
- *
- * <Spinner fullScreen />
- * ```
- */
 export function Spinner({
   size = 'small',
-  color = colors.primary,
+  color,
   message,
   center = true,
   fullScreen = false,
   style,
 }: SpinnerProps): React.ReactElement {
+  const { colors } = useTheme();
+  const spinnerColor = color ?? colors.primary;
+
   return (
     <View
       style={[
         styles.container,
         center && styles.centered,
-        fullScreen && styles.fullScreen,
+        fullScreen && [styles.fullScreen, { backgroundColor: colors.background }],
         style,
       ]}
       accessibilityRole="progressbar"
       accessibilityLabel={message ?? 'Loading'}
       accessibilityState={{ busy: true }}
     >
-      <ActivityIndicator size={size} color={color} />
+      <ActivityIndicator size={size} color={spinnerColor} />
       {message && (
-        <Text
-          variant="bodySmall"
-          color="secondary"
-          style={styles.message}
-        >
+        <Text variant="bodySmall" color="secondary" style={styles.message}>
           {message}
         </Text>
       )}
@@ -91,7 +74,6 @@ const styles = StyleSheet.create({
   },
   fullScreen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   message: {
     marginTop: spacing.sm,

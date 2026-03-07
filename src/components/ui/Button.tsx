@@ -14,7 +14,8 @@ import {
   type PressableProps,
   type AccessibilityProps,
 } from 'react-native';
-import { colors, spacing, fontSizes, fontWeights, borderRadius } from '@/theme';
+import { useTheme } from '@/theme';
+import { spacing, fontSizes, fontWeights, borderRadius, type Colors } from '@/theme';
 
 /**
  * Button variants for different use cases
@@ -46,13 +47,11 @@ export interface ButtonProps extends Omit<PressableProps, 'style'>, Accessibilit
   textStyle?: TextStyle;
 }
 
-/**
- * Get background color based on variant and pressed state
- */
 function getBackgroundColor(
   variant: ButtonVariant,
   pressed: boolean,
-  disabled: boolean
+  disabled: boolean,
+  colors: Colors
 ): string {
   if (disabled) {
     return colors.surfaceVariant;
@@ -73,10 +72,7 @@ function getBackgroundColor(
   }
 }
 
-/**
- * Get text color based on variant
- */
-function getTextColor(variant: ButtonVariant, disabled: boolean): string {
+function getTextColor(variant: ButtonVariant, disabled: boolean, colors: Colors): string {
   if (disabled) {
     return colors.textMuted;
   }
@@ -96,10 +92,7 @@ function getTextColor(variant: ButtonVariant, disabled: boolean): string {
   }
 }
 
-/**
- * Get border style based on variant
- */
-function getBorderStyle(variant: ButtonVariant, disabled: boolean): ViewStyle {
+function getBorderStyle(variant: ButtonVariant, disabled: boolean, colors: Colors): ViewStyle {
   if (variant === 'outline') {
     return {
       borderWidth: 1,
@@ -112,7 +105,10 @@ function getBorderStyle(variant: ButtonVariant, disabled: boolean): ViewStyle {
 /**
  * Size configurations for button dimensions and text
  */
-const sizeConfig: Record<ButtonSize, { height: number; paddingHorizontal: number; fontSize: number }> = {
+const sizeConfig: Record<
+  ButtonSize,
+  { height: number; paddingHorizontal: number; fontSize: number }
+> = {
   sm: {
     height: 32,
     paddingHorizontal: spacing.sm,
@@ -130,20 +126,6 @@ const sizeConfig: Record<ButtonSize, { height: number; paddingHorizontal: number
   },
 };
 
-/**
- * Button component for user interactions
- *
- * @example
- * ```tsx
- * <Button onPress={() => console.log('pressed')}>
- *   Click me
- * </Button>
- *
- * <Button variant="outline" size="sm" loading>
- *   Loading...
- * </Button>
- * ```
- */
 export function Button({
   children,
   variant = 'primary',
@@ -156,6 +138,7 @@ export function Button({
   accessibilityHint,
   ...pressableProps
 }: ButtonProps): React.ReactElement {
+  const { colors } = useTheme();
   const sizeStyles = sizeConfig[size];
   const isDisabled = disabled || loading;
 
@@ -168,15 +151,17 @@ export function Button({
         disabled: isDisabled,
         busy: loading,
       }}
-      accessibilityLabel={accessibilityLabel ?? (typeof children === 'string' ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel ?? (typeof children === 'string' ? children : undefined)
+      }
       accessibilityHint={accessibilityHint}
       style={({ pressed }) => [
         styles.base,
         {
           height: sizeStyles.height,
           paddingHorizontal: sizeStyles.paddingHorizontal,
-          backgroundColor: getBackgroundColor(variant, pressed, isDisabled),
-          ...getBorderStyle(variant, isDisabled),
+          backgroundColor: getBackgroundColor(variant, pressed, isDisabled, colors),
+          ...getBorderStyle(variant, isDisabled, colors),
         },
         style,
       ]}
@@ -184,7 +169,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={getTextColor(variant, false)}
+          color={getTextColor(variant, false, colors)}
           accessibilityLabel="Loading"
         />
       ) : typeof children === 'string' || typeof children === 'number' ? (
@@ -193,7 +178,7 @@ export function Button({
             styles.text,
             {
               fontSize: sizeStyles.fontSize,
-              color: getTextColor(variant, isDisabled),
+              color: getTextColor(variant, isDisabled, colors),
             },
             textStyle,
           ]}

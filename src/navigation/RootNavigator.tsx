@@ -19,7 +19,8 @@ import { LoginScreen, SetupScreen } from '@/screens';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
 import { TimeEntrySchema } from '@/schemas';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/theme';
+import { spacing } from '@/theme';
 
 import { MainTabs } from './MainTabs';
 import type { RootStackParamList, RootStackScreenProps } from './types';
@@ -35,6 +36,7 @@ function EntryEditScreen({
   navigation,
 }: RootStackScreenProps<'EntryEdit'>): React.ReactElement {
   const { entryId } = route.params;
+  const { colors } = useTheme();
 
   // Fetch the single time entry by ID
   const {
@@ -65,7 +67,7 @@ function EntryEditScreen({
   // Loading state
   if (entryLoading || categoriesLoading) {
     return (
-      <View style={styles.placeholderContainer}>
+      <View style={[styles.placeholderContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text variant="body" color="muted" center style={styles.placeholderSubtext}>
           Loading entry...
@@ -77,7 +79,7 @@ function EntryEditScreen({
   // Error state
   if (entryError || !entry) {
     return (
-      <View style={styles.placeholderContainer}>
+      <View style={[styles.placeholderContainer, { backgroundColor: colors.background }]}>
         <Text variant="heading" center>
           Entry not found
         </Text>
@@ -112,6 +114,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export function RootNavigator(): React.ReactElement {
   const { isAuthenticated, user } = useAuth();
+  const { colors } = useTheme();
 
   return (
     <Stack.Navigator
@@ -162,7 +165,6 @@ export function RootNavigator(): React.ReactElement {
 const styles = StyleSheet.create({
   placeholderContainer: {
     flex: 1,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,

@@ -2,11 +2,11 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { OfflineBanner } from '@/components/ui';
 import { AuthProvider } from '@/contexts';
 import { useAuth, useSplashScreen } from '@/hooks';
 import { NavigationProvider } from '@/navigation';
-import { ThemeProvider } from '@/theme';
-import { colors } from '@/theme';
+import { ThemeProvider, useTheme } from '@/theme';
 
 const queryClient = new QueryClient();
 
@@ -30,6 +30,7 @@ const queryClient = new QueryClient();
  */
 function AppContent(): React.ReactElement | null {
   const { loading } = useAuth();
+  const { colors, isDark } = useTheme();
 
   // Control splash screen visibility based on auth loading state
   const { isReady, onLayoutRootView } = useSplashScreen({
@@ -44,9 +45,13 @@ function AppContent(): React.ReactElement | null {
 
   // NavigationProvider renders RootNavigator which handles auth-based routing
   return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      onLayout={onLayoutRootView}
+    >
+      <OfflineBanner />
       <NavigationProvider />
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -54,7 +59,6 @@ function AppContent(): React.ReactElement | null {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 });
 

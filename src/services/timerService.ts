@@ -34,6 +34,8 @@
 
 import { supabase } from '@/lib/supabase';
 import { getTimerStoreState } from '@/stores';
+import { isDeviceOnline } from '@/hooks/useNetworkStatus';
+import { queueCreateEntry } from '@/hooks/useOfflineSync';
 import {
   ActiveTimerSchema,
   TimeEntrySchema,
@@ -128,6 +130,24 @@ export async function startTimer(options?: StartTimerOptions): Promise<TimerResu
     // This validates UUID format but does NOT validate category entity fields
     const categoryId = options?.categoryId ?? null;
     const validatedCategoryId = CategoryIdSchema.parse(categoryId);
+
+    // If offline, create a local-only timer in the store
+    if (!isDeviceOnline()) {
+      const localTimer = {
+        id: crypto.randomUUID(),
+        user_id: '00000000-0000-0000-0000-000000000000',
+        category_id: validatedCategoryId,
+        started_at: new Date().toISOString(),
+        running: true,
+        timer_mode: options?.timerMode ?? 'normal',
+        pomodoro_phase: options?.pomodoroPhase ?? 'work',
+        phase_duration_seconds: options?.phaseDurationSeconds ?? null,
+        pomodoros_completed: options?.pomodorosCompleted ?? 0,
+      } as ActiveTimer;
+      const store = getTimerStoreState();
+      store.setActiveTimer(localTimer);
+      return { data: localTimer, error: null };
+    }
 
     // Insert new timer - DO NOT include started_at (server sets it)
     // The database DEFAULT now() ensures accurate server-side timestamp
@@ -249,6 +269,47 @@ export async function stopTimer(options?: StopTimerOptions): Promise<TimerResult
       notes: options?.notes ?? null,
     };
     StopTimerSchema.parse(input);
+
+    // If offline, compute duration locally and queue as create_entry
+    if (!isDeviceOnline()) {
+      const store = getTimerStoreState();
+      const activeTimer = store.activeTimer;
+
+      if (!activeTimer) {
+        return {
+          data: null,
+          error: new TimerServiceError('No active timer to stop', undefined, 'stop'),
+        };
+      }
+
+      const startedAtMs = Date.parse(activeTimer.started_at);
+      const durationSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
+      const now = new Date().toISOString();
+
+      await queueCreateEntry({
+        category_id: activeTimer.category_id,
+        start_at: activeTimer.started_at,
+        end_at: now,
+        duration_seconds: durationSeconds,
+        notes: input.notes,
+      });
+
+      store.setActiveTimer(null);
+
+      const syntheticEntry = {
+        id: crypto.randomUUID(),
+        user_id: '00000000-0000-0000-0000-000000000000',
+        category_id: activeTimer.category_id,
+        start_at: activeTimer.started_at,
+        end_at: now,
+        duration_seconds: durationSeconds,
+        notes: input.notes,
+        entry_type: 'work',
+        created_at: now,
+        updated_at: now,
+      } as TimeEntry;
+      return { data: syntheticEntry, error: null };
+    }
 
     // Call the RPC function which handles everything atomically
     const { data, error } = await supabase.rpc('stop_timer_and_create_entry', {

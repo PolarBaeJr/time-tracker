@@ -12,7 +12,7 @@ export * from './spacing';
 export * from './typography';
 
 // Import for theme object composition
-import { colors, type Colors } from './colors';
+import { darkColors, lightColors, type Colors } from './colors';
 import { spacing, type Spacing } from './spacing';
 import {
   fontSizes,
@@ -22,6 +22,7 @@ import {
   type FontWeights,
   type LineHeights,
 } from './typography';
+import { useThemePreference } from '@/stores/themeStore';
 
 /**
  * Border radius scale for consistent rounded corners
@@ -80,7 +81,7 @@ export type Shadows = typeof shadows;
  * Complete theme object containing all design tokens
  */
 export const theme = {
-  colors,
+  colors: darkColors,
   spacing,
   fontSizes,
   fontWeights,
@@ -100,17 +101,20 @@ export interface Theme {
   lineHeights: LineHeights;
   borderRadius: BorderRadius;
   shadows: Shadows;
+  isDark: boolean;
 }
 
 /**
- * ThemeContext for future theming support (light mode, custom themes)
- * Currently provides the default dark theme
+ * ThemeContext for theming support (light mode, dark mode, system)
  */
-export const ThemeContext = createContext<Theme>(theme);
+export const ThemeContext = createContext<Theme>({
+  ...theme,
+  isDark: true,
+});
 
 /**
  * Hook to access the current theme
- * @returns The current theme object
+ * @returns The current theme object with colors, spacing, and isDark flag
  */
 export function useTheme(): Theme {
   const currentTheme = useContext(ThemeContext);
@@ -125,22 +129,32 @@ export function useTheme(): Theme {
  */
 interface ThemeProviderProps {
   children: React.ReactNode;
-  theme?: Theme;
 }
 
 /**
  * ThemeProvider component
  * Wraps the app to provide theme context to all components
  */
-export function ThemeProvider({
-  children,
-  theme: customTheme = theme,
-}: ThemeProviderProps): React.ReactElement {
-  return React.createElement(
-    ThemeContext.Provider,
-    { value: customTheme },
-    children
+export function ThemeProvider({ children }: ThemeProviderProps): React.ReactElement {
+  const resolved = useThemePreference(s => s.resolved);
+  const isDark = resolved === 'dark';
+  const currentColors = isDark ? darkColors : lightColors;
+
+  const value = React.useMemo<Theme>(
+    () => ({
+      colors: currentColors,
+      spacing,
+      fontSizes,
+      fontWeights,
+      lineHeights,
+      borderRadius,
+      shadows,
+      isDark,
+    }),
+    [isDark, currentColors]
   );
+
+  return React.createElement(ThemeContext.Provider, { value }, children);
 }
 
 // Default export for convenient imports

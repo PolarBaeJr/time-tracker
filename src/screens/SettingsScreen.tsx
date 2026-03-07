@@ -15,6 +15,7 @@ import {
   GoalDefaults,
   AccountSection,
   PomodoroSettings,
+  ThemeSelector,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -189,6 +190,14 @@ export function SettingsScreen(): React.ReactElement {
           />
         }
       >
+        {/* Appearance Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <ThemeSelector />
+          </Card>
+        </View>
+
         {/* Regional Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Regional</Text>

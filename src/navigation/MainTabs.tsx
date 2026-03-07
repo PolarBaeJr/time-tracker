@@ -15,7 +15,9 @@ import * as React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { Icon, type IconName } from '@/components/ui';
-import { colors, spacing } from '@/theme';
+import { KeyboardShortcutProvider } from '@/components/KeyboardShortcutProvider';
+import { useTheme } from '@/theme';
+import { spacing } from '@/theme';
 import {
   TimerScreen as TimerScreenComponent,
   HistoryScreen as HistoryScreenComponent,
@@ -32,27 +34,6 @@ import type { MainTabParamList } from './types';
 // ============================================================================
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-
-/**
- * Tab bar icon component
- */
-function TabBarIcon({
-  name,
-  focused,
-  size,
-}: {
-  name: IconName;
-  focused: boolean;
-  size: number;
-}): React.ReactElement {
-  return (
-    <Icon
-      name={name}
-      size={size}
-      color={focused ? colors.primary : colors.textMuted}
-    />
-  );
-}
 
 /**
  * Get icon name based on route and focus state
@@ -77,75 +58,70 @@ function getTabIcon(routeName: keyof MainTabParamList, focused: boolean): IconNa
  * Uses themed colors and custom Icon component for tab icons.
  */
 export function MainTabs(): React.ReactElement {
+  const { colors } = useTheme();
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: colors.surface,
-        },
-        headerTintColor: colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-        headerShadowVisible: false,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          paddingTop: spacing.xs,
-          height: 60,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-          marginBottom: spacing.xs,
-        },
-        tabBarIcon: ({ focused, size }) => (
-          <TabBarIcon
-            name={getTabIcon(route.name, focused)}
-            focused={focused}
-            size={size}
-          />
-        ),
-      })}
-      initialRouteName="Timer"
-    >
-      <Tab.Screen
-        name="Timer"
-        component={TimerScreenComponent}
-        options={{ title: 'Timer' }}
-      />
-      <Tab.Screen
-        name="History"
-        component={HistoryScreenComponent}
-        options={{ title: 'History' }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreenComponent}
-        options={{ title: 'Analytics' }}
-      />
-      <Tab.Screen
-        name="Categories"
-        component={CategoriesScreenComponent}
-        options={{ title: 'Categories', headerShown: false }}
-      />
-      <Tab.Screen
-        name="Goals"
-        component={GoalsScreenComponent}
-        options={{ title: 'Goals' }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreenComponent}
-        options={{ title: 'Settings', headerShown: false }}
-      />
-    </Tab.Navigator>
+    <KeyboardShortcutProvider>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            fontWeight: '600',
+          },
+          headerShadowVisible: false,
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+            paddingTop: spacing.xs,
+            height: 60,
+          },
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '500',
+            marginBottom: spacing.xs,
+          },
+          tabBarIcon: ({ focused, size }) => (
+            <Icon
+              name={getTabIcon(route.name, focused)}
+              size={size}
+              color={focused ? colors.primary : colors.textMuted}
+            />
+          ),
+        })}
+        initialRouteName="Timer"
+      >
+        <Tab.Screen name="Timer" component={TimerScreenComponent} options={{ title: 'Timer' }} />
+        <Tab.Screen
+          name="History"
+          component={HistoryScreenComponent}
+          options={{ title: 'History' }}
+        />
+        <Tab.Screen
+          name="Analytics"
+          component={AnalyticsScreenComponent}
+          options={{ title: 'Analytics' }}
+        />
+        <Tab.Screen
+          name="Categories"
+          component={CategoriesScreenComponent}
+          options={{ title: 'Categories', headerShown: false }}
+        />
+        <Tab.Screen name="Goals" component={GoalsScreenComponent} options={{ title: 'Goals' }} />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreenComponent}
+          options={{ title: 'Settings', headerShown: false }}
+        />
+      </Tab.Navigator>
+    </KeyboardShortcutProvider>
   );
 }
-
 
 export default MainTabs;

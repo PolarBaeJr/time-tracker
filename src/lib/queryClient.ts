@@ -26,7 +26,15 @@
  * @see https://tanstack.com/query/latest/docs/react/guides/important-defaults
  */
 
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, onlineManager } from '@tanstack/react-query';
+
+// Sync TanStack Query's online state with the browser's navigator.onLine
+if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+  onlineManager.setOnline(navigator.onLine);
+
+  window.addEventListener('online', () => onlineManager.setOnline(true));
+  window.addEventListener('offline', () => onlineManager.setOnline(false));
+}
 
 /**
  * 5 minutes in milliseconds

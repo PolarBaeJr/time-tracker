@@ -9,7 +9,8 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
-import { colors, fontSizes, fontWeights, lineHeights } from '@/theme';
+import { useTheme } from '@/theme';
+import { fontSizes, fontWeights, lineHeights } from '@/theme';
 
 /**
  * Text variants for different use cases
@@ -26,7 +27,14 @@ export type TextVariant =
 /**
  * Text color options
  */
-export type TextColor = 'default' | 'secondary' | 'muted' | 'primary' | 'error' | 'success' | 'warning';
+export type TextColor =
+  | 'default'
+  | 'secondary'
+  | 'muted'
+  | 'primary'
+  | 'error'
+  | 'success'
+  | 'warning';
 
 /**
  * Text component props
@@ -85,37 +93,6 @@ const variantStyles: Record<TextVariant, TextStyle> = {
   },
 };
 
-/**
- * Color mappings
- */
-const colorMap: Record<TextColor, string> = {
-  default: colors.text,
-  secondary: colors.textSecondary,
-  muted: colors.textMuted,
-  primary: colors.primary,
-  error: colors.error,
-  success: colors.success,
-  warning: colors.warning,
-};
-
-/**
- * Text component for displaying styled text
- *
- * @example
- * ```tsx
- * <Text>Default body text</Text>
- *
- * <Text variant="heading">Page Title</Text>
- *
- * <Text variant="caption" color="muted">
- *   Small helper text
- * </Text>
- *
- * <Text variant="display" center>
- *   01:23:45
- * </Text>
- * ```
- */
 export function Text({
   children,
   variant = 'body',
@@ -125,11 +102,23 @@ export function Text({
   style,
   ...textProps
 }: TextProps): React.ReactElement {
+  const { colors } = useTheme();
+
+  const colorMap: Record<TextColor, string> = {
+    default: colors.text,
+    secondary: colors.textSecondary,
+    muted: colors.textMuted,
+    primary: colors.primary,
+    error: colors.error,
+    success: colors.success,
+    warning: colors.warning,
+  };
+
   return (
     <RNText
       {...textProps}
       style={[
-        styles.base,
+        { color: colors.text },
         variantStyles[variant],
         { color: colorMap[color] },
         bold && styles.bold,
@@ -143,9 +132,6 @@ export function Text({
 }
 
 const styles = StyleSheet.create({
-  base: {
-    color: colors.text,
-  },
   bold: {
     fontWeight: fontWeights.bold,
   },

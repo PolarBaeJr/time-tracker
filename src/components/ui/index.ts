@@ -21,11 +21,10 @@ export { Text, type TextProps, type TextVariant, type TextColor } from './Text';
 export { Spinner, type SpinnerProps, type SpinnerSize } from './Spinner';
 
 // ColorPicker component
-export {
-  ColorPicker,
-  type ColorPickerProps,
-  PRESET_COLORS,
-} from './ColorPicker';
+export { ColorPicker, type ColorPickerProps, PRESET_COLORS } from './ColorPicker';
 
 // Icon component
 export { Icon, type IconProps, type IconName, iconMap } from './Icon';
+
+// OfflineBanner component
+export { OfflineBanner, type OfflineBannerProps } from './OfflineBanner';

@@ -12,7 +12,8 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { colors, spacing, fontSizes, fontWeights, borderRadius } from '@/theme';
+import { useTheme } from '@/theme';
+import { spacing, fontSizes, fontWeights, borderRadius } from '@/theme';
 
 /**
  * Input component props
@@ -34,31 +35,6 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   labelStyle?: TextStyle;
 }
 
-/**
- * Input component for text entry with label and validation support
- *
- * @example
- * ```tsx
- * <Input
- *   label="Email"
- *   placeholder="Enter your email"
- *   keyboardType="email-address"
- * />
- *
- * <Input
- *   label="Password"
- *   secureTextEntry
- *   error="Password is required"
- * />
- *
- * <Input
- *   label="Notes"
- *   multiline
- *   numberOfLines={4}
- *   placeholder="Add notes..."
- * />
- * ```
- */
 export function Input({
   label,
   error,
@@ -70,10 +46,11 @@ export function Input({
   multiline,
   secureTextEntry,
   placeholder,
-  placeholderTextColor = colors.textMuted,
+  placeholderTextColor,
   editable,
   ...textInputProps
 }: InputProps): React.ReactElement {
+  const { colors } = useTheme();
   const hasError = Boolean(error);
   const isEditable = editable !== false && !disabled;
 
@@ -83,7 +60,8 @@ export function Input({
         <Text
           style={[
             styles.label,
-            disabled && styles.labelDisabled,
+            { color: colors.text },
+            disabled && { color: colors.textMuted },
             labelStyle,
           ]}
         >
@@ -93,7 +71,7 @@ export function Input({
       <TextInput
         {...textInputProps}
         placeholder={placeholder}
-        placeholderTextColor={placeholderTextColor}
+        placeholderTextColor={placeholderTextColor ?? colors.textMuted}
         editable={isEditable}
         multiline={multiline}
         secureTextEntry={secureTextEntry}
@@ -103,19 +81,24 @@ export function Input({
         }}
         style={[
           styles.input,
+          {
+            backgroundColor: colors.surfaceVariant,
+            borderColor: colors.border,
+            color: colors.text,
+          },
           multiline && styles.inputMultiline,
-          hasError && styles.inputError,
-          disabled && styles.inputDisabled,
+          hasError && { borderColor: colors.error },
+          disabled && { backgroundColor: colors.surface, color: colors.textMuted },
           inputStyle,
         ]}
       />
       {hasError && (
-        <Text style={styles.errorText} accessibilityRole="alert">
+        <Text style={[styles.errorText, { color: colors.error }]} accessibilityRole="alert">
           {error}
         </Text>
       )}
       {!hasError && helperText && (
-        <Text style={styles.helperText}>{helperText}</Text>
+        <Text style={[styles.helperText, { color: colors.textMuted }]}>{helperText}</Text>
       )}
     </View>
   );
@@ -128,21 +111,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.medium,
-    color: colors.text,
     marginBottom: spacing.xs,
-  },
-  labelDisabled: {
-    color: colors.textMuted,
   },
   input: {
     height: 48,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceVariant,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
     fontSize: fontSizes.md,
   },
   inputMultiline: {
@@ -151,21 +127,12 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     paddingTop: spacing.sm,
   },
-  inputError: {
-    borderColor: colors.error,
-  },
-  inputDisabled: {
-    backgroundColor: colors.surface,
-    color: colors.textMuted,
-  },
   errorText: {
     fontSize: fontSizes.sm,
-    color: colors.error,
     marginTop: spacing.xs,
   },
   helperText: {
     fontSize: fontSizes.sm,
-    color: colors.textMuted,
     marginTop: spacing.xs,
   },
 });

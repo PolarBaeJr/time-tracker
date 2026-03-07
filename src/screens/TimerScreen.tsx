@@ -43,6 +43,7 @@ import {
   usePomodoro,
   usePomodoroSettings,
   usePomodoroPresets,
+  useKeyboardShortcuts,
 } from '@/hooks';
 import { startTimer, stopTimer, syncTimerWithStore } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
@@ -430,6 +431,27 @@ export function TimerScreen(): React.ReactElement {
   const hasActiveTimer = activeTimer !== null;
   const isPomodoroActive = activeTimer?.timer_mode === 'pomodoro';
   const isCountdownActive = activeTimer?.timer_mode === 'countdown';
+
+  const timerShortcuts = useMemo(
+    () => [
+      {
+        id: 'toggle-timer',
+        key: ' ',
+        handler: () => {
+          if (isStarting || isStopping) return;
+          if (hasActiveTimer) {
+            void handleStop();
+          } else {
+            void handleStart();
+          }
+        },
+        description: 'Start / Stop timer',
+      },
+    ],
+    [hasActiveTimer, isStarting, isStopping, handleStart, handleStop]
+  );
+
+  useKeyboardShortcuts(timerShortcuts);
 
   // Countdown remaining seconds
   const countdownRemaining = useMemo(() => {
