@@ -269,13 +269,18 @@ function setupAutoUpdater(): void {
         type: 'info',
         title: 'Update Ready',
         message: `Version ${info.version} has been downloaded.`,
-        detail: 'Close and reopen the app to apply the update.',
-        buttons: ['Close Now', 'Later'],
+        detail: 'The app will restart to apply the update.',
+        buttons: ['Restart Now', 'Later'],
         defaultId: 0,
       })
       .then(({ response }) => {
         if (response === 0) {
-          app.exit(0);
+          // Let quitAndInstall stage the update, then force-kill if it hangs
+          setImmediate(() => {
+            autoUpdater.quitAndInstall(false, true);
+            // Force-kill after 3s in case quitAndInstall hangs (unsigned macOS)
+            setTimeout(() => process.exit(0), 3000);
+          });
         }
       });
   });
