@@ -44,7 +44,7 @@ import {
   usePomodoroSettings,
   usePomodoroPresets,
 } from '@/hooks';
-import { startTimer, stopTimer } from '@/services/timerService';
+import { startTimer, stopTimer, syncTimerWithStore } from '@/services/timerService';
 import { useTimerStore } from '@/stores';
 import { colors, spacing, borderRadius } from '@/theme';
 import { queryKeys } from '@/lib/queryClient';
@@ -189,6 +189,13 @@ export function TimerScreen(): React.ReactElement {
   // Guard for auto-transition — track the timer ID we already transitioned from
   const isTransitioningRef = useRef(false);
   const lastTransitionedTimerIdRef = useRef<string | null>(null);
+
+  // Sync timer with server on mount (crash recovery)
+  useEffect(() => {
+    void syncTimerWithStore().catch(err => {
+      console.warn('[TimerScreen] Initial timer sync failed:', err);
+    });
+  }, []);
 
   // Realtime timer subscription
   const { connectionStatus, lastSyncMessage, clearSyncMessage } = useRealtimeTimer({
