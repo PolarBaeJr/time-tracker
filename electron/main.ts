@@ -136,11 +136,6 @@ function createWindow(): void {
   // Prevent navigation to external URLs in the main window
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const parsedUrl = new URL(url);
-    const allowedHosts = [
-      'localhost',
-      '127.0.0.1',
-      'accounts.google.com', // OAuth flow
-    ];
 
     // Allow file:// and worktracker:// protocols
     if (parsedUrl.protocol === 'file:' || parsedUrl.protocol === 'worktracker:') {
@@ -148,12 +143,17 @@ function createWindow(): void {
     }
 
     // Allow localhost in development
-    if (isDev && allowedHosts.includes(parsedUrl.hostname)) {
+    if (isDev && (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1')) {
       return;
     }
 
-    // Allow OAuth redirects
-    if (parsedUrl.hostname === 'accounts.google.com') {
+    // Allow Supabase OAuth initiation and Google sign-in
+    if (
+      parsedUrl.hostname.endsWith('.supabase.co') ||
+      parsedUrl.hostname.endsWith('.supabase.in') ||
+      parsedUrl.hostname === 'accounts.google.com' ||
+      parsedUrl.hostname === 'oauth2.googleapis.com'
+    ) {
       return;
     }
 
