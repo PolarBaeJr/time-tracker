@@ -6,7 +6,7 @@
 const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID';
 
 const SPOTIFY_SCOPES =
-  'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+  'user-read-playback-state user-modify-playback-state user-read-currently-playing streaming user-read-email user-read-private';
 
 const AUTHORIZE_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
@@ -118,6 +118,35 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
   }
 
   return response.json();
+}
+
+/**
+ * Load the Spotify Web Playback SDK script
+ */
+export function loadSpotifyPlaybackSDK(): Promise<void> {
+  if (typeof window !== 'undefined' && window.Spotify) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Spotify Web Playback SDK load timed out'));
+    }, 10_000);
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
+
+    const script = document.createElement('script');
+    script.src = 'https://sdk.scdn.co/spotify-player.js';
+    script.async = true;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error('Failed to load Spotify Web Playback SDK'));
+    };
+    document.head.appendChild(script);
+  });
 }
 
 /**

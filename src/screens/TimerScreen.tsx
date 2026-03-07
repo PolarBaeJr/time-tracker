@@ -781,8 +781,8 @@ export function TimerScreen(): React.ReactElement {
             />
           </Card>
 
-          {/* Spotify mini player (only when timer is active) */}
-          {hasActiveTimer && <SpotifyMiniPlayer />}
+          {/* Spotify mini player */}
+          <SpotifyMiniPlayer />
 
           {/* Sync message toast */}
           {lastSyncMessage && (

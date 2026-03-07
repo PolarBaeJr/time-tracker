@@ -5,6 +5,7 @@
  * fetching playback state, and controlling playback.
  */
 
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
@@ -16,6 +17,17 @@ import {
   refreshAccessToken,
   spotifyFetch,
 } from '@/lib/spotify';
+import {
+  initPlayer,
+  destroyPlayer,
+  getPlayer,
+  getDeviceId,
+  getIsPremium,
+  subscribePlayerState,
+  getPlayerStateSnapshot,
+  subscribePlayerError,
+  getPlayerErrorSnapshot,
+} from '@/lib/spotifyPlayer';
 
 // ============================================================================
 // TYPES
@@ -269,9 +281,140 @@ export function useSpotifyControls() {
   };
 
   return {
+    togglePlay: async () => {
+      const p = getPlayer();
+      if (p) {
+        await p.togglePlay();
+      } else {
+        // Determine current state to decide play vs pause
+        await callApi('/me/player/play');
+      }
+    },
     play: () => callApi('/me/player/play'),
     pause: () => callApi('/me/player/pause'),
-    next: () => callApi('/me/player/next', 'POST'),
-    previous: () => callApi('/me/player/previous', 'POST'),
+    next: async () => {
+      const p = getPlayer();
+      if (p) {
+        await p.nextTrack();
+      } else {
+        await callApi('/me/player/next', 'POST');
+      }
+    },
+    previous: async () => {
+      const p = getPlayer();
+      if (p) {
+        await p.previousTrack();
+      } else {
+        await callApi('/me/player/previous', 'POST');
+      }
+    },
+    seek: async (ms: number) => {
+      const p = getPlayer();
+      if (p) {
+        await p.seek(ms);
+      }
+    },
+    setVolume: async (v: number) => {
+      const p = getPlayer();
+      if (p) {
+        await p.setVolume(v);
+      }
+    },
+  };
+}
+
+export function useSpotifyPlayer(connection: SpotifyConnection | null | undefined) {
+  const [isReady, setIsReady] = useState(false);
+  const error = useSyncExternalStore(subscribePlayerError, getPlayerErrorSnapshot, () => null);
+
+  useEffect(() => {
+    if (!connection) return;
+
+    let cancelled = false;
+
+    const getAccessToken = async () => {
+      return getValidAccessToken(connection);
+    };
+
+    initPlayer(getAccessToken)
+      .then(() => {
+        if (!cancelled) setIsReady(!!getDeviceId());
+        // Poll briefly for device_id since 'ready' fires async
+        const check = setInterval(() => {
+          if (cancelled) {
+            clearInterval(check);
+            return;
+          }
+          if (getDeviceId()) {
+            setIsReady(true);
+            clearInterval(check);
+          }
+        }, 200);
+        setTimeout(() => clearInterval(check), 5000);
+      })
+      .catch(err => {
+        console.warn('Spotify SDK init failed:', err);
+      });
+
+    return () => {
+      cancelled = true;
+      destroyPlayer();
+      setIsReady(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-init when connection row changes
+  }, [connection?.id]);
+
+  return {
+    isReady,
+    error,
+    isPremium: getIsPremium(),
+  };
+}
+
+export function useSpotifySDKPlayback(): SpotifyPlaybackState | null {
+  const state = useSyncExternalStore(subscribePlayerState, getPlayerStateSnapshot, () => null);
+
+  if (!state) return null;
+
+  return {
+    track: state.track
+      ? {
+          name: state.track.name,
+          artist: state.track.artist,
+          albumArt: state.track.albumArt,
+          durationMs: state.track.durationMs,
+          progressMs: state.progressMs,
+        }
+      : null,
+    isPlaying: state.isPlaying,
+  };
+}
+
+export function useSpotifyProgress(sdkState: SpotifyPlaybackState | null) {
+  const currentProgressMs = sdkState?.track?.progressMs ?? 0;
+  const isPlaying = sdkState?.isPlaying ?? false;
+  const durationMs = sdkState?.track?.durationMs ?? 0;
+
+  const [interpolated, setInterpolated] = useState(0);
+  const baseRef = useRef({ progressMs: 0, timestamp: 0 });
+
+  // Interpolation timer: runs when playing, syncs base on SDK state changes
+  useEffect(() => {
+    // Always update base from latest SDK state
+    baseRef.current = { progressMs: currentProgressMs, timestamp: Date.now() };
+
+    if (!isPlaying || !durationMs) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - baseRef.current.timestamp;
+      setInterpolated(Math.min(baseRef.current.progressMs + elapsed, durationMs));
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [currentProgressMs, isPlaying, durationMs]);
+
+  return {
+    progressMs: sdkState?.track ? (isPlaying ? interpolated : currentProgressMs) : 0,
+    durationMs,
   };
 }

@@ -29,7 +29,7 @@ import * as http from 'http';
 import * as path from 'path';
 
 // Local HTTP server port for receiving the OAuth callback in the system browser.
-// Add http://localhost:54321/auth/callback to Supabase redirect allow-list.
+// Add http://127.0.0.1:54321/auth/callback to Supabase/Spotify redirect allow-list.
 const OAUTH_CALLBACK_PORT = 54321;
 let callbackServer: http.Server | null = null;
 
@@ -37,7 +37,7 @@ function startOAuthCallbackServer(): void {
   if (callbackServer) return;
 
   callbackServer = http.createServer((req, res) => {
-    const url = new URL(req.url ?? '/', `http://localhost:${OAUTH_CALLBACK_PORT}`);
+    const url = new URL(req.url ?? '/', `http://127.0.0.1:${OAUTH_CALLBACK_PORT}`);
 
     if (url.pathname === '/auth/callback') {
       // Implicit flow: tokens are in the URL hash which browsers don't send
@@ -370,7 +370,7 @@ function setupAutoUpdater(): void {
   });
 
   autoUpdater.on('download-progress', progress => {
-    console.log(`[updater] Download: ${progress.percent.toFixed(0)}%`);
+    console.warn(`[updater] Download: ${progress.percent.toFixed(0)}%`);
   });
 
   autoUpdater.on('update-downloaded', info => {
@@ -470,7 +470,7 @@ if (!gotTheLock) {
   // Expose OAuth redirect URL to renderer via IPC
   ipcMain.handle(
     'get-oauth-redirect-url',
-    () => `http://localhost:${OAUTH_CALLBACK_PORT}/auth/callback`
+    () => `http://127.0.0.1:${OAUTH_CALLBACK_PORT}/auth/callback`
   );
 
   // Check for updates manually from the renderer
