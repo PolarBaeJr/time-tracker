@@ -203,11 +203,28 @@ export {
   type UsePomodoroPresetsResult,
 } from './usePomodoroSettings';
 
+// Pomodoro stats hooks
+export {
+  usePomodoroStats,
+  type PomodoroStatsData,
+  type UsePomodoroStatsOptions,
+  type UsePomodoroStatsResult,
+} from './usePomodoroStats';
+
 // Keyboard shortcuts hook
 export { useKeyboardShortcuts, type ShortcutDef } from './useKeyboardShortcuts';
 
 // Timer sounds hook
 export { useTimerSounds, type SoundEvent } from './useTimerSounds';
+
+// Desktop notifications
+export { sendNotification } from './useDesktopNotifications';
+
+// Idle detection hook
+export { useIdleDetection } from './useIdleDetection';
+
+// Tray sync
+export { useTraySync } from './useTraySync';
 
 // Splash screen hook
 export {

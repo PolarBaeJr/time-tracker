@@ -21,7 +21,7 @@
 import * as React from 'react';
 import { ScrollView, View, StyleSheet, useWindowDimensions, RefreshControl } from 'react-native';
 
-import { KPICards, GoalProgress, getCurrentMonth } from '@/components/analytics';
+import { KPICards, GoalProgress, getCurrentMonth, PomodoroStats } from '@/components/analytics';
 import {
   ChartContainer,
   DailyChart,
@@ -74,12 +74,7 @@ function ChartSection({ halfWidth, children }: ChartSectionProps): React.ReactEl
   const isTablet = width >= TABLET_BREAKPOINT;
 
   return (
-    <View
-      style={[
-        styles.chartSection,
-        isTablet && halfWidth && styles.chartSectionHalf,
-      ]}
-    >
+    <View style={[styles.chartSection, isTablet && halfWidth && styles.chartSectionHalf]}>
       {children}
     </View>
   );
@@ -132,9 +127,9 @@ export function AnalyticsScreen(): React.ReactElement {
    * Check if all chart data is empty
    */
   const isAllDataEmpty = React.useMemo(() => {
-    const dailyEmpty = !dailyQuery.data?.some((d) => d.totalSeconds > 0);
-    const weeklyEmpty = !weeklyQuery.data?.some((w) => w.totalSeconds > 0);
-    const monthlyEmpty = !monthlyQuery.data?.some((m) => m.totalSeconds > 0);
+    const dailyEmpty = !dailyQuery.data?.some(d => d.totalSeconds > 0);
+    const weeklyEmpty = !weeklyQuery.data?.some(w => w.totalSeconds > 0);
+    const monthlyEmpty = !monthlyQuery.data?.some(m => m.totalSeconds > 0);
     return dailyEmpty && weeklyEmpty && monthlyEmpty;
   }, [dailyQuery.data, weeklyQuery.data, monthlyQuery.data]);
 
@@ -150,10 +145,7 @@ export function AnalyticsScreen(): React.ReactElement {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.content,
-          isTablet && styles.contentTablet,
-        ]}
+        contentContainerStyle={[styles.content, isTablet && styles.contentTablet]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -170,6 +162,14 @@ export function AnalyticsScreen(): React.ReactElement {
             Overview
           </Text>
           <KPICards />
+        </View>
+
+        {/* Pomodoro Section */}
+        <View style={styles.section}>
+          <Text variant="label" color="secondary" style={styles.sectionTitle}>
+            Pomodoro
+          </Text>
+          <PomodoroStats />
         </View>
 
         {/* Goal Progress Section */}
@@ -194,7 +194,7 @@ export function AnalyticsScreen(): React.ReactElement {
                 subtitle="Daily time tracked"
                 isLoading={dailyQuery.isLoading}
                 error={dailyQuery.error as Error | null}
-                isEmpty={!dailyQuery.data?.some((d) => d.totalSeconds > 0)}
+                isEmpty={!dailyQuery.data?.some(d => d.totalSeconds > 0)}
                 emptyMessage="No time tracked in the last 7 days"
                 minHeight={180}
               >
@@ -209,7 +209,7 @@ export function AnalyticsScreen(): React.ReactElement {
                 subtitle="Weekly totals"
                 isLoading={weeklyQuery.isLoading}
                 error={weeklyQuery.error as Error | null}
-                isEmpty={!weeklyQuery.data?.some((w) => w.totalSeconds > 0)}
+                isEmpty={!weeklyQuery.data?.some(w => w.totalSeconds > 0)}
                 emptyMessage="No time tracked in the last 4 weeks"
                 minHeight={180}
               >
@@ -224,7 +224,7 @@ export function AnalyticsScreen(): React.ReactElement {
                 subtitle="Monthly totals"
                 isLoading={monthlyQuery.isLoading}
                 error={monthlyQuery.error as Error | null}
-                isEmpty={!monthlyQuery.data?.some((m) => m.totalSeconds > 0)}
+                isEmpty={!monthlyQuery.data?.some(m => m.totalSeconds > 0)}
                 emptyMessage="No time tracked in the last 6 months"
                 minHeight={180}
               >
@@ -240,17 +240,13 @@ export function AnalyticsScreen(): React.ReactElement {
                 isLoading={hourOfDayQuery.isLoading || dayOfWeekQuery.isLoading}
                 error={(hourOfDayQuery.error || dayOfWeekQuery.error) as Error | null}
                 isEmpty={
-                  !hourOfDayQuery.data?.some((h) => h > 0) &&
-                  !dayOfWeekQuery.data?.some((d) => d > 0)
+                  !hourOfDayQuery.data?.some(h => h > 0) && !dayOfWeekQuery.data?.some(d => d > 0)
                 }
                 emptyMessage="No activity data yet"
                 minHeight={200}
               >
                 {hourOfDayQuery.data && dayOfWeekQuery.data && (
-                  <HeatmapChart
-                    hourData={hourOfDayQuery.data}
-                    dayData={dayOfWeekQuery.data}
-                  />
+                  <HeatmapChart hourData={hourOfDayQuery.data} dayData={dayOfWeekQuery.data} />
                 )}
               </ChartContainer>
             </ChartSection>

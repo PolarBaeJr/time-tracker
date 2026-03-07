@@ -12,7 +12,18 @@
  * - Content Security Policy restricts resource loading
  */
 
-import { app, BrowserWindow, session, ipcMain, dialog } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  session,
+  ipcMain,
+  dialog,
+  Notification,
+  Tray,
+  Menu,
+  nativeImage,
+  globalShortcut,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import * as http from 'http';
 import * as path from 'path';
@@ -76,6 +87,12 @@ const PROD_URL = `file://${path.join(__dirname, '../dist/index.html')}`;
  * Stored globally to prevent garbage collection
  */
 let mainWindow: BrowserWindow | null = null;
+
+/**
+ * System tray reference
+ * Stored globally to prevent garbage collection
+ */
+let tray: Tray | null = null;
 
 /**
  * Content Security Policy for the application
@@ -224,6 +241,57 @@ function createWindow(): void {
 }
 
 /**
+ * Create the system tray with context menu
+ */
+function createTray(): void {
+  // Create a simple 16x16 circle icon programmatically
+  const iconDataURL =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA' +
+    'QklEQVQ4T2NkoBAwUqifYdAY8B8bHxkbJYaQdAHIAGwYpwuIMgDZBcgYqwuINgCbIbhc' +
+    'QLQBuAzB5gKiDcDnZwBergwRAYjf4QAAAABJRU5ErkJggg==';
+  const icon = nativeImage.createFromDataURL(iconDataURL);
+
+  tray = new Tray(icon);
+  tray.setToolTip('WorkTracker');
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show/Hide WorkTracker',
+      click: () => {
+        if (mainWindow) {
+          if (mainWindow.isVisible()) {
+            mainWindow.hide();
+          } else {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        }
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+}
+
+/**
  * Handle OAuth deep link: worktracker://auth/callback?code=...
  * Sends the full callback URL to the renderer via IPC so the Supabase SDK
  * can call exchangeCodeForSession() with the stored PKCE code_verifier.
@@ -248,14 +316,14 @@ function setupAutoUpdater(): void {
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('update-available', info => {
-    console.log('[updater] Update available:', info.version);
+    console.warn('[updater] Update available:', info.version);
     if (mainWindow) {
       mainWindow.webContents.send('update-status', `Downloading update v${info.version}...`);
     }
   });
 
   autoUpdater.on('update-not-available', () => {
-    console.log('[updater] App is up to date');
+    console.warn('[updater] App is up to date');
   });
 
   autoUpdater.on('download-progress', progress => {
@@ -263,7 +331,7 @@ function setupAutoUpdater(): void {
   });
 
   autoUpdater.on('update-downloaded', info => {
-    console.log('[updater] Update downloaded:', info.version);
+    console.warn('[updater] Update downloaded:', info.version);
     const { shell } = require('electron') as typeof import('electron');
     dialog
       .showMessageBox({
@@ -334,6 +402,14 @@ if (!gotTheLock) {
   // App is ready to create windows
   app.whenReady().then(() => {
     createWindow();
+    createTray();
+
+    // Register global shortcut for toggling timer
+    globalShortcut.register('CommandOrControl+Shift+T', () => {
+      if (mainWindow) {
+        mainWindow.webContents.send('global-shortcut-toggle');
+      }
+    });
 
     // Check for updates in production builds
     if (!isDev) {
@@ -363,6 +439,28 @@ if (!gotTheLock) {
   // Get current app version
   ipcMain.handle('get-app-version', () => app.getVersion());
 
+  // Show a desktop notification
+  ipcMain.on('show-notification', (_event, title: string, body: string) => {
+    const notification = new Notification({ title, body });
+    notification.show();
+  });
+
+  // Update tray tooltip with timer state
+  ipcMain.on(
+    'update-tray',
+    (_event, state: { isRunning: boolean; elapsed: string; phase?: string }) => {
+      if (!tray) return;
+      const parts = ['WorkTracker'];
+      if (state.isRunning) {
+        parts.push(`${state.elapsed}`);
+        if (state.phase) {
+          parts.push(`(${state.phase})`);
+        }
+      }
+      tray.setToolTip(parts.join(' - '));
+    }
+  );
+
   // Open a URL in the system browser from the renderer
   ipcMain.handle('open-external-url', (_event, url: string) => {
     const { shell } = require('electron');
@@ -370,6 +468,11 @@ if (!gotTheLock) {
     return shell.openExternal(url);
   });
 }
+
+// Unregister all global shortcuts before quitting
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
 
 // Quit when all windows are closed (except on macOS)
 app.on('window-all-closed', () => {

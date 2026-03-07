@@ -17,6 +17,7 @@ import {
   PomodoroSettings,
   ThemeSelector,
   TimerSoundSettings,
+  IdleDetectionSettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -232,6 +233,14 @@ export function SettingsScreen(): React.ReactElement {
           <Text style={styles.sectionTitle}>Timer Sounds</Text>
           <Card padding="md" elevation="none" style={styles.sectionCard}>
             <TimerSoundSettings disabled={isUpdating} />
+          </Card>
+        </View>
+
+        {/* Idle Detection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Idle Detection</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <IdleDetectionSettings disabled={isUpdating} />
           </Card>
         </View>
 

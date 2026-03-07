@@ -49,10 +49,13 @@ import {
   usePomodoroSettings,
   usePomodoroPresets,
   useKeyboardShortcuts,
+  sendNotification,
+  useTraySync,
 } from '@/hooks';
 import { useTimerSounds } from '@/hooks/useTimerSounds';
+import { useIdleDetection } from '@/hooks/useIdleDetection';
 import { startTimer, stopTimer, syncTimerWithStore } from '@/services/timerService';
-import { useTimerStore } from '@/stores';
+import { useTimerStore, useTimerSettings } from '@/stores';
 import { colors, spacing, borderRadius } from '@/theme';
 import { queryKeys } from '@/lib/queryClient';
 import type { Category } from '@/schemas';
@@ -154,6 +157,9 @@ export function TimerScreen(): React.ReactElement {
 
   // Timer sounds
   const { playSound } = useTimerSounds();
+
+  // Idle detection settings
+  const { idleDetectionEnabled, idleThresholdMinutes } = useTimerSettings();
 
   // Pomodoro settings (persisted)
   const { settings: pomodoroSettings, updateSettings: updatePomodoroSettings } =
@@ -399,6 +405,8 @@ export function TimerScreen(): React.ReactElement {
         }
       } else {
         playSound('phase-change');
+        const phaseLabel = PHASE_LABELS[info.phase] ?? info.phase;
+        sendNotification('Phase Changed', `Starting ${phaseLabel}`);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -462,6 +470,31 @@ export function TimerScreen(): React.ReactElement {
   const isPomodoroActive = activeTimer?.timer_mode === 'pomodoro';
   const isCountdownActive = activeTimer?.timer_mode === 'countdown';
 
+  // Idle detection — only active when a timer is running
+  const handleIdleDetected = useCallback(
+    (idleMinutes: number) => {
+      const message = `You've been idle for ${idleMinutes} minutes. Discard idle time or keep it?`;
+      if (Platform.OS === 'web') {
+        const discard = window.confirm(message);
+        if (discard) {
+          void handleStop();
+        }
+      } else {
+        Alert.alert('Idle Detected', message, [
+          { text: 'Keep', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: () => void handleStop() },
+        ]);
+      }
+    },
+    [handleStop]
+  );
+
+  useIdleDetection({
+    enabled: idleDetectionEnabled && hasActiveTimer,
+    thresholdMinutes: idleThresholdMinutes,
+    onIdle: handleIdleDetected,
+  });
+
   const timerShortcuts = useMemo(
     () => [
       {
@@ -483,6 +516,22 @@ export function TimerScreen(): React.ReactElement {
 
   useKeyboardShortcuts(timerShortcuts);
 
+  // Tray sync (Electron only)
+  useTraySync();
+
+  // Global shortcut toggle (Electron only)
+  useEffect(() => {
+    const toggleTimer = () => {
+      if (isStarting || isStopping) return;
+      if (hasActiveTimer) {
+        void handleStop();
+      } else {
+        void handleStart();
+      }
+    };
+    window.desktop?.onGlobalShortcut(toggleTimer);
+  }, [hasActiveTimer, isStarting, isStopping, handleStart, handleStop]);
+
   // Countdown remaining seconds
   const countdownRemaining = useMemo(() => {
     if (!isCountdownActive || !activeTimer?.phase_duration_seconds) return undefined;
@@ -500,6 +549,7 @@ export function TimerScreen(): React.ReactElement {
     ) {
       countdownAlertedTimerIdRef.current = activeTimer.id;
       playSound('countdown-complete');
+      sendNotification('Countdown Complete', 'Your countdown timer has finished.');
       if (Platform.OS === 'web') {
         alert('Countdown complete!');
       } else {

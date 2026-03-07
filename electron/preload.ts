@@ -59,6 +59,12 @@ interface DesktopAPI {
   getAppVersion: () => Promise<string>;
   /** Listen for update status messages */
   onUpdateStatus: (callback: (message: string) => void) => void;
+  /** Show a desktop notification */
+  showNotification: (title: string, body: string) => void;
+  /** Update tray timer state */
+  updateTray: (state: { isRunning: boolean; elapsed: string; phase?: string }) => void;
+  /** Listen for global shortcut toggle */
+  onGlobalShortcut: (callback: () => void) => void;
 }
 
 /**
@@ -99,6 +105,15 @@ const desktopAPI: DesktopAPI = {
   getAppVersion: () => ipcRenderer.invoke('get-app-version') as Promise<string>,
   onUpdateStatus: (callback: (message: string) => void) => {
     ipcRenderer.on('update-status', (_event, message: string) => callback(message));
+  },
+  showNotification: (title: string, body: string) => {
+    ipcRenderer.send('show-notification', title, body);
+  },
+  updateTray: (state: { isRunning: boolean; elapsed: string; phase?: string }) => {
+    ipcRenderer.send('update-tray', state);
+  },
+  onGlobalShortcut: (callback: () => void) => {
+    ipcRenderer.on('global-shortcut-toggle', () => callback());
   },
 };
 

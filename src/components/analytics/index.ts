@@ -15,3 +15,6 @@ export type { KPICardsProps } from './KPICards';
 
 export { GoalProgress, getCurrentMonth } from './GoalProgress';
 export type { GoalProgressProps } from './GoalProgress';
+
+export { PomodoroStats } from './PomodoroStats';
+export type { PomodoroStatsProps } from './PomodoroStats';
