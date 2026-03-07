@@ -1,6 +1,7 @@
 import { useSyncExternalStore, useCallback } from 'react';
 
 import { storage } from '@/lib';
+import { getDashboardForSync, applyServerDashboardPrefs } from '@/stores/dashboardStore';
 
 const STORAGE_KEY = 'worktracker.pomodoro-settings.v1';
 const PRESETS_STORAGE_KEY = 'worktracker.pomodoro-presets.v1';
@@ -298,6 +299,7 @@ export function applyServerPreferences(prefs: {
   pomodorosBeforeLongBreak?: number;
   autoStartAfterBreak?: boolean;
   customPresets?: PomodoroPreset[];
+  dashboardWidgets?: Array<{ id: string; visible: boolean }>;
 }): void {
   if (!prefs || typeof prefs !== 'object') return;
 
@@ -340,6 +342,10 @@ export function applyServerPreferences(prefs: {
     notifyPresetListeners();
     void storage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets));
   }
+
+  if (Array.isArray(prefs.dashboardWidgets)) {
+    applyServerDashboardPrefs(prefs.dashboardWidgets);
+  }
 }
 
 export function getSettingsForSync(): Record<string, unknown> {
@@ -353,6 +359,7 @@ export function getSettingsForSync(): Record<string, unknown> {
     pomodorosBeforeLongBreak: currentSettings.pomodorosBeforeLongBreak,
     autoStartAfterBreak: currentSettings.autoStartAfterBreak,
     customPresets: customPresets,
+    ...getDashboardForSync(),
   };
 }
 

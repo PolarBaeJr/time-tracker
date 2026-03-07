@@ -18,3 +18,6 @@ export type { GoalProgressProps } from './GoalProgress';
 
 export { PomodoroStats } from './PomodoroStats';
 export type { PomodoroStatsProps } from './PomodoroStats';
+
+export { DashboardWidgetWrapper } from './DashboardWidgetWrapper';
+export { DashboardEditPanel } from './DashboardEditPanel';

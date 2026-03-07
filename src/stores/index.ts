@@ -36,3 +36,15 @@ export {
   getLocalTemplatesAndClear,
 } from './entryTemplateStore';
 export type { EntryTemplate, TemplateStoreState } from './entryTemplateStore';
+
+export {
+  useDashboardLayout,
+  setWidgetOrder,
+  toggleWidgetVisibility,
+  moveWidget,
+  resetToDefault,
+  setEditMode,
+  getDashboardForSync,
+  applyServerDashboardPrefs,
+} from './dashboardStore';
+export type { DashboardWidgetId, DashboardWidgetConfig } from './dashboardStore';

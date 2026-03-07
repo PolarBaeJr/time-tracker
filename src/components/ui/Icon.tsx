@@ -62,6 +62,9 @@ export const iconMap = {
   tag: '\u{1F3F7}', // label/tag
   attach: '\u{1F4CE}', // paperclip
   file: '\u{1F4C4}', // page facing up
+  'drag-handle': '\u2630', // hamburger
+  eye: '\u{1F441}', // eye
+  'eye-off': '\u25CB', // circle
 } as const;
 
 export type IconName = keyof typeof iconMap;

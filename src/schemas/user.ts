@@ -25,6 +25,14 @@ export const UserPreferencesSchema = z
         })
       )
       .default([]),
+    dashboardWidgets: z
+      .array(
+        z.object({
+          id: z.string(),
+          visible: z.boolean(),
+        })
+      )
+      .optional(),
   })
   .partial();
 
