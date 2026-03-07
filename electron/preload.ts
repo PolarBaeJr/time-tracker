@@ -49,6 +49,8 @@ interface DesktopAPI {
   platform: PlatformInfo;
   /** Get the OAuth redirect URL for this platform */
   getOAuthRedirectUrl: () => Promise<string>;
+  /** Open a URL in the system browser */
+  openExternalUrl: (url: string) => Promise<void>;
   /** Listen for OAuth callback URL from main process (full worktracker:// URL) */
   onOAuthCallback: (callback: (url: string) => void) => void;
 }
@@ -83,6 +85,7 @@ const desktopAPI: DesktopAPI = {
   versions: getVersions(),
   platform: getPlatform(),
   getOAuthRedirectUrl: () => ipcRenderer.invoke('get-oauth-redirect-url') as Promise<string>,
+  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url) as Promise<void>,
   onOAuthCallback: (callback: (url: string) => void) => {
     ipcRenderer.on('oauth-callback', (_event, url: string) => callback(url));
   },

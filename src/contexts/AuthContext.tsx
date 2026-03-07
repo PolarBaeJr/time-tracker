@@ -141,16 +141,25 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const signInWithGoogle = async (): Promise<void> => {
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const isElectron = typeof window !== 'undefined' && window.desktop?.platform?.isElectron;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: getAuthRedirectUrl(),
+        // In Electron, skip the automatic browser redirect so the PKCE flow
+        // state is fully stored before we open the system browser ourselves.
+        skipBrowserRedirect: isElectron ? true : undefined,
       },
     });
 
     if (error) {
       setLoading(false);
       throw error;
+    }
+
+    if (isElectron && data.url) {
+      await window.desktop!.openExternalUrl(data.url);
     }
   };
 

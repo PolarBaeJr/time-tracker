@@ -77,18 +77,6 @@ const CSP_POLICY = [
 ].join('; ');
 
 /**
- * Open the OAuth flow in the system browser.
- * A local HTTP server receives the callback so the browser can show a
- * "Sign-in complete" page and close itself. Passkeys and Touch ID work
- * because the system browser has full OS authenticator integration.
- */
-function openOAuthInBrowser(url: string): void {
-  startOAuthCallbackServer();
-  const { shell } = require('electron');
-  void shell.openExternal(url);
-}
-
-/**
  * Create the main application window
  */
 function createWindow(): void {
@@ -202,38 +190,15 @@ function createWindow(): void {
       return;
     }
 
-    // OAuth URLs open in a dedicated popup window so the main window stays
-    // on our React app and the popup closes automatically after sign-in.
-    if (
-      parsedUrl.hostname.endsWith('.supabase.co') ||
-      parsedUrl.hostname.endsWith('.supabase.in') ||
-      parsedUrl.hostname === 'accounts.google.com' ||
-      parsedUrl.hostname === 'oauth2.googleapis.com'
-    ) {
-      event.preventDefault();
-      openOAuthInBrowser(url);
-      return;
-    }
-
     // Block other navigations
     event.preventDefault();
     console.warn(`Blocked navigation to: ${url}`);
   });
 
-  // Handle new window requests — open OAuth in popup, others in system browser
+  // Handle new window requests — always open in system browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    const parsedUrl = new URL(url);
-    if (
-      parsedUrl.hostname.endsWith('.supabase.co') ||
-      parsedUrl.hostname.endsWith('.supabase.in') ||
-      parsedUrl.hostname === 'accounts.google.com' ||
-      parsedUrl.hostname === 'oauth2.googleapis.com'
-    ) {
-      openOAuthInBrowser(url);
-    } else {
-      const { shell } = require('electron');
-      void shell.openExternal(url);
-    }
+    const { shell } = require('electron');
+    void shell.openExternal(url);
     return { action: 'deny' };
   });
 }
@@ -302,7 +267,17 @@ if (!gotTheLock) {
   });
 
   // Expose OAuth redirect URL to renderer via IPC
-  ipcMain.handle('get-oauth-redirect-url', () => 'worktracker://auth/callback');
+  ipcMain.handle(
+    'get-oauth-redirect-url',
+    () => `http://localhost:${OAUTH_CALLBACK_PORT}/auth/callback`
+  );
+
+  // Open a URL in the system browser from the renderer
+  ipcMain.handle('open-external-url', (_event, url: string) => {
+    const { shell } = require('electron');
+    startOAuthCallbackServer();
+    return shell.openExternal(url);
+  });
 }
 
 // Quit when all windows are closed (except on macOS)
