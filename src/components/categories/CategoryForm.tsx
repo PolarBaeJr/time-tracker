@@ -7,16 +7,8 @@
  */
 
 import * as React from 'react';
-import { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  Alert,
-  Platform,
-} from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Modal, ScrollView, StyleSheet, Pressable, Alert, Platform } from 'react-native';
 import { Button, Text, Input, ColorPicker, Card } from '@/components/ui';
 import { colors, spacing, borderRadius } from '@/theme';
 import {
@@ -35,6 +27,7 @@ interface FormState {
   name: string;
   color: string;
   type: string;
+  hourlyRate: string;
 }
 
 /**
@@ -44,6 +37,7 @@ interface FormErrors {
   name?: string;
   color?: string;
   type?: string;
+  hourlyRate?: string;
 }
 
 /**
@@ -113,42 +107,46 @@ export function CategoryForm({
   const isEditMode = category !== null;
 
   // Form state
-  const [form, setForm] = useState<FormState>({
-    name: '',
-    color: PRESET_COLORS[0],
-    type: '',
-  });
+  const getInitialForm = (): FormState =>
+    category
+      ? {
+          name: category.name,
+          color: category.color,
+          type: category.type,
+          hourlyRate: category.hourly_rate != null ? String(category.hourly_rate) : '',
+        }
+      : {
+          name: '',
+          color: PRESET_COLORS[0],
+          type: '',
+          hourlyRate: '',
+        };
+
+  // Track previous category/visible to reset form during render (React recommended pattern)
+  const currentKey = `${category?.id ?? 'new'}-${visible}`;
+  const [prevKey, setPrevKey] = useState(currentKey);
+
+  const [form, setForm] = useState<FormState>(getInitialForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReassignOptions, setShowReassignOptions] = useState(false);
   const [selectedReassignCategory, setSelectedReassignCategory] = useState<string | null>(null);
 
-  // Initialize form when category changes
-  useEffect(() => {
-    if (category) {
-      setForm({
-        name: category.name,
-        color: category.color,
-        type: category.type,
-      });
-    } else {
-      setForm({
-        name: '',
-        color: PRESET_COLORS[0],
-        type: '',
-      });
-    }
+  // Reset form when category or visibility changes (during render, not in an effect)
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
+    setForm(getInitialForm());
     setErrors({});
     setShowDeleteConfirm(false);
     setShowReassignOptions(false);
     setSelectedReassignCategory(null);
-  }, [category, visible]);
+  }
 
   // Update form field
   const updateField = useCallback((field: keyof FormState, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm(prev => ({ ...prev, [field]: value }));
     // Clear error when field is modified
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
+    setErrors(prev => ({ ...prev, [field]: undefined }));
   }, []);
 
   // Validate form
@@ -158,7 +156,7 @@ export function CategoryForm({
     if (isEditMode) {
       const result = UpdateCategorySchema.safeParse(form);
       if (!result.success) {
-        result.error.issues.forEach((issue) => {
+        result.error.issues.forEach(issue => {
           const field = issue.path[0] as keyof FormErrors;
           newErrors[field] = issue.message;
         });
@@ -166,7 +164,7 @@ export function CategoryForm({
     } else {
       const result = CreateCategorySchema.safeParse(form);
       if (!result.success) {
-        result.error.issues.forEach((issue) => {
+        result.error.issues.forEach(issue => {
           const field = issue.path[0] as keyof FormErrors;
           newErrors[field] = issue.message;
         });
@@ -184,14 +182,26 @@ export function CategoryForm({
     }
 
     if (isEditMode) {
-      // Only include changed fields for update
       const updateData: UpdateCategoryInput = {};
       if (form.name !== category?.name) updateData.name = form.name;
       if (form.color !== category?.color) updateData.color = form.color;
       if (form.type !== category?.type) updateData.type = form.type;
+      const newRate = form.hourlyRate ? parseFloat(form.hourlyRate) : null;
+      const oldRate = category?.hourly_rate ?? null;
+      if (newRate !== oldRate) {
+        (updateData as Record<string, unknown>).hourly_rate = newRate;
+      }
       onSubmit(updateData);
     } else {
-      onSubmit(form as CreateCategoryInput);
+      const createData: Record<string, unknown> = {
+        name: form.name,
+        color: form.color,
+        type: form.type,
+      };
+      if (form.hourlyRate) {
+        createData.hourly_rate = parseFloat(form.hourlyRate);
+      }
+      onSubmit(createData as CreateCategoryInput);
     }
   }, [validateForm, isEditMode, form, category, onSubmit]);
 
@@ -284,7 +294,7 @@ export function CategoryForm({
                 label="Name"
                 placeholder="Category name"
                 value={form.name}
-                onChangeText={(text) => updateField('name', text)}
+                onChangeText={text => updateField('name', text)}
                 error={errors.name}
                 maxLength={100}
                 autoFocus={!isEditMode}
@@ -295,7 +305,7 @@ export function CategoryForm({
                 label="Type"
                 placeholder="e.g., work, hobby, study"
                 value={form.type}
-                onChangeText={(text) => updateField('type', text)}
+                onChangeText={text => updateField('type', text)}
                 error={errors.type}
                 maxLength={50}
                 helperText="A classification for this category"
@@ -303,7 +313,7 @@ export function CategoryForm({
 
               {/* Type suggestions */}
               <View style={styles.suggestions}>
-                {TYPE_SUGGESTIONS.map((suggestion) => (
+                {TYPE_SUGGESTIONS.map(suggestion => (
                   <Pressable
                     key={suggestion}
                     onPress={() => updateField('type', suggestion)}
@@ -322,11 +332,22 @@ export function CategoryForm({
                 ))}
               </View>
 
+              {/* Hourly rate */}
+              <Input
+                label="Hourly Rate (optional)"
+                placeholder="e.g., 50.00"
+                value={form.hourlyRate}
+                onChangeText={text => updateField('hourlyRate', text)}
+                error={errors.hourlyRate}
+                keyboardType="numeric"
+                helperText="Used to calculate earnings for billable entries"
+              />
+
               {/* Color picker */}
               <ColorPicker
                 label="Color"
                 value={form.color}
-                onChange={(color) => updateField('color', color)}
+                onChange={color => updateField('color', color)}
                 error={errors.color}
                 showCustomInput
               />
@@ -364,15 +385,15 @@ export function CategoryForm({
                 Reassign Entries?
               </Text>
               <Text variant="body" color="secondary" center style={styles.confirmText}>
-                This category has {entryCount} time {entryCount === 1 ? 'entry' : 'entries'}.
-                You can reassign them to another category before deleting, or leave them uncategorized.
+                This category has {entryCount} time {entryCount === 1 ? 'entry' : 'entries'}. You
+                can reassign them to another category before deleting, or leave them uncategorized.
               </Text>
 
               <Text variant="label" style={styles.reassignLabel}>
                 Move entries to:
               </Text>
 
-              {otherCategories.map((cat) => {
+              {otherCategories.map(cat => {
                 const isSelected = selectedReassignCategory === cat.id;
                 return (
                   <Card
@@ -432,11 +453,13 @@ export function CategoryForm({
               {entryCount > 0 ? (
                 <Text variant="body" color="secondary" center style={styles.confirmText}>
                   This category has {entryCount} time {entryCount === 1 ? 'entry' : 'entries'}.
-                  Deleting it will leave those entries uncategorized (they won't be deleted).
+                  Deleting it will leave those entries uncategorized (they won{"'"}t be deleted).
                 </Text>
               ) : (
                 <Text variant="body" color="secondary" center style={styles.confirmText}>
-                  Are you sure you want to delete "{category?.name}"? This action cannot be undone.
+                  Are you sure you want to delete {'"'}
+                  {category?.name}
+                  {'"'}? This action cannot be undone.
                 </Text>
               )}
 

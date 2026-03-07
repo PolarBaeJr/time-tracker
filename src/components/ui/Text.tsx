@@ -8,6 +8,7 @@ import {
   StyleSheet,
   type TextProps as RNTextProps,
   type TextStyle,
+  type StyleProp,
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { fontSizes, fontWeights, lineHeights } from '@/theme';
@@ -49,7 +50,7 @@ export interface TextProps extends RNTextProps {
   /** Whether text should be centered */
   center?: boolean;
   /** Additional styles */
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
 }
 
 /**

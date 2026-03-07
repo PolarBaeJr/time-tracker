@@ -72,7 +72,6 @@ export interface UseSplashScreenResult {
 export function useSplashScreen(options: UseSplashScreenOptions): UseSplashScreenResult {
   const { authLoading, dataLoading = false, minimumDisplayTime = 500 } = options;
 
-  const [isReady, setIsReady] = useState(false);
   const [minimumTimePassed, setMinimumTimePassed] = useState(false);
 
   // Track minimum display time
@@ -84,12 +83,8 @@ export function useSplashScreen(options: UseSplashScreenOptions): UseSplashScree
     return () => clearTimeout(timer);
   }, [minimumDisplayTime]);
 
-  // Update ready state when all conditions are met
-  useEffect(() => {
-    if (!authLoading && !dataLoading && minimumTimePassed) {
-      setIsReady(true);
-    }
-  }, [authLoading, dataLoading, minimumTimePassed]);
+  // Derive ready state from conditions (no effect needed)
+  const isReady = !authLoading && !dataLoading && minimumTimePassed;
 
   const hideSplash = useCallback(async () => {
     try {

@@ -7,20 +7,11 @@
  */
 
 import * as React from 'react';
-import { useCallback, useState } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Platform,
-} from 'react-native';
+import { useState } from 'react';
+import { View, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, Button, Spinner } from '@/components/ui';
-import {
-  TimezoneSelector,
-  WeekStartSelector,
-} from '@/components/settings';
+import { TimezoneSelector, WeekStartSelector } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
 import { useUserSettings, useUpdateUserSettings } from '@/hooks/useUserSettings';
@@ -35,7 +26,7 @@ export function SetupScreen(): React.ReactElement {
   });
 
   const { updateSettings, isUpdating } = useUpdateUserSettings({
-    onError: (err) => {
+    onError: err => {
       const message = err.message || 'Failed to update settings';
       if (Platform.OS === 'web') {
         alert(message);
@@ -45,31 +36,25 @@ export function SetupScreen(): React.ReactElement {
     },
   });
 
-  const handleTimezoneChange = useCallback(
-    async (timezone: string) => {
-      if (!user?.id) return;
-      try {
-        await updateSettings({ userId: user.id, updates: { timezone } });
-      } catch {
-        // handled by onError
-      }
-    },
-    [user?.id, updateSettings]
-  );
+  const handleTimezoneChange = async (timezone: string) => {
+    if (!user?.id) return;
+    try {
+      await updateSettings({ userId: user.id, updates: { timezone } });
+    } catch {
+      // handled by onError
+    }
+  };
 
-  const handleWeekStartChange = useCallback(
-    async (weekStartDay: number) => {
-      if (!user?.id) return;
-      try {
-        await updateSettings({ userId: user.id, updates: { week_start_day: weekStartDay } });
-      } catch {
-        // handled by onError
-      }
-    },
-    [user?.id, updateSettings]
-  );
+  const handleWeekStartChange = async (weekStartDay: number) => {
+    if (!user?.id) return;
+    try {
+      await updateSettings({ userId: user.id, updates: { week_start_day: weekStartDay } });
+    } catch {
+      // handled by onError
+    }
+  };
 
-  const handleGetStarted = useCallback(async () => {
+  const handleGetStarted = async () => {
     if (!user?.id) return;
     setIsCompleting(true);
     try {
@@ -78,7 +63,7 @@ export function SetupScreen(): React.ReactElement {
     } catch {
       setIsCompleting(false);
     }
-  }, [user?.id, updateSettings, refreshUser]);
+  };
 
   if (isLoading && !settings) {
     return (
@@ -93,7 +78,9 @@ export function SetupScreen(): React.ReactElement {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
-        <Text variant="display" style={styles.headerTitle}>Welcome</Text>
+        <Text variant="display" style={styles.headerTitle}>
+          Welcome
+        </Text>
         <Text variant="body" color="muted" style={styles.headerSubtitle}>
           Set up your preferences to get started
         </Text>

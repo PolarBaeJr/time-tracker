@@ -34,14 +34,18 @@ import {
   Platform,
   Pressable,
   Modal,
+  Switch,
 } from 'react-native';
 
-import { Button, Input, Text, Card, Spinner } from '@/components/ui';
+import { Button, Input, Text, Card, Spinner, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreateTimeEntry } from '@/hooks/useTimeEntryMutations';
 import { CreateTimeEntrySchema } from '@/schemas';
 import type { Category } from '@/schemas';
+import { useEntryTemplates, addTemplate } from '@/stores/entryTemplateStore';
+import { TemplateSelector } from '@/components/history/TemplateSelector';
+import type { EntryTemplate } from '@/stores/entryTemplateStore';
 
 // ============================================================================
 // Types
@@ -62,6 +66,7 @@ interface FormState {
   endTime: Date;
   durationMinutes: string;
   notes: string;
+  isBillable: boolean;
 }
 
 /**
@@ -190,7 +195,7 @@ function CategorySelector({
   const [modalVisible, setModalVisible] = useState(false);
 
   const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === selectedId),
+    () => categories.find(c => c.id === selectedId),
     [categories, selectedId]
   );
 
@@ -222,9 +227,7 @@ function CategorySelector({
       >
         {selectedCategory ? (
           <View style={styles.selectedCategory}>
-            <View
-              style={[styles.colorSwatch, { backgroundColor: selectedCategory.color }]}
-            />
+            <View style={[styles.colorSwatch, { backgroundColor: selectedCategory.color }]} />
             <View style={styles.categoryInfo}>
               <Text style={styles.categoryName}>{selectedCategory.name}</Text>
               <Text style={styles.categoryType}>{selectedCategory.type}</Text>
@@ -261,7 +264,7 @@ function CategorySelector({
                 <Text style={styles.categoryName}>No category</Text>
               </Pressable>
 
-              {categories.map((category) => (
+              {categories.map(category => (
                 <Pressable
                   key={category.id}
                   style={[
@@ -272,9 +275,7 @@ function CategorySelector({
                   accessibilityRole="button"
                 >
                   <View style={styles.selectedCategory}>
-                    <View
-                      style={[styles.colorSwatch, { backgroundColor: category.color }]}
-                    />
+                    <View style={[styles.colorSwatch, { backgroundColor: category.color }]} />
                     <View style={styles.categoryInfo}>
                       <Text style={styles.categoryName}>{category.name}</Text>
                       <Text style={styles.categoryType}>{category.type}</Text>
@@ -401,12 +402,14 @@ interface ModeToggleProps {
 }
 
 function ModeToggle({ mode, onModeChange }: ModeToggleProps): React.ReactElement {
-  const timesTextStyle = mode === 'times'
-    ? StyleSheet.flatten([styles.modeButtonText, styles.modeButtonTextActive])
-    : styles.modeButtonText;
-  const durationTextStyle = mode === 'duration'
-    ? StyleSheet.flatten([styles.modeButtonText, styles.modeButtonTextActive])
-    : styles.modeButtonText;
+  const timesTextStyle =
+    mode === 'times'
+      ? StyleSheet.flatten([styles.modeButtonText, styles.modeButtonTextActive])
+      : styles.modeButtonText;
+  const durationTextStyle =
+    mode === 'duration'
+      ? StyleSheet.flatten([styles.modeButtonText, styles.modeButtonTextActive])
+      : styles.modeButtonText;
 
   return (
     <View style={styles.modeToggle}>
@@ -462,8 +465,8 @@ export function QuickEntry({
       // Call success callback
       onSuccess?.();
     },
-    onError: (error) => {
-      setErrors((prev) => ({
+    onError: error => {
+      setErrors(prev => ({
         ...prev,
         general: error.message,
       }));
@@ -484,6 +487,7 @@ export function QuickEntry({
       endTime: now,
       durationMinutes: '60',
       notes: '',
+      isBillable: false,
     };
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -501,7 +505,7 @@ export function QuickEntry({
   }, [mode, form.date, form.startTime, form.endTime, form.durationMinutes]);
 
   // Reset form to initial state
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     const now = getRoundedCurrentTime();
     const oneHourAgo = new Date(now);
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
@@ -513,12 +517,13 @@ export function QuickEntry({
       endTime: now,
       durationMinutes: '60',
       notes: '',
+      isBillable: false,
     });
     setErrors({});
-  }, [initialCategoryId]);
+  };
 
   // Validate form and return true if valid
-  const validateForm = useCallback((): boolean => {
+  const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     // Check date is not in the future
@@ -556,10 +561,10 @@ export function QuickEntry({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [form, mode]);
+  };
 
   // Handle form submission
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
@@ -597,6 +602,7 @@ export function QuickEntry({
       end_at,
       duration_seconds,
       notes: form.notes || null,
+      is_billable: form.isBillable,
     };
 
     const validationResult = CreateTimeEntrySchema.safeParse(input);
@@ -618,24 +624,55 @@ export function QuickEntry({
     } catch {
       // Error handled by onError callback
     }
-  }, [form, mode, validateForm, createEntry]);
+  };
 
   // Form field update handlers
-  const updateField = useCallback(
-    <K extends keyof FormState>(field: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
-      // Clear related error
-      if (field === 'categoryId') setErrors((prev) => ({ ...prev, category: undefined }));
-      if (field === 'date') setErrors((prev) => ({ ...prev, date: undefined }));
-      if (field === 'startTime')
-        setErrors((prev) => ({ ...prev, startTime: undefined }));
-      if (field === 'endTime') setErrors((prev) => ({ ...prev, endTime: undefined }));
-      if (field === 'durationMinutes')
-        setErrors((prev) => ({ ...prev, duration: undefined }));
-      if (field === 'notes') setErrors((prev) => ({ ...prev, notes: undefined }));
-    },
-    []
-  );
+  const updateField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    // Clear related error
+    if (field === 'categoryId') setErrors(prev => ({ ...prev, category: undefined }));
+    if (field === 'date') setErrors(prev => ({ ...prev, date: undefined }));
+    if (field === 'startTime') setErrors(prev => ({ ...prev, startTime: undefined }));
+    if (field === 'endTime') setErrors(prev => ({ ...prev, endTime: undefined }));
+    if (field === 'durationMinutes') setErrors(prev => ({ ...prev, duration: undefined }));
+    if (field === 'notes') setErrors(prev => ({ ...prev, notes: undefined }));
+  };
+
+  // Handle save as template
+  const handleSaveAsTemplate = () => {
+    const templateName = form.notes
+      ? form.notes.slice(0, 30).trim()
+      : `Template ${new Date().toLocaleDateString()}`;
+
+    addTemplate({
+      name: templateName,
+      categoryId: form.categoryId,
+      notes: form.notes,
+      durationSeconds: calculatedDuration,
+      isBillable: form.isBillable,
+      tagIds: [],
+    });
+
+    if (Platform.OS === 'web') {
+      Alert.alert('Saved', 'Template saved successfully');
+    } else {
+      Alert.alert('Saved', 'Template saved successfully');
+    }
+  };
+
+  // Handle load template
+  const handleLoadTemplate = (template: EntryTemplate) => {
+    setForm(prev => ({
+      ...prev,
+      categoryId: template.categoryId,
+      notes: template.notes,
+      durationMinutes: String(Math.round(template.durationSeconds / 60)),
+      isBillable: template.isBillable,
+    }));
+    if (template.durationSeconds > 0) {
+      setMode('duration');
+    }
+  };
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
@@ -643,6 +680,21 @@ export function QuickEntry({
         <Text variant="heading" style={styles.title}>
           Add Time Entry
         </Text>
+
+        {/* Template actions */}
+        <View style={styles.templateRow}>
+          <TemplateSelector onSelect={handleLoadTemplate} />
+          <Pressable
+            style={styles.saveTemplateButton}
+            onPress={handleSaveAsTemplate}
+            disabled={calculatedDuration <= 0}
+            accessibilityRole="button"
+            accessibilityLabel="Save as template"
+          >
+            <Icon name="save" size={14} color={colors.textSecondary} />
+            <Text style={styles.saveTemplateText}>Save as Template</Text>
+          </Pressable>
+        </View>
 
         {/* General error */}
         {errors.general && (
@@ -655,7 +707,7 @@ export function QuickEntry({
         <CategorySelector
           categories={categories}
           selectedId={form.categoryId}
-          onSelect={(id) => updateField('categoryId', id)}
+          onSelect={id => updateField('categoryId', id)}
           error={errors.category}
           loading={categoriesLoading}
         />
@@ -664,7 +716,7 @@ export function QuickEntry({
         <DatePickerField
           label="Date"
           value={form.date}
-          onChange={(date) => updateField('date', date)}
+          onChange={date => updateField('date', date)}
           error={errors.date}
           maxDate={new Date()}
         />
@@ -679,7 +731,7 @@ export function QuickEntry({
               <TimePickerField
                 label="Start Time"
                 value={form.startTime}
-                onChange={(time) => updateField('startTime', time)}
+                onChange={time => updateField('startTime', time)}
                 error={errors.startTime}
               />
             </View>
@@ -687,7 +739,7 @@ export function QuickEntry({
               <TimePickerField
                 label="End Time"
                 value={form.endTime}
-                onChange={(time) => updateField('endTime', time)}
+                onChange={time => updateField('endTime', time)}
                 error={errors.endTime}
               />
             </View>
@@ -696,7 +748,7 @@ export function QuickEntry({
           <Input
             label="Duration (minutes)"
             value={form.durationMinutes}
-            onChangeText={(text) => updateField('durationMinutes', text)}
+            onChangeText={text => updateField('durationMinutes', text)}
             error={errors.duration}
             keyboardType="numeric"
             placeholder="Enter duration in minutes"
@@ -715,13 +767,24 @@ export function QuickEntry({
         <Input
           label="Notes (optional)"
           value={form.notes}
-          onChangeText={(text) => updateField('notes', text)}
+          onChangeText={text => updateField('notes', text)}
           error={errors.notes}
           multiline
           numberOfLines={3}
           placeholder="Add notes about this time entry..."
           helperText={`${form.notes.length}/1000 characters`}
         />
+
+        {/* Billable toggle */}
+        <View style={styles.billableRow}>
+          <Text style={styles.billableLabel}>Billable</Text>
+          <Switch
+            value={form.isBillable}
+            onValueChange={value => updateField('isBillable', value)}
+            trackColor={{ false: colors.surfaceVariant, true: colors.success + '60' }}
+            thumbColor={form.isBillable ? colors.success : colors.textMuted}
+          />
+        </View>
 
         {/* Action buttons */}
         <View style={styles.actions}>
@@ -908,6 +971,39 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     color: colors.primary,
     fontWeight: '600',
+  },
+  billableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  billableLabel: {
+    fontSize: fontSizes.md,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  templateRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
+  saveTemplateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceVariant,
+  },
+  saveTemplateText: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginLeft: spacing.xs,
   },
   actions: {
     flexDirection: 'row',
