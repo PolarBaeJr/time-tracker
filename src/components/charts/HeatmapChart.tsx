@@ -25,8 +25,8 @@
  * Install: npx expo install victory-native react-native-svg
  */
 
-import React, { useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Svg, { Rect, Text as SvgText, G } from 'react-native-svg';
 
 import { colors } from '@/theme';
@@ -54,10 +54,30 @@ export interface HeatmapChartProps {
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOUR_LABELS = [
-  '12a', '1a', '2a', '3a', '4a', '5a',
-  '6a', '7a', '8a', '9a', '10a', '11a',
-  '12p', '1p', '2p', '3p', '4p', '5p',
-  '6p', '7p', '8p', '9p', '10p', '11p',
+  '12a',
+  '1a',
+  '2a',
+  '3a',
+  '4a',
+  '5a',
+  '6a',
+  '7a',
+  '8a',
+  '9a',
+  '10a',
+  '11a',
+  '12p',
+  '1p',
+  '2p',
+  '3p',
+  '4p',
+  '5p',
+  '6p',
+  '7p',
+  '8p',
+  '9p',
+  '10p',
+  '11p',
 ];
 
 // Show every 3rd hour label to avoid crowding
@@ -65,15 +85,15 @@ const VISIBLE_HOUR_INDICES = [0, 3, 6, 9, 12, 15, 18, 21];
 
 // Color scale for heatmap (from empty to intense)
 const HEAT_COLORS = [
-  colors.surfaceVariant,  // 0: No activity
-  '#1e3a5f',              // 1: Very low
-  '#2563eb',              // 2: Low
-  '#3b82f6',              // 3: Medium-low
-  '#6366f1',              // 4: Medium (primary)
-  '#8b5cf6',              // 5: Medium-high
-  '#a855f7',              // 6: High
-  '#c026d3',              // 7: Very high
-  '#e879f9',              // 8: Intense
+  colors.surfaceVariant, // 0: No activity
+  '#1e3a5f', // 1: Very low
+  '#2563eb', // 2: Low
+  '#3b82f6', // 3: Medium-low
+  '#6366f1', // 4: Medium (primary)
+  '#8b5cf6', // 5: Medium-high
+  '#a855f7', // 6: High
+  '#c026d3', // 7: Very high
+  '#e879f9', // 8: Intense
 ];
 
 // ============================================================================
@@ -125,12 +145,17 @@ export function HeatmapChart({
   dayData,
   height = 280,
 }: HeatmapChartProps): React.ReactElement {
-  const { width } = useWindowDimensions();
-  const chartWidth = width - 48; // Account for card padding
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    setContainerWidth(event.nativeEvent.layout.width);
+  }, []);
+
+  const chartWidth = containerWidth;
 
   // Layout calculations
   const leftPadding = 35; // Space for hour labels
-  const topPadding = 25;  // Space for day labels
+  const topPadding = 25; // Space for day labels
   const bottomPadding = 10;
   const rightPadding = 10;
 
@@ -157,15 +182,11 @@ export function HeatmapChart({
 
     // Normalize hour data
     const hourMax = hourData ? Math.max(...hourData, 1) : 1;
-    const normalizedHours = hourData
-      ? hourData.map(h => h / hourMax)
-      : new Array(24).fill(0.5);
+    const normalizedHours = hourData ? hourData.map(h => h / hourMax) : new Array(24).fill(0.5);
 
     // Normalize day data
     const dayMax = dayData ? Math.max(...dayData, 1) : 1;
-    const normalizedDays = dayData
-      ? dayData.map(d => d / dayMax)
-      : new Array(7).fill(0.5);
+    const normalizedDays = dayData ? dayData.map(d => d / dayMax) : new Array(7).fill(0.5);
 
     // Build grid: day (x) x hour (y)
     for (let hour = 0; hour < 24; hour++) {
@@ -201,11 +222,15 @@ export function HeatmapChart({
   }, []);
 
   if (!heatmapData) {
-    return <View style={[styles.container, { height }]} />;
+    return <View style={[styles.container, { height }]} onLayout={onLayout} />;
+  }
+
+  if (chartWidth === 0) {
+    return <View style={[styles.container, { height }]} onLayout={onLayout} />;
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayout}>
       <Svg width={chartWidth} height={height}>
         {/* Day labels (x-axis, top) */}
         <G>
@@ -225,7 +250,7 @@ export function HeatmapChart({
 
         {/* Hour labels (y-axis, left) */}
         <G>
-          {VISIBLE_HOUR_INDICES.map((hourIndex) => (
+          {VISIBLE_HOUR_INDICES.map(hourIndex => (
             <SvgText
               key={`hour-${hourIndex}`}
               x={leftPadding - 5}
@@ -307,6 +332,7 @@ export function HeatmapChart({
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     alignItems: 'center',
   },
   legend: {

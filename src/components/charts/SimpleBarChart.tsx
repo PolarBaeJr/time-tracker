@@ -4,14 +4,14 @@
  */
 
 import React, { useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/ui';
 import { colors, spacing, borderRadius } from '@/theme';
 
 export interface BarDatum {
   label: string;
-  value: number;   // hours (already converted)
+  value: number; // hours (already converted)
   color?: string;
 }
 
@@ -35,12 +35,7 @@ export function SimpleBarChart({
   barColor = colors.primary,
   maxLabels = 7,
 }: SimpleBarChartProps): React.ReactElement {
-  const { width } = useWindowDimensions();
-
-  const maxValue = useMemo(
-    () => Math.max(...data.map((d) => d.value), 0.1),
-    [data]
-  );
+  const maxValue = useMemo(() => Math.max(...data.map(d => d.value), 0.1), [data]);
 
   // Pick which indices get an x-axis label
   const labelStep = useMemo(
@@ -54,7 +49,6 @@ export function SimpleBarChart({
 
   const chartHeight = height - 32; // leave room for x-axis labels
   const yAxisWidth = 36;
-  const chartWidth = Math.min(width - 48, 800) - yAxisWidth;
 
   // Y-axis ticks: 0, half, max
   const topLabel = formatHours(maxValue);
@@ -66,13 +60,19 @@ export function SimpleBarChart({
       <View style={{ flexDirection: 'row', height: chartHeight }}>
         {/* Y-axis */}
         <View style={[styles.yAxis, { width: yAxisWidth }]}>
-          <Text variant="caption" color="muted" style={styles.yLabel}>{topLabel}</Text>
-          <Text variant="caption" color="muted" style={styles.yLabel}>{midLabel}</Text>
-          <Text variant="caption" color="muted" style={styles.yLabel}>0h</Text>
+          <Text variant="caption" color="muted" style={styles.yLabel}>
+            {topLabel}
+          </Text>
+          <Text variant="caption" color="muted" style={styles.yLabel}>
+            {midLabel}
+          </Text>
+          <Text variant="caption" color="muted" style={styles.yLabel}>
+            0h
+          </Text>
         </View>
 
         {/* Bars */}
-        <View style={[styles.barsArea, { width: chartWidth }]}>
+        <View style={styles.barsArea}>
           {/* Grid lines */}
           <View style={[styles.gridLine, { top: 0 }]} />
           <View style={[styles.gridLine, { top: '50%' }]} />
@@ -90,7 +90,8 @@ export function SimpleBarChart({
                       style={[
                         styles.bar,
                         {
-                          height: `${Math.max(heightPct, d.value > 0 ? 2 : 0)}%` as unknown as number,
+                          height:
+                            `${Math.max(heightPct, d.value > 0 ? 2 : 0)}%` as unknown as number,
                           backgroundColor: color,
                         },
                       ]}
@@ -108,12 +109,7 @@ export function SimpleBarChart({
         {data.map((d, i) => (
           <View key={i} style={styles.xLabelContainer}>
             {i % labelStep === 0 ? (
-              <Text
-                variant="caption"
-                color="muted"
-                style={styles.xLabel}
-                numberOfLines={1}
-              >
+              <Text variant="caption" color="muted" style={styles.xLabel} numberOfLines={1}>
                 {d.label}
               </Text>
             ) : null}
@@ -168,8 +164,8 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: '100%',
-    borderTopLeftRadius: borderRadius.xs,
-    borderTopRightRadius: borderRadius.xs,
+    borderTopLeftRadius: borderRadius.sm,
+    borderTopRightRadius: borderRadius.sm,
     minHeight: 0,
   },
   xAxis: {

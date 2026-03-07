@@ -21,7 +21,7 @@
  */
 
 import * as React from 'react';
-import { View, StyleSheet, useWindowDimensions, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 
 import { Card, Text, Spinner } from '@/components/ui';
 import { useDailyTotals, useWeeklyTotals, useMonthlyTotals } from '@/hooks/useAnalytics';
@@ -53,9 +53,6 @@ interface KPICardData {
 // CONSTANTS
 // ============================================================================
 
-/** Breakpoint for responsive layout */
-const TABLET_BREAKPOINT = 768;
-
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -84,8 +81,8 @@ function calculateStreak(dailyTotals: Array<{ date: string; totalSeconds: number
   }
 
   // Sort by date descending (newest first)
-  const sorted = [...dailyTotals].sort((a, b) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime()
+  const sorted = [...dailyTotals].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   // Check if today has any time logged
@@ -199,9 +196,6 @@ function SingleKPICard({ data, isLoading, style }: SingleKPICardProps): React.Re
  * - useMonthlyTotals for this month
  */
 export function KPICards({ style }: KPICardsProps): React.ReactElement {
-  const { width } = useWindowDimensions();
-  const isTablet = width >= TABLET_BREAKPOINT;
-
   // Fetch data using analytics hooks
   // Get 30 days for streak calculation
   const { data: dailyData, isLoading: dailyLoading } = useDailyTotals({ days: 30 });
@@ -224,20 +218,20 @@ export function KPICards({ style }: KPICardsProps): React.ReactElement {
       subtitle: todayHours > 0 ? 'Keep it up!' : 'Start tracking',
     },
     {
-      title: "This Week",
+      title: 'This Week',
       value: formatHours(weekHours) + 'h',
       icon: '\u{1F4C5}', // Calendar emoji
       accentColor: colors.secondary,
       subtitle: weekHours > 28800 ? 'Great week!' : undefined,
     },
     {
-      title: "This Month",
+      title: 'This Month',
       value: formatHours(monthHours) + 'h',
       icon: '\u{1F4CA}', // Chart emoji
       accentColor: colors.success,
     },
     {
-      title: "Streak",
+      title: 'Streak',
       value: streak + (streak === 1 ? ' day' : ' days'),
       icon: '\u{1F525}', // Fire emoji
       accentColor: streak > 0 ? colors.warning : colors.textMuted,
@@ -247,30 +241,14 @@ export function KPICards({ style }: KPICardsProps): React.ReactElement {
 
   const isLoading = dailyLoading || weeklyLoading || monthlyLoading;
 
-  const containerStyle = StyleSheet.flatten([
-    styles.container,
-    isTablet ? styles.containerTablet : undefined,
-    style,
-  ]);
-
-  const getCardWrapperStyle = (index: number): ViewStyle => {
-    const baseStyle = isTablet ? styles.cardWrapperTablet : styles.cardWrapperMobile;
-    const needsMarginRight = isTablet && index % 2 === 0 && index < cards.length - 1;
-    return StyleSheet.flatten([
-      styles.cardWrapper,
-      baseStyle,
-      needsMarginRight ? styles.cardMarginRight : undefined,
-    ]);
-  };
-
   return (
-    <View style={containerStyle}>
-      {cards.map((card, index) => (
+    <View style={StyleSheet.flatten([styles.container, style])}>
+      {cards.map(card => (
         <SingleKPICard
           key={card.title}
           data={card}
           isLoading={isLoading}
-          style={getCardWrapperStyle(index)}
+          style={styles.cardWrapper}
         />
       ))}
     </View>
@@ -285,23 +263,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-  },
-  containerTablet: {
-    flexDirection: 'row',
+    gap: spacing.md,
   },
   cardWrapper: {
-    marginBottom: spacing.md,
-  },
-  cardWrapperMobile: {
-    width: '48%',
-    marginRight: '4%',
-  },
-  cardWrapperTablet: {
-    width: '48%',
-    marginRight: '4%',
-  },
-  cardMarginRight: {
-    marginRight: '4%',
+    flexGrow: 1,
+    flexBasis: '45%',
+    minWidth: 140,
   },
   card: {
     minHeight: 100,
