@@ -38,12 +38,13 @@ let mainWindow: BrowserWindow | null = null;
  */
 const CSP_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://www.googleapis.com https://apis.google.com",
   "frame-src 'self' https://accounts.google.com",
+  "worker-src 'self' blob:",
 ].join('; ');
 
 /**
@@ -199,16 +200,16 @@ app.on('window-all-closed', () => {
 // Security: Prevent new webview/webcontents creation
 app.on('web-contents-created', (_event, contents) => {
   // Disable webview tag
-  contents.on('will-attach-webview', (event) => {
+  contents.on('will-attach-webview', event => {
     event.preventDefault();
   });
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('Uncaught exception:', error);
 });
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', reason => {
   console.error('Unhandled rejection:', reason);
 });
