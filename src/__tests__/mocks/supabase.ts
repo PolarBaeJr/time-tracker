@@ -98,6 +98,7 @@ export function mockMonthlyGoal(overrides?: Partial<MonthlyGoal>): MonthlyGoal {
     user_id: 'user-123-uuid',
     month: '2024-03-01',
     category_id: null,
+    category_type: null,
     target_hours: 40,
     ...overrides,
   };

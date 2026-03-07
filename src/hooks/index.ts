@@ -86,13 +86,16 @@ export {
 export {
   useSetOverallGoal,
   useSetCategoryGoal,
+  useSetTypeGoal,
   useDeleteGoal,
   GoalMutationError,
   type UseSetOverallGoalOptions,
   type UseSetCategoryGoalOptions,
+  type UseSetTypeGoalOptions,
   type UseDeleteGoalOptions,
   type UseSetOverallGoalResult,
   type UseSetCategoryGoalResult,
+  type UseSetTypeGoalResult,
   type UseDeleteGoalResult,
 } from './useGoalMutations';
 

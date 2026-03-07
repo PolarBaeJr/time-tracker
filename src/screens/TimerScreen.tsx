@@ -186,8 +186,9 @@ export function TimerScreen(): React.ReactElement {
   // Pomodoro state
   const pomodoro = usePomodoro();
 
-  // Guard for auto-transition
+  // Guard for auto-transition — track the timer ID we already transitioned from
   const isTransitioningRef = useRef(false);
+  const lastTransitionedTimerIdRef = useRef<string | null>(null);
 
   // Realtime timer subscription
   const { connectionStatus, lastSyncMessage, clearSyncMessage } = useRealtimeTimer({
@@ -406,16 +407,18 @@ export function TimerScreen(): React.ReactElement {
   // Handle skip phase (stop current, start next)
   const handleSkipPhase = handleNextPhase;
 
-  // Auto-transition when phase completes
+  // Auto-transition when phase completes (guarded by timer ID to prevent loops)
   useEffect(() => {
     if (
       pomodoro.isPhaseComplete &&
       activeTimer?.timer_mode === 'pomodoro' &&
+      activeTimer.id !== lastTransitionedTimerIdRef.current &&
       !isTransitioningRef.current
     ) {
+      lastTransitionedTimerIdRef.current = activeTimer.id;
       void handleNextPhase();
     }
-  }, [pomodoro.isPhaseComplete, activeTimer?.timer_mode, handleNextPhase]);
+  }, [pomodoro.isPhaseComplete, activeTimer?.timer_mode, activeTimer?.id, handleNextPhase]);
 
   // Open category selector
   const handleOpenCategorySelector = useCallback(() => {

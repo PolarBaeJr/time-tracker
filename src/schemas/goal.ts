@@ -27,10 +27,17 @@ export const MonthlyGoalSchema = z.object({
 
   /**
    * UUID of the category this goal applies to (nullable)
-   * NULL = overall/total goal
+   * NULL = overall/total goal or per-type goal
    * NOT NULL = per-category goal
    */
   category_id: z.string().uuid().nullable(),
+
+  /**
+   * Category type for per-type goals (nullable)
+   * NULL = overall/total goal or per-category goal
+   * NOT NULL = per-type goal
+   */
+  category_type: z.string().min(1).max(50).nullable(),
 
   /**
    * Target hours to achieve in this month
@@ -58,6 +65,12 @@ export const CreateGoalSchema = z.object({
    * Omit or set to null for overall/total goal
    */
   category_id: z.string().uuid().nullable().optional(),
+
+  /**
+   * Category type for per-type goals (optional)
+   * Omit or set to null for overall/total goal or per-category goal
+   */
+  category_type: z.string().min(1).max(50).nullable().optional(),
 
   /**
    * Target hours to achieve
@@ -134,5 +147,16 @@ export const SetCategoryGoalSchema = z.object({
   target_hours: z.number().positive('Target hours must be greater than 0'),
 });
 
+/**
+ * Schema for setting per-type goals (category_type IS NOT NULL)
+ * Used for the useSetTypeGoal mutation
+ */
+export const SetTypeGoalSchema = z.object({
+  month: z.string().date(),
+  category_type: z.string().min(1).max(50),
+  target_hours: z.number().positive('Target hours must be greater than 0'),
+});
+
 export type SetOverallGoalInput = z.infer<typeof SetOverallGoalSchema>;
 export type SetCategoryGoalInput = z.infer<typeof SetCategoryGoalSchema>;
+export type SetTypeGoalInput = z.infer<typeof SetTypeGoalSchema>;

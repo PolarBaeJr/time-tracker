@@ -67,6 +67,9 @@ export interface GoalProgressResult {
   /** Per-category goal progress */
   categories: GoalProgress[];
 
+  /** Per-type goal progress */
+  types: GoalProgress[];
+
   /** Month being tracked */
   month: string;
 
@@ -143,16 +146,10 @@ function calculateProgress(
  * @returns Promise<GoalProgressResult> - Combined progress data
  * @throws GoalProgressError if the fetch fails
  */
-async function fetchGoalProgress({
-  month,
-}: FetchGoalProgressParams): Promise<GoalProgressResult> {
+async function fetchGoalProgress({ month }: FetchGoalProgressParams): Promise<GoalProgressResult> {
   // Calculate month boundaries
   const monthDate = new Date(month);
-  const monthStart = new Date(
-    monthDate.getFullYear(),
-    monthDate.getMonth(),
-    1
-  ).toISOString();
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
   const monthEnd = new Date(
     monthDate.getFullYear(),
     monthDate.getMonth() + 1,
@@ -163,8 +160,8 @@ async function fetchGoalProgress({
     999
   ).toISOString();
 
-  // Fetch goals and time entries in parallel
-  const [goalsResult, timeEntriesResult] = await Promise.all([
+  // Fetch goals, time entries, and categories in parallel
+  const [goalsResult, timeEntriesResult, categoriesResult] = await Promise.all([
     supabase
       .from('monthly_goals')
       .select('*')
@@ -175,6 +172,7 @@ async function fetchGoalProgress({
       .select('duration_seconds, category_id')
       .gte('start_at', monthStart)
       .lte('start_at', monthEnd),
+    supabase.from('categories').select('id, type'),
   ]);
 
   if (goalsResult.error) {
@@ -182,17 +180,25 @@ async function fetchGoalProgress({
   }
 
   if (timeEntriesResult.error) {
-    throw new GoalProgressError(
-      timeEntriesResult.error.message,
-      timeEntriesResult.error.code
-    );
+    throw new GoalProgressError(timeEntriesResult.error.message, timeEntriesResult.error.code);
+  }
+
+  if (categoriesResult.error) {
+    throw new GoalProgressError(categoriesResult.error.message, categoriesResult.error.code);
   }
 
   const goals = goalsResult.data ?? [];
   const timeEntries = timeEntriesResult.data ?? [];
+  const categoriesData = categoriesResult.data ?? [];
+
+  // Build a map from category ID to type
+  const categoryIdToType = new Map<string, string>();
+  for (const cat of categoriesData) {
+    categoryIdToType.set(cat.id, cat.type);
+  }
 
   // Validate goals
-  const validatedGoals = goals.map((goal) => {
+  const validatedGoals = goals.map(goal => {
     const parsed = MonthlyGoalSchema.safeParse(goal);
     if (!parsed.success) {
       console.warn('[useGoalProgress] Invalid goal data:', goal, parsed.error);
@@ -214,25 +220,48 @@ async function fetchGoalProgress({
     hoursByCategory.set(categoryId, existing + seconds);
   }
 
+  // Build hours by type map
+  const hoursByType = new Map<string, number>();
+  for (const entry of timeEntries) {
+    const categoryId = entry.category_id as string | null;
+    if (categoryId) {
+      const type = categoryIdToType.get(categoryId);
+      if (type) {
+        const existing = hoursByType.get(type) ?? 0;
+        hoursByType.set(type, existing + (entry.duration_seconds || 0));
+      }
+    }
+  }
+
   // Calculate days remaining
   const daysRemaining = calculateDaysRemaining(month);
 
   // Find overall goal and calculate progress
-  const overallGoal = validatedGoals.find((g) => g.category_id === null);
+  const overallGoal = validatedGoals.find(g => g.category_id === null && g.category_type === null);
   const overallProgress = overallGoal
     ? calculateProgress(overallGoal, totalLoggedSeconds / 3600, daysRemaining)
     : null;
 
   // Calculate per-category progress
-  const categoryGoals = validatedGoals.filter((g) => g.category_id !== null);
-  const categoryProgress = categoryGoals.map((goal) => {
+  const categoryGoals = validatedGoals.filter(
+    g => g.category_id !== null && g.category_type === null
+  );
+  const categoryProgress = categoryGoals.map(goal => {
     const categorySeconds = hoursByCategory.get(goal.category_id) ?? 0;
     return calculateProgress(goal, categorySeconds / 3600, daysRemaining);
+  });
+
+  // Calculate per-type progress
+  const typeGoals = validatedGoals.filter(g => g.category_type !== null);
+  const typeProgress = typeGoals.map(goal => {
+    const typeSeconds = hoursByType.get(goal.category_type!) ?? 0;
+    return calculateProgress(goal, typeSeconds / 3600, daysRemaining);
   });
 
   return {
     overall: overallProgress,
     categories: categoryProgress,
+    types: typeProgress,
     month,
     monthStart,
     monthEnd,

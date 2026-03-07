@@ -36,6 +36,7 @@ import {
   getLastNWeeks,
   getLastNMonths,
   getHourFromISOString,
+  getHourOfDay,
   getDayOfWeekFromISOString,
   type DayOfWeek,
   type DateRangeOptions,
@@ -121,10 +122,7 @@ export interface UseDailyTotalsOptions {
 /**
  * Fetch daily totals for the last N days
  */
-async function fetchDailyTotals(
-  days: number,
-  options: DateRangeOptions
-): Promise<DailyTotal[]> {
+async function fetchDailyTotals(days: number, options: DateRangeOptions): Promise<DailyTotal[]> {
   const dayRanges = getLastNDays(days, options);
 
   // Fetch all entries in the date range
@@ -167,7 +165,7 @@ async function fetchDailyTotals(
   }
 
   // Convert to array, sorted by date descending (newest first)
-  return dayRanges.map((range) => ({
+  return dayRanges.map(range => ({
     date: range.date,
     totalSeconds: dailyMap.get(range.date) ?? 0,
   }));
@@ -220,10 +218,7 @@ export interface UseWeeklyTotalsOptions {
 /**
  * Fetch weekly totals for the last N weeks
  */
-async function fetchWeeklyTotals(
-  weeks: number,
-  options: DateRangeOptions
-): Promise<WeeklyTotal[]> {
+async function fetchWeeklyTotals(weeks: number, options: DateRangeOptions): Promise<WeeklyTotal[]> {
   const weekRanges = getLastNWeeks(weeks, options);
 
   // Fetch all entries in the date range
@@ -266,7 +261,7 @@ async function fetchWeeklyTotals(
   }
 
   // Convert to array, sorted by week start descending (newest first)
-  return weekRanges.map((range) => ({
+  return weekRanges.map(range => ({
     weekStart: range.weekStart,
     totalSeconds: weeklyMap.get(range.weekStart) ?? 0,
   }));
@@ -365,7 +360,7 @@ async function fetchMonthlyTotals(
   }
 
   // Convert to array, sorted by month descending (newest first)
-  return monthRanges.map((range) => ({
+  return monthRanges.map(range => ({
     month: range.month,
     totalSeconds: monthlyMap.get(range.month) ?? 0,
   }));
@@ -441,13 +436,25 @@ async function fetchHourOfDayDistribution(
   // Initialize 24 hours with 0
   const distribution: HourOfDayDistribution = new Array(24).fill(0);
 
-  // Aggregate by hour
+  // Distribute each entry's duration across the actual hours it spans
   if (data) {
     for (const entry of data) {
-      if (!entry.start_at || entry.duration_seconds === null) continue;
+      if (!entry.start_at || !entry.duration_seconds) continue;
 
-      const hour = getHourFromISOString(entry.start_at, timezone);
-      distribution[hour] += entry.duration_seconds;
+      const start = new Date(entry.start_at);
+      let remaining = entry.duration_seconds;
+      let cursor = new Date(start);
+
+      while (remaining > 0) {
+        const hour = getHourOfDay(cursor, timezone);
+        // Seconds until the start of the next hour
+        const secsToNextHour = (60 - cursor.getMinutes()) * 60 - cursor.getSeconds();
+        const slice = Math.min(remaining, secsToNextHour);
+
+        distribution[hour] += slice;
+        remaining -= slice;
+        cursor = new Date(cursor.getTime() + slice * 1000);
+      }
     }
   }
 

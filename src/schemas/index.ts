@@ -69,10 +69,12 @@ export {
   UpdateGoalSchema,
   SetOverallGoalSchema,
   SetCategoryGoalSchema,
+  SetTypeGoalSchema,
   type MonthlyGoal,
   type CreateGoalInput,
   type UpdateGoalInput,
   type SetOverallGoalInput,
   type SetCategoryGoalInput,
+  type SetTypeGoalInput,
   type GoalProgress,
 } from './goal';

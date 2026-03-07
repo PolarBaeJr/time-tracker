@@ -30,7 +30,7 @@ import * as React from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button, Card, Input, Text } from '@/components/ui';
-import { useSetOverallGoal, useSetCategoryGoal, useCategories } from '@/hooks';
+import { useSetOverallGoal, useSetCategoryGoal, useSetTypeGoal, useCategories } from '@/hooks';
 import { type Category } from '@/schemas';
 import { borderRadius, colors, spacing } from '@/theme';
 
@@ -47,10 +47,13 @@ export interface GoalFormProps {
   month: string;
 
   /** Type of goal to create */
-  type: 'overall' | 'category';
+  type: 'overall' | 'category' | 'type';
 
   /** Initial category ID (for category goals) */
   initialCategoryId?: string;
+
+  /** Initial category type (for type goals) */
+  initialCategoryType?: string;
 
   /** Initial target hours */
   initialTargetHours?: number;
@@ -88,6 +91,7 @@ export function GoalForm({
   month,
   type,
   initialCategoryId,
+  initialCategoryType,
   initialTargetHours,
   onSuccess,
   onCancel,
@@ -99,18 +103,21 @@ export function GoalForm({
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(
     initialCategoryId ?? null
   );
+  const [selectedType, setSelectedType] = React.useState<string | null>(
+    initialCategoryType ?? null
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   // Hooks
   const { data: categories, isLoading: categoriesLoading } = useCategories({
-    enabled: type === 'category',
+    enabled: type === 'category' || type === 'type',
   });
 
   const setOverallGoal = useSetOverallGoal({
     onSuccess: () => {
       onSuccess?.();
     },
-    onError: (err) => {
+    onError: err => {
       setError(err.message);
       showError('Failed to save goal', err.message);
     },
@@ -120,13 +127,33 @@ export function GoalForm({
     onSuccess: () => {
       onSuccess?.();
     },
-    onError: (err) => {
+    onError: err => {
       setError(err.message);
       showError('Failed to save goal', err.message);
     },
   });
 
-  const isMutating = setOverallGoal.isPending || setCategoryGoal.isPending;
+  const setTypeGoal = useSetTypeGoal({
+    onSuccess: () => {
+      onSuccess?.();
+    },
+    onError: err => {
+      setError(err.message);
+      showError('Failed to save goal', err.message);
+    },
+  });
+
+  const isMutating = setOverallGoal.isPending || setCategoryGoal.isPending || setTypeGoal.isPending;
+
+  // Derive unique types from categories
+  const uniqueTypes = React.useMemo(() => {
+    if (!categories) return [];
+    const typeSet = new Set<string>();
+    for (const cat of categories) {
+      typeSet.add(cat.type);
+    }
+    return Array.from(typeSet).sort();
+  }, [categories]);
 
   /**
    * Validate the form input
@@ -141,6 +168,11 @@ export function GoalForm({
 
     if (type === 'category' && !selectedCategoryId) {
       setError('Please select a category');
+      return { valid: false };
+    }
+
+    if (type === 'type' && !selectedType) {
+      setError('Please select a type');
       return { valid: false };
     }
 
@@ -164,7 +196,7 @@ export function GoalForm({
           month,
           target_hours: validation.targetHoursNum,
         });
-      } else {
+      } else if (type === 'category') {
         if (!selectedCategoryId) {
           setError('Please select a category');
           return;
@@ -172,6 +204,16 @@ export function GoalForm({
         await setCategoryGoal.mutateAsync({
           month,
           category_id: selectedCategoryId,
+          target_hours: validation.targetHoursNum,
+        });
+      } else {
+        if (!selectedType) {
+          setError('Please select a type');
+          return;
+        }
+        await setTypeGoal.mutateAsync({
+          month,
+          category_type: selectedType,
           target_hours: validation.targetHoursNum,
         });
       }
@@ -200,13 +242,17 @@ export function GoalForm({
    * Get the selected category (for display)
    */
   const selectedCategory = React.useMemo(() => {
-    return categories?.find((c) => c.id === selectedCategoryId);
+    return categories?.find(c => c.id === selectedCategoryId);
   }, [categories, selectedCategoryId]);
 
   return (
     <Card padding="lg" elevation="md" style={styles.card}>
       <Text variant="headingSmall" style={styles.title}>
-        {type === 'overall' ? 'Set Overall Goal' : 'Set Category Goal'}
+        {type === 'overall'
+          ? 'Set Overall Goal'
+          : type === 'category'
+            ? 'Set Category Goal'
+            : 'Set Type Goal'}
       </Text>
 
       <Text variant="bodySmall" color="secondary" style={styles.subtitle}>
@@ -231,7 +277,7 @@ export function GoalForm({
               style={styles.categoryScroll}
               contentContainerStyle={styles.categoryScrollContent}
             >
-              {categories.map((category) => (
+              {categories.map(category => (
                 <Pressable
                   key={category.id}
                   onPress={() => handleCategorySelect(category)}
@@ -271,13 +317,71 @@ export function GoalForm({
         </View>
       )}
 
+      {/* Type Selector (only for type goals) */}
+      {type === 'type' && (
+        <View style={styles.section}>
+          <Text variant="label" style={styles.sectionLabel}>
+            Type
+          </Text>
+
+          {categoriesLoading ? (
+            <Text variant="bodySmall" color="muted">
+              Loading types...
+            </Text>
+          ) : uniqueTypes.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
+              contentContainerStyle={styles.categoryScrollContent}
+            >
+              {uniqueTypes.map(typeName => (
+                <Pressable
+                  key={typeName}
+                  onPress={() => {
+                    setSelectedType(typeName);
+                    setError(null);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: typeName === selectedType }}
+                  accessibilityLabel={`Select ${typeName} type`}
+                  style={[
+                    styles.categoryChip,
+                    typeName === selectedType && styles.categoryChipSelected,
+                  ]}
+                >
+                  <Text
+                    variant="bodySmall"
+                    color={typeName === selectedType ? 'default' : 'secondary'}
+                  >
+                    {typeName}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text variant="bodySmall" color="muted">
+              No types yet. Create categories with types first.
+            </Text>
+          )}
+
+          {selectedType && (
+            <View style={styles.selectedCategoryBanner}>
+              <Text variant="body">
+                Selected: <Text bold>{selectedType}</Text>
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Target Hours Input */}
       <View style={styles.section}>
         <Input
           label="Target Hours"
           placeholder="Enter target hours"
           value={targetHours}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setTargetHours(text);
             setError(null);
           }}
@@ -292,7 +396,7 @@ export function GoalForm({
           Quick Set
         </Text>
         <View style={styles.quickSetContainer}>
-          {QUICK_SET_VALUES.map((hours) => (
+          {QUICK_SET_VALUES.map(hours => (
             <Button
               key={hours}
               variant={targetHours === hours.toString() ? 'primary' : 'outline'}
@@ -323,7 +427,12 @@ export function GoalForm({
           variant="primary"
           onPress={() => void handleSubmit()}
           loading={isMutating}
-          disabled={isMutating || !targetHours || (type === 'category' && !selectedCategoryId)}
+          disabled={
+            isMutating ||
+            !targetHours ||
+            (type === 'category' && !selectedCategoryId) ||
+            (type === 'type' && !selectedType)
+          }
           style={styles.submitButton}
         >
           Save Goal

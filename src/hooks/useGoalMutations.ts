@@ -55,10 +55,12 @@ import { queryKeys } from '@/lib/queryClient';
 import {
   SetOverallGoalSchema,
   SetCategoryGoalSchema,
+  SetTypeGoalSchema,
   MonthlyGoalSchema,
   type MonthlyGoal,
   type SetOverallGoalInput,
   type SetCategoryGoalInput,
+  type SetTypeGoalInput,
 } from '@/schemas';
 
 /**
@@ -194,7 +196,7 @@ export function useSetOverallGoal(options?: UseSetOverallGoalOptions) {
 
   return useMutation({
     mutationFn: setOverallGoal,
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate goals queries for this month
       queryClient.invalidateQueries({ queryKey: queryKeys.goals(data.month) });
 
@@ -202,9 +204,7 @@ export function useSetOverallGoal(options?: UseSetOverallGoalOptions) {
     },
     onError: (error: Error) => {
       const mutationError =
-        error instanceof GoalMutationError
-          ? error
-          : new GoalMutationError(error.message);
+        error instanceof GoalMutationError ? error : new GoalMutationError(error.message);
 
       options?.onError?.(mutationError);
     },
@@ -331,7 +331,7 @@ export function useSetCategoryGoal(options?: UseSetCategoryGoalOptions) {
 
   return useMutation({
     mutationFn: setCategoryGoal,
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate goals queries for this month
       queryClient.invalidateQueries({ queryKey: queryKeys.goals(data.month) });
 
@@ -339,9 +339,129 @@ export function useSetCategoryGoal(options?: UseSetCategoryGoalOptions) {
     },
     onError: (error: Error) => {
       const mutationError =
-        error instanceof GoalMutationError
-          ? error
-          : new GoalMutationError(error.message);
+        error instanceof GoalMutationError ? error : new GoalMutationError(error.message);
+
+      options?.onError?.(mutationError);
+    },
+  });
+}
+
+// ============================================================================
+// SET TYPE GOAL (category_type IS NOT NULL)
+// ============================================================================
+
+/**
+ * Set or update a per-type goal for a month
+ *
+ * Uses upsert with the partial unique index on (user_id, month, category_type)
+ * WHERE category_type IS NOT NULL.
+ *
+ * @param input - Month, category type, and target hours
+ * @returns Promise<MonthlyGoal> - The created/updated goal
+ * @throws GoalMutationError if validation or mutation fails
+ */
+async function setTypeGoal(input: SetTypeGoalInput): Promise<MonthlyGoal> {
+  // Validate input
+  const validationResult = SetTypeGoalSchema.safeParse(input);
+  if (!validationResult.success) {
+    throw new GoalMutationError(
+      `Validation failed: ${validationResult.error.message}`,
+      'VALIDATION_ERROR',
+      validationResult.error.flatten()
+    );
+  }
+
+  const { month, category_type, target_hours } = validationResult.data;
+
+  // First try to find existing goal
+  const { data: existing } = await supabase
+    .from('monthly_goals')
+    .select('id')
+    .eq('month', month)
+    .eq('category_type', category_type)
+    .single();
+
+  let result;
+  let error;
+
+  if (existing?.id) {
+    // Update existing
+    const updateResult = await supabase
+      .from('monthly_goals')
+      .update({ target_hours })
+      .eq('id', existing.id)
+      .select()
+      .single();
+    result = updateResult.data;
+    error = updateResult.error;
+  } else {
+    // Insert new
+    const insertResult = await supabase
+      .from('monthly_goals')
+      .insert({
+        month,
+        category_type,
+        target_hours,
+      })
+      .select()
+      .single();
+    result = insertResult.data;
+    error = insertResult.error;
+  }
+
+  if (error) {
+    throw new GoalMutationError(error.message, error.code, error.details);
+  }
+
+  if (!result) {
+    throw new GoalMutationError('No data returned from mutation', 'NO_DATA');
+  }
+
+  // Validate response
+  const parsed = MonthlyGoalSchema.safeParse(result);
+  if (!parsed.success) {
+    console.warn('[useGoalMutations] Invalid response data:', result, parsed.error);
+    return result as MonthlyGoal;
+  }
+
+  return parsed.data;
+}
+
+/**
+ * Options for useSetTypeGoal hook
+ */
+export interface UseSetTypeGoalOptions {
+  /**
+   * Callback invoked on successful mutation
+   */
+  onSuccess?: (goal: MonthlyGoal) => void;
+
+  /**
+   * Callback invoked on error
+   */
+  onError?: (error: GoalMutationError) => void;
+}
+
+/**
+ * Hook to set/update a per-type goal for a month
+ *
+ * @param options - Optional callbacks for success/error handling
+ * @returns Mutation object with mutate/mutateAsync methods
+ */
+export function useSetTypeGoal(options?: UseSetTypeGoalOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: setTypeGoal,
+    onSuccess: data => {
+      // Invalidate goals queries for this month
+      queryClient.invalidateQueries({ queryKey: queryKeys.goals(data.month) });
+
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      const mutationError =
+        error instanceof GoalMutationError ? error : new GoalMutationError(error.message);
 
       options?.onError?.(mutationError);
     },
@@ -420,7 +540,7 @@ export function useDeleteGoal(options?: UseDeleteGoalOptions) {
 
   return useMutation({
     mutationFn: deleteGoal,
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate goals queries for this month
       queryClient.invalidateQueries({ queryKey: queryKeys.goals(data.month) });
 
@@ -428,9 +548,7 @@ export function useDeleteGoal(options?: UseDeleteGoalOptions) {
     },
     onError: (error: Error) => {
       const mutationError =
-        error instanceof GoalMutationError
-          ? error
-          : new GoalMutationError(error.message);
+        error instanceof GoalMutationError ? error : new GoalMutationError(error.message);
 
       options?.onError?.(mutationError);
     },
@@ -442,4 +560,5 @@ export function useDeleteGoal(options?: UseDeleteGoalOptions) {
  */
 export type UseSetOverallGoalResult = ReturnType<typeof useSetOverallGoal>;
 export type UseSetCategoryGoalResult = ReturnType<typeof useSetCategoryGoal>;
+export type UseSetTypeGoalResult = ReturnType<typeof useSetTypeGoal>;
 export type UseDeleteGoalResult = ReturnType<typeof useDeleteGoal>;

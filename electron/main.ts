@@ -275,7 +275,12 @@ function setupAutoUpdater(): void {
       })
       .then(({ response }) => {
         if (response === 0) {
-          autoUpdater.quitAndInstall();
+          // Remove listeners that might prevent quit, then schedule
+          // quitAndInstall on next tick to avoid dialog callback issues.
+          app.removeAllListeners('window-all-closed');
+          setImmediate(() => {
+            autoUpdater.quitAndInstall(false, true);
+          });
         }
       });
   });

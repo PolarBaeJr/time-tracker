@@ -36,7 +36,7 @@ export interface GoalListProps {
   onEditGoal?: (goal: MonthlyGoal) => void;
 
   /** Callback when a new goal should be added */
-  onAddGoal?: (type: 'overall' | 'category') => void;
+  onAddGoal?: (type: 'overall' | 'category' | 'type') => void;
 }
 
 /**
@@ -96,8 +96,13 @@ function GoalProgressItem({
   onDelete,
   isDeleting,
 }: GoalProgressItemProps): React.ReactElement {
-  const isOverall = progress.goal.category_id === null;
-  const displayName = isOverall ? 'Overall Goal' : categoryName ?? 'Category Goal';
+  const isOverall = progress.goal.category_id === null && progress.goal.category_type === null;
+  const isTypeGoal = progress.goal.category_type !== null;
+  const displayName = isTypeGoal
+    ? `${progress.goal.category_type} (type)`
+    : isOverall
+      ? 'Overall Goal'
+      : (categoryName ?? 'Category Goal');
   const progressPercent = Math.min(progress.progressPercent, 100);
   const progressColor = getProgressColor(progress.progressPercent, progress.isAchieved);
 
@@ -230,7 +235,7 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
       setDeletingId(null);
       void refetch();
     },
-    onError: (err) => {
+    onError: err => {
       setDeletingId(null);
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.alert(`Failed to delete goal: ${err.message}`);
@@ -257,7 +262,7 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
     categoryId: string | null
   ): { name?: string; color?: string } | undefined => {
     if (!categoryId || !categories) return undefined;
-    const category = categories.find((c) => c.id === categoryId);
+    const category = categories.find(c => c.id === categoryId);
     return category ? { name: category.name, color: category.color } : undefined;
   };
 
@@ -287,7 +292,8 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
   // Check if there are any goals
   const hasOverall = progressData?.overall !== null;
   const hasCategories = progressData?.categories && progressData.categories.length > 0;
-  const hasGoals = hasOverall || hasCategories;
+  const hasTypes = progressData?.types && progressData.types.length > 0;
+  const hasGoals = hasOverall || hasCategories || hasTypes;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -335,7 +341,7 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
       </View>
 
       {/* Category Goals */}
-      {progressData?.categories.map((catProgress) => {
+      {progressData?.categories.map(catProgress => {
         const catDetails = getCategoryDetails(catProgress.goal.category_id);
         return (
           <GoalProgressItem
@@ -344,9 +350,7 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
             categoryName={catDetails?.name}
             categoryColor={catDetails?.color}
             onEdit={onEditGoal ? () => onEditGoal(catProgress.goal) : undefined}
-            onDelete={() =>
-              handleDelete(catProgress.goal, catDetails?.name ?? 'Category Goal')
-            }
+            onDelete={() => handleDelete(catProgress.goal, catDetails?.name ?? 'Category Goal')}
             isDeleting={deletingId === catProgress.goal.id}
           />
         );
@@ -365,6 +369,45 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
           </Text>
           <Text variant="caption" color="muted" center>
             Set a target for a specific category
+          </Text>
+        </Pressable>
+      )}
+
+      {/* Section Divider - Type Goals */}
+      <View style={styles.sectionDivider}>
+        <Text variant="label" color="muted">
+          Type Goals
+        </Text>
+      </View>
+
+      {/* Type Goals */}
+      {progressData?.types.map(typeProgress => {
+        return (
+          <GoalProgressItem
+            key={typeProgress.goal.id}
+            progress={typeProgress}
+            onEdit={onEditGoal ? () => onEditGoal(typeProgress.goal) : undefined}
+            onDelete={() =>
+              handleDelete(typeProgress.goal, typeProgress.goal.category_type ?? 'Type Goal')
+            }
+            isDeleting={deletingId === typeProgress.goal.id}
+          />
+        );
+      })}
+
+      {/* Add Type Goal Button */}
+      {categories && categories.length > 0 && (
+        <Pressable
+          style={styles.addGoalCard}
+          onPress={() => onAddGoal?.('type')}
+          accessibilityRole="button"
+          accessibilityLabel="Add type goal"
+        >
+          <Text variant="body" color="primary" center>
+            + Add Type Goal
+          </Text>
+          <Text variant="caption" color="muted" center>
+            Set a target for all categories of a type
           </Text>
         </Pressable>
       )}

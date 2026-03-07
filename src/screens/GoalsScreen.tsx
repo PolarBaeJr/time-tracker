@@ -84,7 +84,7 @@ export function GoalsScreen(): React.ReactElement {
   // State
   const [selectedMonth, setSelectedMonth] = React.useState<string>(getCurrentMonth());
   const [isFormVisible, setIsFormVisible] = React.useState(false);
-  const [formType, setFormType] = React.useState<'overall' | 'category'>('overall');
+  const [formType, setFormType] = React.useState<'overall' | 'category' | 'type'>('overall');
   const [editingGoal, setEditingGoal] = React.useState<MonthlyGoal | null>(null);
 
   // We need a key to force GoalList to refresh after mutations
@@ -108,7 +108,7 @@ export function GoalsScreen(): React.ReactElement {
   /**
    * Handle opening the goal form
    */
-  const handleAddGoal = (type: 'overall' | 'category'): void => {
+  const handleAddGoal = (type: 'overall' | 'category' | 'type'): void => {
     setFormType(type);
     setEditingGoal(null);
     setIsFormVisible(true);
@@ -118,7 +118,13 @@ export function GoalsScreen(): React.ReactElement {
    * Handle editing an existing goal
    */
   const handleEditGoal = (goal: MonthlyGoal): void => {
-    setFormType(goal.category_id === null ? 'overall' : 'category');
+    if (goal.category_type !== null) {
+      setFormType('type');
+    } else if (goal.category_id !== null) {
+      setFormType('category');
+    } else {
+      setFormType('overall');
+    }
     setEditingGoal(goal);
     setIsFormVisible(true);
   };
@@ -138,7 +144,7 @@ export function GoalsScreen(): React.ReactElement {
     setIsFormVisible(false);
     setEditingGoal(null);
     // Force GoalList to refresh
-    setListKey((prev) => prev + 1);
+    setListKey(prev => prev + 1);
   };
 
   const isCurrentMonth = selectedMonth === getCurrentMonth();
@@ -172,9 +178,7 @@ export function GoalsScreen(): React.ReactElement {
             onPress={handleGoToCurrentMonth}
             disabled={isCurrentMonth}
             accessibilityRole="button"
-            accessibilityLabel={
-              isCurrentMonth ? 'Current month selected' : 'Go to current month'
-            }
+            accessibilityLabel={isCurrentMonth ? 'Current month selected' : 'Go to current month'}
             style={styles.monthDisplay}
           >
             <Text variant="headingSmall" center>
@@ -231,9 +235,7 @@ export function GoalsScreen(): React.ReactElement {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.modalHeader}>
-              <Text variant="headingSmall">
-                {editingGoal ? 'Edit Goal' : 'New Goal'}
-              </Text>
+              <Text variant="headingSmall">{editingGoal ? 'Edit Goal' : 'New Goal'}</Text>
               <Button variant="ghost" size="sm" onPress={handleFormClose}>
                 Close
               </Button>
@@ -243,6 +245,7 @@ export function GoalsScreen(): React.ReactElement {
               month={selectedMonth}
               type={formType}
               initialCategoryId={editingGoal?.category_id ?? undefined}
+              initialCategoryType={editingGoal?.category_type ?? undefined}
               initialTargetHours={editingGoal?.target_hours}
               onSuccess={handleFormSuccess}
               onCancel={handleFormClose}
