@@ -44,10 +44,18 @@ function getCurrentMonth(): string {
 }
 
 /**
+ * Parse YYYY-MM-DD as local date (not UTC)
+ */
+function parseLocalDate(month: string): Date {
+  const [y, m, d] = month.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/**
  * Navigate to previous month
  */
 function getPreviousMonth(month: string): string {
-  const date = new Date(month);
+  const date = parseLocalDate(month);
   date.setMonth(date.getMonth() - 1);
   return getFirstDayOfMonth(date);
 }
@@ -56,7 +64,7 @@ function getPreviousMonth(month: string): string {
  * Navigate to next month
  */
 function getNextMonth(month: string): string {
-  const date = new Date(month);
+  const date = parseLocalDate(month);
   date.setMonth(date.getMonth() + 1);
   return getFirstDayOfMonth(date);
 }
@@ -65,12 +73,12 @@ function getNextMonth(month: string): string {
  * Format month for display
  */
 function formatMonthDisplay(month: string): string {
-  const date = new Date(month);
+  const date = parseLocalDate(month);
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
 /**
- * Check if a month is in the future (beyond current month)
+ * Check if a month is the current month or in the past
  */
 function isCurrentOrPastMonth(month: string): boolean {
   const currentMonth = getCurrentMonth();

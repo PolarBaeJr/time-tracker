@@ -80,7 +80,8 @@ function showError(title: string, message: string): void {
  * Format month string for display
  */
 function formatMonthDisplay(month: string): string {
-  const date = new Date(month);
+  const [y, m, d] = month.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
