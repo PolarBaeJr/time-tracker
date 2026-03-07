@@ -264,23 +264,22 @@ function setupAutoUpdater(): void {
 
   autoUpdater.on('update-downloaded', info => {
     console.log('[updater] Update downloaded:', info.version);
+    const { shell } = require('electron') as typeof import('electron');
     dialog
       .showMessageBox({
         type: 'info',
-        title: 'Update Ready',
-        message: `Version ${info.version} has been downloaded.`,
-        detail: 'The app will restart to apply the update.',
-        buttons: ['Restart Now', 'Later'],
+        title: 'Update Available',
+        message: `Version ${info.version} is available.`,
+        detail: 'Would you like to download and install it?',
+        buttons: ['Download Update', 'Later'],
         defaultId: 0,
       })
       .then(({ response }) => {
         if (response === 0) {
-          // Let quitAndInstall stage the update, then force-kill if it hangs
-          setImmediate(() => {
-            autoUpdater.quitAndInstall(false, true);
-            // Force-kill after 3s in case quitAndInstall hangs (unsigned macOS)
-            setTimeout(() => process.exit(0), 3000);
-          });
+          // Open the releases page so the user can grab the latest DMG
+          void shell.openExternal(
+            `https://github.com/PolarBaeJr/time-tracker/releases/tag/v${info.version}`
+          );
         }
       });
   });
