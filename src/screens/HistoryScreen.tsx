@@ -15,11 +15,11 @@
 
 import * as React from 'react';
 import { useState, useCallback, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { HistoryFilters, EntryList } from '@/components/history';
-import { Text } from '@/components/ui';
-import { colors, spacing, fontSizes } from '@/theme';
+import { HistoryFilters, EntryList, ManualEntryModal } from '@/components/history';
+import { Text, Icon } from '@/components/ui';
+import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import { useTimeEntries, useCategories } from '@/hooks';
 import type { TimeEntry, TimeEntryFilters } from '@/schemas';
 
@@ -48,6 +48,9 @@ export interface HistoryScreenProps {
  * HistoryScreen component
  */
 export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.ReactElement {
+  // Manual entry modal state
+  const [addEntryModalVisible, setAddEntryModalVisible] = useState(false);
+
   // Initialize filters from route params
   const [filters, setFilters] = useState<TimeEntryFilters>(() => ({
     categoryId: route?.params?.categoryId,
@@ -56,16 +59,12 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
   }));
 
   // Fetch categories for filter dropdown and entry display
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-  } = useCategories();
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
 
   // Fetch time entries with filters and pagination
   const {
     data,
     isLoading: entriesLoading,
-    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -80,8 +79,8 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
   // Flatten paginated entries
   const entries = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page.data);
-  }, [data?.pages]);
+    return data.pages.flatMap(page => page.data);
+  }, [data]);
 
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: TimeEntryFilters) => {
@@ -146,11 +145,23 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
         <Text variant="heading" style={styles.title}>
           History
         </Text>
-        {entries.length > 0 && (
-          <Text style={styles.entryCount}>
-            {entries.length}{hasNextPage ? '+' : ''} entries
-          </Text>
-        )}
+        <View style={styles.headerRight}>
+          {entries.length > 0 && (
+            <Text style={styles.entryCount}>
+              {entries.length}
+              {hasNextPage ? '+' : ''} entries
+            </Text>
+          )}
+          <Pressable
+            style={styles.addEntryButton}
+            onPress={() => setAddEntryModalVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add entry"
+          >
+            <Icon name="add" size={16} color="#fff" />
+            <Text style={styles.addEntryButtonText}>Add Entry</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Filters */}
@@ -164,9 +175,7 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
       {/* Error state */}
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            Failed to load entries. Pull down to retry.
-          </Text>
+          <Text style={styles.errorText}>Failed to load entries. Pull down to retry.</Text>
         </View>
       )}
 
@@ -183,6 +192,12 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
         onEntryPress={handleEntryPress}
         onEntryEdit={handleEntryEdit}
         emptyMessage={emptyMessage}
+      />
+
+      {/* Manual entry modal */}
+      <ManualEntryModal
+        visible={addEntryModalVisible}
+        onClose={() => setAddEntryModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -208,9 +223,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   entryCount: {
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
+  },
+  addEntryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: 4,
+  },
+  addEntryButtonText: {
+    fontSize: fontSizes.sm,
+    color: '#fff',
+    fontWeight: '600',
   },
   errorContainer: {
     backgroundColor: colors.error + '20',
