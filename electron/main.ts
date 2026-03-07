@@ -51,6 +51,26 @@ const CSP_POLICY = [
  * Create the main application window
  */
 function createWindow(): void {
+  const distDir = path.join(__dirname, '../dist');
+
+  // Expo web exports use absolute paths (/_expo/*, /favicon.ico) which
+  // resolve to file:/// root and 404. Intercept and redirect to dist/.
+  session.defaultSession.webRequest.onBeforeRequest(
+    { urls: ['file://*/*'] },
+    (details, callback) => {
+      const url = new URL(details.url);
+      if (
+        url.pathname.startsWith('/_expo/') ||
+        url.pathname.startsWith('/assets/') ||
+        url.pathname === '/favicon.ico'
+      ) {
+        callback({ redirectURL: `file://${path.join(distDir, url.pathname)}` });
+      } else {
+        callback({});
+      }
+    }
+  );
+
   // Set Content Security Policy before window creation
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
