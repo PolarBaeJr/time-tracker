@@ -11,32 +11,88 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/components": ["src/components/index.ts"],
-      "@/components/*": ["src/components/*"],
-      "@/hooks": ["src/hooks/index.ts"],
-      "@/hooks/*": ["src/hooks/*"],
-      "@/lib": ["src/lib/index.ts"],
-      "@/lib/*": ["src/lib/*"],
-      "@/screens": ["src/screens/index.ts"],
-      "@/screens/*": ["src/screens/*"],
-      "@/stores": ["src/stores/index.ts"],
-      "@/stores/*": ["src/stores/*"],
-      "@/types": ["src/types/index.ts"],
-      "@/types/*": ["src/types/*"],
-      "@/theme": ["src/theme/index.ts"],
-      "@/theme/*": ["src/theme/*"],
-      "@/services": ["src/services/index.ts"],
-      "@/services/*": ["src/services/*"],
-      "@/schemas": ["src/schemas/index.ts"],
-      "@/schemas/*": ["src/schemas/*"],
-      "@/navigation": ["src/navigation/index.tsx"],
-      "@/navigation/*": ["src/navigation/*"],
-      "@/contexts": ["src/contexts/index.ts"],
-      "@/contexts/*": ["src/contexts/*"],
-      "@/utils": ["src/utils/index.ts"],
-      "@/utils/*": ["src/utils/*"]
+      "@/components": [
+        "src/components/index.ts"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/hooks": [
+        "src/hooks/index.ts"
+      ],
+      "@/hooks/*": [
+        "src/hooks/*"
+      ],
+      "@/lib": [
+        "src/lib/index.ts"
+      ],
+      "@/lib/*": [
+        "src/lib/*"
+      ],
+      "@/screens": [
+        "src/screens/index.ts"
+      ],
+      "@/screens/*": [
+        "src/screens/*"
+      ],
+      "@/stores": [
+        "src/stores/index.ts"
+      ],
+      "@/stores/*": [
+        "src/stores/*"
+      ],
+      "@/types": [
+        "src/types/index.ts"
+      ],
+      "@/types/*": [
+        "src/types/*"
+      ],
+      "@/theme": [
+        "src/theme/index.ts"
+      ],
+      "@/theme/*": [
+        "src/theme/*"
+      ],
+      "@/services": [
+        "src/services/index.ts"
+      ],
+      "@/services/*": [
+        "src/services/*"
+      ],
+      "@/schemas": [
+        "src/schemas/index.ts"
+      ],
+      "@/schemas/*": [
+        "src/schemas/*"
+      ],
+      "@/navigation": [
+        "src/navigation/index.tsx"
+      ],
+      "@/navigation/*": [
+        "src/navigation/*"
+      ],
+      "@/contexts": [
+        "src/contexts/index.ts"
+      ],
+      "@/contexts/*": [
+        "src/contexts/*"
+      ],
+      "@/utils": [
+        "src/utils/index.ts"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules", "electron", "dist", "electron-dist"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "electron",
+    "dist",
+    "electron-dist"
+  ]
 }

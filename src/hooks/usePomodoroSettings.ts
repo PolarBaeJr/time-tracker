@@ -192,25 +192,23 @@ const hydratePresets = async (): Promise<void> => {
     console.error('[pomodoroSettings] Failed to hydrate presets:', error);
   } finally {
     presetsLoaded = true;
+    rebuildPresets();
+    cachedPresetSnapshot = { presets: allPresets, isLoaded: presetsLoaded };
     notifyPresetListeners();
   }
 };
 
 void hydratePresets();
 
-const getAllPresets = (): PomodoroPreset[] => [...BUILT_IN_PRESETS, ...customPresets];
+let allPresets: PomodoroPreset[] = [...BUILT_IN_PRESETS, ...customPresets];
 
-let cachedPresetSnapshot = { presets: getAllPresets(), isLoaded: presetsLoaded };
+const rebuildPresets = (): void => {
+  allPresets = [...BUILT_IN_PRESETS, ...customPresets];
+};
+
+let cachedPresetSnapshot = { presets: allPresets, isLoaded: presetsLoaded };
 
 const getPresetSnapshot = (): { presets: PomodoroPreset[]; isLoaded: boolean } => {
-  const next = { presets: getAllPresets(), isLoaded: presetsLoaded };
-  if (
-    next.isLoaded !== cachedPresetSnapshot.isLoaded ||
-    next.presets.length !== cachedPresetSnapshot.presets.length ||
-    next.presets !== cachedPresetSnapshot.presets
-  ) {
-    cachedPresetSnapshot = next;
-  }
   return cachedPresetSnapshot;
 };
 
@@ -223,7 +221,6 @@ const stablePresetSubscribe = (listener: Listener): (() => void) => {
 
 const wrappedPresetSubscribe = (listener: Listener): (() => void) => {
   return stablePresetSubscribe(() => {
-    cachedPresetSnapshot = { presets: getAllPresets(), isLoaded: presetsLoaded };
     listener();
   });
 };
@@ -238,6 +235,8 @@ export function savePreset(
     settings: { ...settings },
   };
   customPresets = [...customPresets, preset];
+  rebuildPresets();
+  cachedPresetSnapshot = { presets: allPresets, isLoaded: presetsLoaded };
   notifyPresetListeners();
   void persistPresets();
   return preset;
@@ -247,6 +246,8 @@ export function deletePreset(id: string): void {
   const target = customPresets.find(p => p.id === id);
   if (!target) return;
   customPresets = customPresets.filter(p => p.id !== id);
+  rebuildPresets();
+  cachedPresetSnapshot = { presets: allPresets, isLoaded: presetsLoaded };
   notifyPresetListeners();
   void persistPresets();
 }
