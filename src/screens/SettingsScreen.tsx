@@ -22,10 +22,17 @@ import { useUserSettings, useUpdateUserSettings } from '@/hooks/useUserSettings'
 import Constants from 'expo-constants';
 
 /**
- * Get app version from Constants
+ * Get app version from Constants or Electron API
  */
-function getAppVersion(): string {
-  const version = Constants.expoConfig?.version ?? '1.0.0';
+function useAppVersion(): string {
+  const [version, setVersion] = React.useState(Constants.expoConfig?.version ?? '1.0.0');
+
+  React.useEffect(() => {
+    if (window.desktop?.getAppVersion) {
+      window.desktop.getAppVersion().then(v => setVersion(v));
+    }
+  }, []);
+
   const buildNumber =
     Constants.expoConfig?.ios?.buildNumber ??
     Constants.expoConfig?.android?.versionCode?.toString() ??
@@ -121,6 +128,8 @@ export function SettingsScreen(): React.ReactElement {
     }
   }, [refetch]);
 
+  const appVersion = useAppVersion();
+
   // Get avatar URL from session metadata
   const avatarUrl = session?.user?.user_metadata?.avatar_url as string | undefined;
 
@@ -157,8 +166,6 @@ export function SettingsScreen(): React.ReactElement {
       </SafeAreaView>
     );
   }
-
-  const appVersion = getAppVersion();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>

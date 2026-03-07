@@ -100,6 +100,7 @@ publish:
   provider: github
   owner: PolarBaeJr
   repo: time-tracker
+  releaseType: release
 
 # Build hooks
 afterSign: null
