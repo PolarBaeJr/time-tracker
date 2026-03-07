@@ -1,7 +1,7 @@
 {
   "name": "worktracker",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "electron/main.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",

@@ -65,7 +65,6 @@ win:
       arch:
         - x64
   icon: assets/icon.ico
-  publisherName: WorkTracker
 
 # NSIS installer configuration for Windows
 nsis:

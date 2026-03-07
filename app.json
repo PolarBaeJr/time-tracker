@@ -54,7 +54,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "WorkTracker",
+      "shortName": "WorkTracker",
+      "description": "Track your work time across projects and categories",
+      "themeColor": "#0F0F0F",
+      "backgroundColor": "#0F0F0F",
+      "startUrl": "/",
+      "display": "standalone",
+      "orientation": "portrait",
+      "scope": "/"
     },
     "plugins": [],
     "extra": {
