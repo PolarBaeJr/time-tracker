@@ -275,12 +275,11 @@ function setupAutoUpdater(): void {
       })
       .then(({ response }) => {
         if (response === 0) {
-          // Remove listeners that might prevent quit, then schedule
-          // quitAndInstall on next tick to avoid dialog callback issues.
-          app.removeAllListeners('window-all-closed');
-          setImmediate(() => {
-            autoUpdater.quitAndInstall(false, true);
-          });
+          // quitAndInstall doesn't reliably restart unsigned macOS apps.
+          // Instead: schedule a relaunch, then quit normally so that
+          // autoInstallOnAppQuit applies the update before restarting.
+          app.relaunch();
+          app.quit();
         }
       });
   });
