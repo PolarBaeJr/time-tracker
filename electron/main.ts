@@ -185,27 +185,13 @@ function createWindow(): void {
 }
 
 /**
- * Handle OAuth deep link: worktracker://auth/callback#access_token=...
- * Extracts tokens and sends them to the renderer via IPC so Supabase
- * can call setSession() without a full page reload.
+ * Handle OAuth deep link: worktracker://auth/callback?code=...
+ * Sends the full callback URL to the renderer via IPC so the Supabase SDK
+ * can call exchangeCodeForSession() with the stored PKCE code_verifier.
  */
 function handleOAuthCallback(url: string): void {
   if (!mainWindow) return;
-  const hash = url.includes('#') ? url.substring(url.indexOf('#') + 1) : '';
-  const params = new URLSearchParams(hash);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const expiresIn = params.get('expires_in');
-  const tokenType = params.get('token_type');
-
-  if (accessToken && refreshToken) {
-    mainWindow.webContents.send('oauth-callback', {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_in: expiresIn ? parseInt(expiresIn, 10) : 3600,
-      token_type: tokenType ?? 'bearer',
-    });
-  }
+  mainWindow.webContents.send('oauth-callback', url);
 }
 
 // Register worktracker:// as a protocol client for OAuth callbacks

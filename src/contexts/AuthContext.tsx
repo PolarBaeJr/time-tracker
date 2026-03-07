@@ -61,6 +61,17 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
 
+  // Electron: listen for the OAuth callback URL sent via IPC from main process.
+  // Uses exchangeCodeForSession so Supabase can complete the PKCE code exchange
+  // using the code_verifier it stored in localStorage before the flow started.
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.desktop?.platform?.isElectron) return;
+
+    window.desktop.onOAuthCallback(async (callbackUrl: string) => {
+      await supabase.auth.exchangeCodeForSession(callbackUrl);
+    });
+  }, []);
+
   React.useEffect(() => {
     let isActive = true;
     let latestRequestId = 0;
