@@ -275,7 +275,7 @@ function setupAutoUpdater(): void {
       })
       .then(({ response }) => {
         if (response === 0) {
-          autoUpdater.quitAndInstall(false, true);
+          app.quit();
         }
       });
   });
