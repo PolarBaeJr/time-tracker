@@ -36,6 +36,8 @@ files:
   - node_modules/semver/**
   - node_modules/tiny-typed-emitter/**
   - node_modules/sax/**
+  - node_modules/debug/**
+  - node_modules/ms/**
 
 # Files to exclude from the build
 extraResources: []
