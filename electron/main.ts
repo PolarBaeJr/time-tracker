@@ -137,8 +137,16 @@ function createWindow(): void {
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const parsedUrl = new URL(url);
 
-    // Allow file:// and worktracker:// protocols
-    if (parsedUrl.protocol === 'file:' || parsedUrl.protocol === 'worktracker:') {
+    // Allow file:// protocol
+    if (parsedUrl.protocol === 'file:') {
+      return;
+    }
+
+    // Intercept worktracker:// OAuth callback — reload app with hash so
+    // Supabase picks up access_token/refresh_token from window.location.hash
+    if (parsedUrl.protocol === 'worktracker:') {
+      event.preventDefault();
+      handleOAuthCallback(url);
       return;
     }
 
