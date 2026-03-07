@@ -269,17 +269,13 @@ function setupAutoUpdater(): void {
         type: 'info',
         title: 'Update Ready',
         message: `Version ${info.version} has been downloaded.`,
-        detail: 'Restart now to apply the update?',
-        buttons: ['Restart', 'Later'],
+        detail: 'Close and reopen the app to apply the update.',
+        buttons: ['Close Now', 'Later'],
         defaultId: 0,
       })
       .then(({ response }) => {
         if (response === 0) {
-          // quitAndInstall doesn't reliably restart unsigned macOS apps.
-          // Instead: schedule a relaunch, then quit normally so that
-          // autoInstallOnAppQuit applies the update before restarting.
-          app.relaunch();
-          app.quit();
+          autoUpdater.quitAndInstall(false, true);
         }
       });
   });
