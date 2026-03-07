@@ -7,6 +7,8 @@ const PRESETS_STORAGE_KEY = 'worktracker.pomodoro-presets.v1';
 
 export interface PomodoroSettingsData {
   pomodoroEnabled: boolean;
+  countdownEnabled: boolean;
+  countdownDurationSeconds: number;
   workDurationSeconds: number;
   breakDurationSeconds: number;
   longBreakDurationSeconds: number;
@@ -17,11 +19,16 @@ export interface PomodoroPreset {
   id: string;
   name: string;
   builtIn?: boolean;
-  settings: Omit<PomodoroSettingsData, 'pomodoroEnabled'>;
+  settings: Omit<
+    PomodoroSettingsData,
+    'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+  >;
 }
 
 const DEFAULT_SETTINGS: PomodoroSettingsData = {
   pomodoroEnabled: false,
+  countdownEnabled: false,
+  countdownDurationSeconds: 45 * 60,
   workDurationSeconds: 25 * 60,
   breakDurationSeconds: 5 * 60,
   longBreakDurationSeconds: 15 * 60,
@@ -67,6 +74,14 @@ const hydrateSettings = async (): Promise<void> => {
             typeof obj.pomodoroEnabled === 'boolean'
               ? obj.pomodoroEnabled
               : DEFAULT_SETTINGS.pomodoroEnabled,
+          countdownEnabled:
+            typeof obj.countdownEnabled === 'boolean'
+              ? obj.countdownEnabled
+              : DEFAULT_SETTINGS.countdownEnabled,
+          countdownDurationSeconds:
+            typeof obj.countdownDurationSeconds === 'number'
+              ? obj.countdownDurationSeconds
+              : DEFAULT_SETTINGS.countdownDurationSeconds,
           workDurationSeconds:
             typeof obj.workDurationSeconds === 'number'
               ? obj.workDurationSeconds
@@ -239,7 +254,10 @@ const wrappedPresetSubscribe = (listener: Listener): (() => void) => {
 
 export function savePreset(
   name: string,
-  settings: Omit<PomodoroSettingsData, 'pomodoroEnabled'>
+  settings: Omit<
+    PomodoroSettingsData,
+    'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+  >
 ): PomodoroPreset {
   const preset: PomodoroPreset = {
     id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -266,6 +284,8 @@ export function deletePreset(id: string): void {
 
 export function applyServerPreferences(prefs: {
   pomodoroEnabled?: boolean;
+  countdownEnabled?: boolean;
+  countdownDurationSeconds?: number;
   workDurationSeconds?: number;
   breakDurationSeconds?: number;
   longBreakDurationSeconds?: number;
@@ -276,6 +296,10 @@ export function applyServerPreferences(prefs: {
 
   const updates: Partial<PomodoroSettingsData> = {};
   if (typeof prefs.pomodoroEnabled === 'boolean') updates.pomodoroEnabled = prefs.pomodoroEnabled;
+  if (typeof prefs.countdownEnabled === 'boolean')
+    updates.countdownEnabled = prefs.countdownEnabled;
+  if (typeof prefs.countdownDurationSeconds === 'number')
+    updates.countdownDurationSeconds = prefs.countdownDurationSeconds;
   if (typeof prefs.workDurationSeconds === 'number')
     updates.workDurationSeconds = prefs.workDurationSeconds;
   if (typeof prefs.breakDurationSeconds === 'number')
@@ -312,6 +336,8 @@ export function applyServerPreferences(prefs: {
 export function getSettingsForSync(): Record<string, unknown> {
   return {
     pomodoroEnabled: currentSettings.pomodoroEnabled,
+    countdownEnabled: currentSettings.countdownEnabled,
+    countdownDurationSeconds: currentSettings.countdownDurationSeconds,
     workDurationSeconds: currentSettings.workDurationSeconds,
     breakDurationSeconds: currentSettings.breakDurationSeconds,
     longBreakDurationSeconds: currentSettings.longBreakDurationSeconds,
@@ -330,7 +356,10 @@ export interface UsePomodoroPresetsResult {
   presets: PomodoroPreset[];
   savePreset: (
     name: string,
-    settings: Omit<PomodoroSettingsData, 'pomodoroEnabled'>
+    settings: Omit<
+      PomodoroSettingsData,
+      'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+    >
   ) => PomodoroPreset;
   deletePreset: (id: string) => void;
   isLoaded: boolean;
@@ -360,7 +389,13 @@ export function usePomodoroPresets(): UsePomodoroPresetsResult {
   );
 
   const save = useCallback(
-    (name: string, settings: Omit<PomodoroSettingsData, 'pomodoroEnabled'>) => {
+    (
+      name: string,
+      settings: Omit<
+        PomodoroSettingsData,
+        'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+      >
+    ) => {
       return savePreset(name, settings);
     },
     []

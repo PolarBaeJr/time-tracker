@@ -24,10 +24,20 @@ export interface SessionSettings {
 export interface TimerModeDropdownProps {
   pomodoroEnabled: boolean;
   onPomodoroEnabledChange: (enabled: boolean) => void;
+  countdownEnabled: boolean;
+  onCountdownEnabledChange: (enabled: boolean) => void;
+  countdownDurationSeconds: number;
+  onCountdownDurationChange: (seconds: number) => void;
   effectiveSettings: SessionSettings;
   onSettingsChange: (settings: SessionSettings) => void;
   presets: PomodoroPreset[];
-  onSavePreset: (name: string, settings: Omit<PomodoroSettingsData, 'pomodoroEnabled'>) => void;
+  onSavePreset: (
+    name: string,
+    settings: Omit<
+      PomodoroSettingsData,
+      'pomodoroEnabled' | 'countdownEnabled' | 'countdownDurationSeconds'
+    >
+  ) => void;
   onDeletePreset: (id: string) => void;
   disabled?: boolean;
 }
@@ -102,6 +112,10 @@ function StepperRow({
 export function TimerModeDropdown({
   pomodoroEnabled,
   onPomodoroEnabledChange,
+  countdownEnabled,
+  onCountdownEnabledChange,
+  countdownDurationSeconds,
+  onCountdownDurationChange,
   effectiveSettings,
   onSettingsChange,
   presets,
@@ -126,13 +140,20 @@ export function TimerModeDropdown({
   }, []);
 
   const handleSelectMode = useCallback(
-    (mode: 'normal' | 'pomodoro') => {
-      onPomodoroEnabledChange(mode === 'pomodoro');
+    (mode: 'normal' | 'pomodoro' | 'countdown') => {
       if (mode === 'normal') {
+        onPomodoroEnabledChange(false);
+        onCountdownEnabledChange(false);
         closeDropdown();
+      } else if (mode === 'pomodoro') {
+        onPomodoroEnabledChange(true);
+        onCountdownEnabledChange(false);
+      } else {
+        onCountdownEnabledChange(true);
+        onPomodoroEnabledChange(false);
       }
     },
-    [onPomodoroEnabledChange, closeDropdown]
+    [onPomodoroEnabledChange, onCountdownEnabledChange, closeDropdown]
   );
 
   const workMinutes = Math.round(effectiveSettings.workDurationSeconds / 60);
@@ -160,7 +181,9 @@ export function TimerModeDropdown({
     setTimeout(() => saveInputRef.current?.focus(), 100);
   }, []);
 
-  const modeLabel = pomodoroEnabled ? 'Pomodoro' : 'Timer';
+  const countdownMinutes = Math.round(countdownDurationSeconds / 60);
+
+  const modeLabel = pomodoroEnabled ? 'Pomodoro' : countdownEnabled ? 'Countdown' : 'Stopwatch';
 
   return (
     <View style={styles.container}>
@@ -194,7 +217,10 @@ export function TimerModeDropdown({
                   <Text style={styles.sectionLabel}>Mode</Text>
                   <View style={styles.modeRow}>
                     <Pressable
-                      style={[styles.modeOption, !pomodoroEnabled && styles.modeOptionSelected]}
+                      style={[
+                        styles.modeOption,
+                        !pomodoroEnabled && !countdownEnabled && styles.modeOptionSelected,
+                      ]}
                       onPress={() => handleSelectMode('normal')}
                       accessibilityRole="button"
                     >
@@ -202,11 +228,27 @@ export function TimerModeDropdown({
                         style={
                           StyleSheet.flatten([
                             styles.modeOptionText,
-                            !pomodoroEnabled && styles.modeOptionTextSelected,
+                            !pomodoroEnabled && !countdownEnabled && styles.modeOptionTextSelected,
                           ]) as TextStyle
                         }
                       >
-                        Timer
+                        Stopwatch
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.modeOption, countdownEnabled && styles.modeOptionSelected]}
+                      onPress={() => handleSelectMode('countdown')}
+                      accessibilityRole="button"
+                    >
+                      <Text
+                        style={
+                          StyleSheet.flatten([
+                            styles.modeOptionText,
+                            countdownEnabled && styles.modeOptionTextSelected,
+                          ]) as TextStyle
+                        }
+                      >
+                        Countdown
                       </Text>
                     </Pressable>
                     <Pressable
@@ -226,6 +268,26 @@ export function TimerModeDropdown({
                       </Text>
                     </Pressable>
                   </View>
+
+                  {/* Countdown settings (shown when Countdown selected) */}
+                  {countdownEnabled && (
+                    <>
+                      <View style={styles.divider} />
+                      <Text style={styles.sectionLabel}>Duration</Text>
+                      <View style={styles.settingsGroup}>
+                        <StepperRow
+                          label="Duration"
+                          value={countdownMinutes}
+                          min={1}
+                          max={180}
+                          onIncrement={() => onCountdownDurationChange((countdownMinutes + 5) * 60)}
+                          onDecrement={() =>
+                            onCountdownDurationChange(Math.max(1, countdownMinutes - 5) * 60)
+                          }
+                        />
+                      </View>
+                    </>
+                  )}
 
                   {/* Pomodoro settings (shown when Pomodoro selected) */}
                   {pomodoroEnabled && (

@@ -82,8 +82,8 @@ export interface StartTimerOptions {
    */
   categoryId?: string | null;
 
-  /** Timer mode: 'normal' or 'pomodoro' */
-  timerMode?: 'normal' | 'pomodoro';
+  /** Timer mode: 'normal', 'pomodoro', or 'countdown' */
+  timerMode?: 'normal' | 'pomodoro' | 'countdown';
 
   /** Pomodoro phase to start */
   pomodoroPhase?: 'work' | 'break' | 'long_break';
@@ -93,6 +93,9 @@ export interface StartTimerOptions {
 
   /** Number of pomodoros already completed */
   pomodorosCompleted?: number;
+
+  /** Target duration for countdown mode in seconds */
+  countdownDurationSeconds?: number;
 }
 
 /**
@@ -139,6 +142,12 @@ export async function startTimer(options?: StartTimerOptions): Promise<TimerResu
       insertData.pomodoro_phase = options.pomodoroPhase ?? 'work';
       insertData.phase_duration_seconds = options.phaseDurationSeconds ?? 1500;
       insertData.pomodoros_completed = options.pomodorosCompleted ?? 0;
+    }
+
+    // Add countdown fields if in countdown mode
+    if (options?.timerMode === 'countdown') {
+      insertData.timer_mode = 'countdown';
+      insertData.phase_duration_seconds = options.countdownDurationSeconds ?? 2700;
     }
 
     const { data, error } = await supabase

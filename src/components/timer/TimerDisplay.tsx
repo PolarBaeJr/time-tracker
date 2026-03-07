@@ -88,7 +88,7 @@ export function TimerDisplay({ style, countdownSeconds }: TimerDisplayProps): Re
         {displayTime}
       </Text>
       <Text variant="bodySmall" color={isRunning ? 'success' : 'warning'} style={styles.statusText}>
-        {isRunning ? 'Running' : 'Paused'}
+        {isRunning ? (countdownSeconds !== undefined ? 'Countdown' : 'Running') : 'Paused'}
       </Text>
     </View>
   );

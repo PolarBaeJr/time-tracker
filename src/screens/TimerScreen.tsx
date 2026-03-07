@@ -167,11 +167,35 @@ export function TimerScreen(): React.ReactElement {
     [sessionSettings, pomodoroSettings]
   );
 
-  const timerMode: TimerMode = pomodoroSettings.pomodoroEnabled ? 'pomodoro' : 'normal';
+  const timerMode: TimerMode = pomodoroSettings.countdownEnabled
+    ? 'countdown'
+    : pomodoroSettings.pomodoroEnabled
+      ? 'pomodoro'
+      : 'normal';
 
   const handlePomodoroEnabledChange = useCallback(
     (enabled: boolean) => {
-      updatePomodoroSettings({ pomodoroEnabled: enabled });
+      updatePomodoroSettings({
+        pomodoroEnabled: enabled,
+        ...(enabled ? { countdownEnabled: false } : {}),
+      });
+    },
+    [updatePomodoroSettings]
+  );
+
+  const handleCountdownEnabledChange = useCallback(
+    (enabled: boolean) => {
+      updatePomodoroSettings({
+        countdownEnabled: enabled,
+        ...(enabled ? { pomodoroEnabled: false } : {}),
+      });
+    },
+    [updatePomodoroSettings]
+  );
+
+  const handleCountdownDurationChange = useCallback(
+    (seconds: number) => {
+      updatePomodoroSettings({ countdownDurationSeconds: seconds });
     },
     [updatePomodoroSettings]
   );
@@ -249,6 +273,9 @@ export function TimerScreen(): React.ReactElement {
         options.pomodoroPhase = 'work';
         options.phaseDurationSeconds = effectiveSettings.workDurationSeconds;
         options.pomodorosCompleted = 0;
+      } else if (timerMode === 'countdown') {
+        options.timerMode = 'countdown';
+        options.countdownDurationSeconds = pomodoroSettings.countdownDurationSeconds;
       }
 
       const result = await startTimer(options);
@@ -272,7 +299,12 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStarting(false);
     }
-  }, [selectedCategoryId, timerMode, effectiveSettings.workDurationSeconds]);
+  }, [
+    selectedCategoryId,
+    timerMode,
+    effectiveSettings.workDurationSeconds,
+    pomodoroSettings.countdownDurationSeconds,
+  ]);
 
   // Handle stop timer
   const handleStop = useCallback(async () => {
@@ -442,8 +474,34 @@ export function TimerScreen(): React.ReactElement {
     setSelectedCategoryId(categoryId);
   }, []);
 
+  const localElapsed = useTimerStore(state => state.localElapsed);
   const hasActiveTimer = activeTimer !== null;
   const isPomodoroActive = activeTimer?.timer_mode === 'pomodoro';
+  const isCountdownActive = activeTimer?.timer_mode === 'countdown';
+
+  // Countdown remaining seconds
+  const countdownRemaining = useMemo(() => {
+    if (!isCountdownActive || !activeTimer?.phase_duration_seconds) return undefined;
+    return Math.max(0, activeTimer.phase_duration_seconds - localElapsed);
+  }, [isCountdownActive, activeTimer?.phase_duration_seconds, localElapsed]);
+
+  // Countdown completion alert (guarded like pomodoro transition)
+  const countdownAlertedTimerIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      isCountdownActive &&
+      countdownRemaining === 0 &&
+      activeTimer &&
+      activeTimer.id !== countdownAlertedTimerIdRef.current
+    ) {
+      countdownAlertedTimerIdRef.current = activeTimer.id;
+      if (Platform.OS === 'web') {
+        alert('Countdown complete!');
+      } else {
+        Alert.alert('Countdown Complete', 'Your countdown timer has finished.');
+      }
+    }
+  }, [isCountdownActive, countdownRemaining, activeTimer]);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -460,6 +518,10 @@ export function TimerScreen(): React.ReactElement {
             <TimerModeDropdown
               pomodoroEnabled={pomodoroSettings.pomodoroEnabled}
               onPomodoroEnabledChange={handlePomodoroEnabledChange}
+              countdownEnabled={pomodoroSettings.countdownEnabled}
+              onCountdownEnabledChange={handleCountdownEnabledChange}
+              countdownDurationSeconds={pomodoroSettings.countdownDurationSeconds}
+              onCountdownDurationChange={handleCountdownDurationChange}
               effectiveSettings={effectiveSettings}
               onSettingsChange={handleSessionSettingsChange}
               presets={presets}
@@ -486,7 +548,13 @@ export function TimerScreen(): React.ReactElement {
 
             {/* Timer display - countdown for pomodoro, elapsed for normal */}
             <TimerDisplay
-              countdownSeconds={isPomodoroActive ? pomodoro.timeRemainingSeconds : undefined}
+              countdownSeconds={
+                isPomodoroActive
+                  ? pomodoro.timeRemainingSeconds
+                  : isCountdownActive
+                    ? countdownRemaining
+                    : undefined
+              }
             />
 
             {/* Category display */}

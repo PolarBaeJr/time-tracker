@@ -12,7 +12,7 @@ import { z } from 'zod';
  * - Elapsed time is calculated as: now() - started_at
  * - Timer survives app restarts and syncs across devices via Supabase Realtime
  */
-export const TimerModeEnum = z.enum(['normal', 'pomodoro']);
+export const TimerModeEnum = z.enum(['normal', 'pomodoro', 'countdown']);
 export const PomodoroPhaseEnum = z.enum(['work', 'break', 'long_break']);
 
 export const ActiveTimerSchema = z.object({
