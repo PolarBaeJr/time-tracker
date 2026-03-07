@@ -18,7 +18,14 @@
  */
 
 // User schemas and types
-export { UserSchema, UpdateUserSchema, type User, type UpdateUserInput } from './user';
+export {
+  UserSchema,
+  UpdateUserSchema,
+  UserPreferencesSchema,
+  type User,
+  type UpdateUserInput,
+  type UserPreferences,
+} from './user';
 
 // Category schemas and types
 export {

@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { UserSchema } from '@/schemas';
 import { supabase, type Session } from '@/lib';
 import type { User as UserProfile } from '@/types';
+import { applyServerPreferences, setSyncCallback } from '@/hooks/usePomodoroSettings';
 
 export interface AuthContextValue {
   user: UserProfile | null;
@@ -146,6 +147,36 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       authSubscription.subscription.unsubscribe();
     };
   }, []);
+
+  // Sync preferences: apply server prefs on login, push local changes to server
+  React.useEffect(() => {
+    if (!user) {
+      setSyncCallback(null);
+      return;
+    }
+
+    // Server wins: apply preferences from profile on login
+    if (user.preferences && typeof user.preferences === 'object') {
+      applyServerPreferences(user.preferences as Parameters<typeof applyServerPreferences>[0]);
+    }
+
+    // Set up callback to push local changes to server (fire-and-forget)
+    setSyncCallback(prefs => {
+      void supabase
+        .from('users')
+        .update({ preferences: prefs, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .then(({ error }) => {
+          if (error) {
+            console.warn('[AuthContext] Failed to sync preferences:', error.message);
+          }
+        });
+    });
+
+    return () => {
+      setSyncCallback(null);
+    };
+  }, [user]);
 
   const signInWithGoogle = async (): Promise<void> => {
     setLoading(true);

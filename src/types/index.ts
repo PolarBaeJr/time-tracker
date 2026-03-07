@@ -13,6 +13,7 @@ export type {
   // User types
   User,
   UpdateUserInput,
+  UserPreferences,
   // Category types
   Category,
   CreateCategoryInput,

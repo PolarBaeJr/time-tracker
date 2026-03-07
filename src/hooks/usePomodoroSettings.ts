@@ -38,9 +38,18 @@ const notifyListeners = (): void => {
   listeners.forEach(listener => listener());
 };
 
+let syncToServer: ((prefs: Record<string, unknown>) => void) | null = null;
+
+export function setSyncCallback(cb: ((prefs: Record<string, unknown>) => void) | null): void {
+  syncToServer = cb;
+}
+
 const persistSettings = async (): Promise<void> => {
   try {
     await storage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
+    if (syncToServer) {
+      syncToServer(getSettingsForSync());
+    }
   } catch (error) {
     console.error('[pomodoroSettings] Failed to persist settings:', error);
   }
@@ -166,6 +175,9 @@ const notifyPresetListeners = (): void => {
 const persistPresets = async (): Promise<void> => {
   try {
     await storage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets));
+    if (syncToServer) {
+      syncToServer(getSettingsForSync());
+    }
   } catch (error) {
     console.error('[pomodoroSettings] Failed to persist presets:', error);
   }
@@ -250,6 +262,62 @@ export function deletePreset(id: string): void {
   cachedPresetSnapshot = { presets: allPresets, isLoaded: presetsLoaded };
   notifyPresetListeners();
   void persistPresets();
+}
+
+export function applyServerPreferences(prefs: {
+  pomodoroEnabled?: boolean;
+  workDurationSeconds?: number;
+  breakDurationSeconds?: number;
+  longBreakDurationSeconds?: number;
+  pomodorosBeforeLongBreak?: number;
+  customPresets?: PomodoroPreset[];
+}): void {
+  if (!prefs || typeof prefs !== 'object') return;
+
+  const updates: Partial<PomodoroSettingsData> = {};
+  if (typeof prefs.pomodoroEnabled === 'boolean') updates.pomodoroEnabled = prefs.pomodoroEnabled;
+  if (typeof prefs.workDurationSeconds === 'number')
+    updates.workDurationSeconds = prefs.workDurationSeconds;
+  if (typeof prefs.breakDurationSeconds === 'number')
+    updates.breakDurationSeconds = prefs.breakDurationSeconds;
+  if (typeof prefs.longBreakDurationSeconds === 'number')
+    updates.longBreakDurationSeconds = prefs.longBreakDurationSeconds;
+  if (typeof prefs.pomodorosBeforeLongBreak === 'number')
+    updates.pomodorosBeforeLongBreak = prefs.pomodorosBeforeLongBreak;
+
+  if (Object.keys(updates).length > 0) {
+    currentSettings = { ...currentSettings, ...updates };
+    cachedSnapshot = getSnapshot();
+    notifyListeners();
+    void storage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
+  }
+
+  if (Array.isArray(prefs.customPresets)) {
+    customPresets = prefs.customPresets.filter(
+      (p): p is PomodoroPreset =>
+        typeof p === 'object' &&
+        p !== null &&
+        typeof p.id === 'string' &&
+        typeof p.name === 'string' &&
+        typeof p.settings === 'object' &&
+        p.settings !== null
+    );
+    rebuildPresets();
+    cachedPresetSnapshot = { presets: allPresets, isLoaded: presetsLoaded };
+    notifyPresetListeners();
+    void storage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets));
+  }
+}
+
+export function getSettingsForSync(): Record<string, unknown> {
+  return {
+    pomodoroEnabled: currentSettings.pomodoroEnabled,
+    workDurationSeconds: currentSettings.workDurationSeconds,
+    breakDurationSeconds: currentSettings.breakDurationSeconds,
+    longBreakDurationSeconds: currentSettings.longBreakDurationSeconds,
+    pomodorosBeforeLongBreak: currentSettings.pomodorosBeforeLongBreak,
+    customPresets: customPresets,
+  };
 }
 
 export interface UsePomodoroSettingsResult {

@@ -31,6 +31,7 @@ export function mockUser(overrides?: Partial<User>): User {
     timezone: 'UTC',
     week_start_day: 1,
     onboarding_complete: true,
+    preferences: {},
     created_at: '2024-01-01T00:00:00.000Z',
     updated_at: '2024-01-01T00:00:00.000Z',
     ...overrides,

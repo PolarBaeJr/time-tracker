@@ -7,16 +7,11 @@
 
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, type ViewStyle } from 'react-native';
 import { Button } from '@/components/ui';
 import { colors, spacing, fontSizes, fontWeights, borderRadius } from '@/theme';
-import { storage } from '@/lib';
+import { storage, supabase } from '@/lib';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Storage key for default goal hours
@@ -36,17 +31,29 @@ export interface GoalDefaultsProps {
  * <GoalDefaults />
  * ```
  */
-export function GoalDefaults({
-  style,
-}: GoalDefaultsProps): React.ReactElement {
+export function GoalDefaults({ style }: GoalDefaultsProps): React.ReactElement {
   const [defaultHours, setDefaultHours] = useState<string>('40');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  // Load saved default hours on mount
+  // Load saved default hours on mount (server wins if available)
   useEffect(() => {
     const loadDefaultHours = async () => {
       try {
+        // Check server preferences first (server wins)
+        if (
+          user?.preferences &&
+          typeof user.preferences === 'object' &&
+          typeof (user.preferences as Record<string, unknown>).defaultGoalHours === 'number'
+        ) {
+          const serverHours = (user.preferences as Record<string, unknown>)
+            .defaultGoalHours as number;
+          setDefaultHours(String(serverHours));
+          await storage.setItem(GOAL_DEFAULTS_KEY, String(serverHours));
+          return;
+        }
+
         const saved = await storage.getItem(GOAL_DEFAULTS_KEY);
         if (saved) {
           setDefaultHours(saved);
@@ -57,7 +64,7 @@ export function GoalDefaults({
     };
 
     void loadDefaultHours();
-  }, []);
+  }, [user]);
 
   // Validate input - only allow positive numbers
   const handleChangeText = useCallback((text: string) => {
@@ -104,6 +111,27 @@ export function GoalDefaults({
 
     try {
       await storage.setItem(GOAL_DEFAULTS_KEY, defaultHours);
+
+      // Sync to server if logged in
+      if (user) {
+        const existingPrefs =
+          user.preferences && typeof user.preferences === 'object'
+            ? (user.preferences as Record<string, unknown>)
+            : {};
+        void supabase
+          .from('users')
+          .update({
+            preferences: { ...existingPrefs, defaultGoalHours: hours },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id)
+          .then(({ error: syncError }) => {
+            if (syncError) {
+              console.warn('[GoalDefaults] Failed to sync to server:', syncError.message);
+            }
+          });
+      }
+
       setSaveMessage('Default saved successfully');
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
@@ -121,9 +149,7 @@ export function GoalDefaults({
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.label}>Default Monthly Goal</Text>
-      <Text style={styles.helperText}>
-        Set a default target when creating new monthly goals
-      </Text>
+      <Text style={styles.helperText}>Set a default target when creating new monthly goals</Text>
 
       <View style={styles.inputRow}>
         <TextInput
@@ -143,12 +169,11 @@ export function GoalDefaults({
         <Text style={styles.previewLabel}>Preview:</Text>
         {isValid ? (
           <Text style={styles.previewText}>
-            {hours.toFixed(1)} hours = ~{(hours / 4).toFixed(1)} hours/week = ~{(hours / 30).toFixed(1)} hours/day
+            {hours.toFixed(1)} hours = ~{(hours / 4).toFixed(1)} hours/week = ~
+            {(hours / 30).toFixed(1)} hours/day
           </Text>
         ) : (
-          <Text style={styles.previewTextInvalid}>
-            Enter a valid number
-          </Text>
+          <Text style={styles.previewTextInvalid}>Enter a valid number</Text>
         )}
       </View>
 

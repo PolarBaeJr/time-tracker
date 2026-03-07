@@ -1,6 +1,36 @@
 import { z } from 'zod';
 
 /**
+ * User Preferences Schema - JSONB preferences for cross-device sync
+ */
+export const UserPreferencesSchema = z
+  .object({
+    pomodoroEnabled: z.boolean().default(false),
+    workDurationSeconds: z.number().default(1500),
+    breakDurationSeconds: z.number().default(300),
+    longBreakDurationSeconds: z.number().default(900),
+    pomodorosBeforeLongBreak: z.number().default(4),
+    defaultGoalHours: z.number().default(40),
+    customPresets: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          settings: z.object({
+            workDurationSeconds: z.number(),
+            breakDurationSeconds: z.number(),
+            longBreakDurationSeconds: z.number(),
+            pomodorosBeforeLongBreak: z.number(),
+          }),
+        })
+      )
+      .default([]),
+  })
+  .partial();
+
+export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
+
+/**
  * User Schema - Entity schema for query responses
  *
  * Represents a user record from the public.users table.
@@ -30,6 +60,9 @@ export const UserSchema = z.object({
 
   /** Timestamp when user record was last updated */
   updated_at: z.string().datetime({ offset: true }).optional(),
+
+  /** User preferences JSONB for cross-device sync */
+  preferences: UserPreferencesSchema.default({}),
 });
 
 /**
@@ -50,6 +83,9 @@ export const UpdateUserSchema = z.object({
 
   /** Whether the user has completed initial settings setup */
   onboarding_complete: z.boolean().optional(),
+
+  /** User preferences JSONB for cross-device sync */
+  preferences: UserPreferencesSchema.optional(),
 });
 
 // Inferred TypeScript types
