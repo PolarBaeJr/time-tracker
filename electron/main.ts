@@ -12,7 +12,7 @@
  * - Content Security Policy restricts resource loading
  */
 
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session, ipcMain } from 'electron';
 import * as path from 'path';
 
 // Development mode detection
@@ -142,8 +142,8 @@ function createWindow(): void {
       'accounts.google.com', // OAuth flow
     ];
 
-    // In production, allow file:// protocol
-    if (parsedUrl.protocol === 'file:') {
+    // Allow file:// and worktracker:// protocols
+    if (parsedUrl.protocol === 'file:' || parsedUrl.protocol === 'worktracker:') {
       return;
     }
 
@@ -177,24 +177,42 @@ function createWindow(): void {
 }
 
 /**
+ * Handle OAuth deep link: worktracker://auth/callback#access_token=...
+ * Loads the app with the hash fragment so Supabase picks up the session.
+ */
+function handleOAuthCallback(url: string): void {
+  if (!mainWindow) return;
+  const hash = url.includes('#') ? url.substring(url.indexOf('#')) : '';
+  const distPath = path.join(__dirname, '../dist/index.html');
+  void mainWindow.loadURL(`file://${distPath}${hash}`);
+}
+
+// Register worktracker:// as a protocol client for OAuth callbacks
+app.setAsDefaultProtocolClient('worktracker');
+
+/**
  * Enforce single instance of the application
  * If another instance is started, focus the existing window
  */
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  // Another instance is already running, quit this one
   app.quit();
 } else {
-  // Handle second-instance event
-  app.on('second-instance', () => {
-    // Focus the main window if it exists
+  // On Windows/Linux the deep link URL comes via second-instance argv
+  app.on('second-instance', (_event, argv) => {
     if (mainWindow) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
+      if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
+    const deepLink = argv.find(arg => arg.startsWith('worktracker://'));
+    if (deepLink) handleOAuthCallback(deepLink);
+  });
+
+  // On macOS the deep link comes via open-url event
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleOAuthCallback(url);
   });
 
   // App is ready to create windows
@@ -208,6 +226,9 @@ if (!gotTheLock) {
       }
     });
   });
+
+  // Expose OAuth redirect URL to renderer via IPC
+  ipcMain.handle('get-oauth-redirect-url', () => 'worktracker://auth/callback');
 }
 
 // Quit when all windows are closed (except on macOS)

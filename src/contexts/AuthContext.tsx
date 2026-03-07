@@ -22,6 +22,11 @@ interface AuthProviderProps {
 export const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
 function getAuthRedirectUrl(): string {
+  // Electron: use custom protocol so deep link returns tokens to the app
+  if (typeof window !== 'undefined' && window.desktop?.platform?.isElectron) {
+    return 'worktracker://auth/callback';
+  }
+
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return `${window.location.origin}/auth/callback`;
   }
@@ -30,11 +35,7 @@ function getAuthRedirectUrl(): string {
 }
 
 async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
+  const { data, error } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
 
   if (error) {
     console.warn('[AuthContext] Failed to fetch user profile:', error.message);
@@ -55,9 +56,7 @@ async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
   return parsedProfile.data;
 }
 
-export function AuthProvider({
-  children,
-}: AuthProviderProps): React.ReactElement {
+export function AuthProvider({ children }: AuthProviderProps): React.ReactElement {
   const [user, setUser] = React.useState<UserProfile | null>(null);
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);

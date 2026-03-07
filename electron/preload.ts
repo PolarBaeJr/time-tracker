@@ -11,7 +11,7 @@
  * - Validate all inputs from renderer
  */
 
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 /**
  * Platform information exposed to renderer
@@ -47,6 +47,8 @@ interface DesktopAPI {
   versions: VersionInfo;
   /** Platform information */
   platform: PlatformInfo;
+  /** Get the OAuth redirect URL for this platform */
+  getOAuthRedirectUrl: () => Promise<string>;
 }
 
 /**
@@ -78,6 +80,7 @@ function getPlatform(): PlatformInfo {
 const desktopAPI: DesktopAPI = {
   versions: getVersions(),
   platform: getPlatform(),
+  getOAuthRedirectUrl: () => ipcRenderer.invoke('get-oauth-redirect-url') as Promise<string>,
 };
 
 // Expose the API to the renderer process
