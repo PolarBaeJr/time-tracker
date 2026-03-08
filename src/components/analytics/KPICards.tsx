@@ -24,7 +24,12 @@ import * as React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 
 import { Card, Text, Spinner } from '@/components/ui';
-import { useDailyTotals, useWeeklyTotals, useMonthlyTotals } from '@/hooks/useAnalytics';
+import {
+  useDailyTotals,
+  useWeeklyTotals,
+  useMonthlyTotals,
+  useEarnings,
+} from '@/hooks/useAnalytics';
 import { colors, spacing } from '@/theme';
 
 // ============================================================================
@@ -201,12 +206,19 @@ export function KPICards({ style }: KPICardsProps): React.ReactElement {
   const { data: dailyData, isLoading: dailyLoading } = useDailyTotals({ days: 30 });
   const { data: weeklyData, isLoading: weeklyLoading } = useWeeklyTotals({ weeks: 1 });
   const { data: monthlyData, isLoading: monthlyLoading } = useMonthlyTotals({ months: 1 });
+  const { data: earningsData, isLoading: earningsLoading } = useEarnings();
 
   // Calculate values
   const todayHours = dailyData?.[0]?.totalSeconds ?? 0;
   const weekHours = weeklyData?.[0]?.totalSeconds ?? 0;
   const monthHours = monthlyData?.[0]?.totalSeconds ?? 0;
   const streak = dailyData ? calculateStreak(dailyData) : 0;
+
+  const hasEarnings =
+    earningsData != null &&
+    (earningsData.todayEarnings > 0 ||
+      earningsData.weekEarnings > 0 ||
+      earningsData.monthEarnings > 0);
 
   // Prepare card data
   const cards: KPICardData[] = [
@@ -239,7 +251,17 @@ export function KPICards({ style }: KPICardsProps): React.ReactElement {
     },
   ];
 
-  const isLoading = dailyLoading || weeklyLoading || monthlyLoading;
+  if (hasEarnings) {
+    cards.push({
+      title: 'Earnings',
+      value: `$${earningsData!.monthEarnings.toFixed(2)}`,
+      icon: '\u{1F4B0}', // Money bag emoji
+      accentColor: colors.success,
+      subtitle: 'This month',
+    });
+  }
+
+  const isLoading = dailyLoading || weeklyLoading || monthlyLoading || earningsLoading;
 
   return (
     <View style={StyleSheet.flatten([styles.container, style])}>

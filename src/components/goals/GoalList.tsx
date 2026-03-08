@@ -36,7 +36,7 @@ export interface GoalListProps {
   onEditGoal?: (goal: MonthlyGoal) => void;
 
   /** Callback when a new goal should be added */
-  onAddGoal?: (type: 'overall' | 'category' | 'type') => void;
+  onAddGoal?: (type: 'overall' | 'category' | 'type' | 'earnings') => void;
 }
 
 /**
@@ -96,13 +96,16 @@ function GoalProgressItem({
   onDelete,
   isDeleting,
 }: GoalProgressItemProps): React.ReactElement {
+  const isEarningsGoal = progress.goal.category_type === '__earnings__';
   const isOverall = progress.goal.category_id === null && progress.goal.category_type === null;
-  const isTypeGoal = progress.goal.category_type !== null;
-  const displayName = isTypeGoal
-    ? `${progress.goal.category_type} (type)`
-    : isOverall
-      ? 'Overall Goal'
-      : (categoryName ?? 'Category Goal');
+  const isTypeGoal = progress.goal.category_type !== null && !isEarningsGoal;
+  const displayName = isEarningsGoal
+    ? 'Monthly Earnings Goal'
+    : isTypeGoal
+      ? `${progress.goal.category_type} (type)`
+      : isOverall
+        ? 'Overall Goal'
+        : (categoryName ?? 'Category Goal');
   const progressPercent = Math.min(progress.progressPercent, 100);
   const progressColor = getProgressColor(progress.progressPercent, progress.isAchieved);
 
@@ -131,10 +134,15 @@ function GoalProgressItem({
       {/* Progress Stats */}
       <View style={styles.progressStats}>
         <Text variant="headingSmall">
-          {formatHours(progress.actualHours)}
+          {isEarningsGoal
+            ? `$${progress.actualHours.toFixed(2)}`
+            : formatHours(progress.actualHours)}
           <Text variant="body" color="secondary">
             {' '}
-            / {formatHours(progress.targetHours)}h
+            /{' '}
+            {isEarningsGoal
+              ? `$${progress.targetHours.toFixed(2)}`
+              : `${formatHours(progress.targetHours)}h`}
           </Text>
         </Text>
         <Text variant="bodySmall" color="secondary">
@@ -163,14 +171,22 @@ function GoalProgressItem({
               <Text variant="caption" color="muted">
                 Remaining
               </Text>
-              <Text variant="body">{formatHours(progress.remainingHours)}h</Text>
+              <Text variant="body">
+                {isEarningsGoal
+                  ? `$${progress.remainingHours.toFixed(2)}`
+                  : `${formatHours(progress.remainingHours)}h`}
+              </Text>
             </View>
             {progress.daysRemaining > 0 && (
               <View style={styles.stat}>
                 <Text variant="caption" color="muted">
                   Daily target
                 </Text>
-                <Text variant="body">{formatHours(progress.dailyRequiredToMeetGoal)}h/day</Text>
+                <Text variant="body">
+                  {isEarningsGoal
+                    ? `$${progress.dailyRequiredToMeetGoal.toFixed(2)}/day`
+                    : `${formatHours(progress.dailyRequiredToMeetGoal)}h/day`}
+                </Text>
               </View>
             )}
             <View style={styles.stat}>
@@ -186,7 +202,9 @@ function GoalProgressItem({
               Goal completed!
             </Text>
             <Text variant="body" color="success">
-              +{formatHours(Math.abs(progress.remainingHours))}h extra
+              {isEarningsGoal
+                ? `+$${Math.abs(progress.remainingHours).toFixed(2)} extra`
+                : `+${formatHours(Math.abs(progress.remainingHours))}h extra`}
             </Text>
           </View>
         )}
@@ -295,6 +313,11 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
   const hasTypes = progressData?.types && progressData.types.length > 0;
   const hasGoals = hasOverall || hasCategories || hasTypes;
 
+  const earningsGoals =
+    progressData?.types.filter(tp => tp.goal.category_type === '__earnings__') ?? [];
+  const hasTypeGoals =
+    progressData?.types.some(tp => tp.goal.category_type !== '__earnings__') ?? false;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Summary Header */}
@@ -310,37 +333,23 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
       )}
 
       {/* Overall Goal */}
-      {progressData?.overall ? (
+      {progressData?.overall && (
         <GoalProgressItem
           progress={progressData.overall}
           onEdit={onEditGoal ? () => onEditGoal(progressData.overall!.goal) : undefined}
           onDelete={() => handleDelete(progressData.overall!.goal, 'Overall Goal')}
           isDeleting={deletingId === progressData.overall.goal.id}
         />
-      ) : (
-        <Pressable
-          style={styles.addGoalCard}
-          onPress={() => onAddGoal?.('overall')}
-          accessibilityRole="button"
-          accessibilityLabel="Add overall goal"
-        >
-          <Text variant="body" color="primary" center>
-            + Set Overall Monthly Goal
-          </Text>
-          <Text variant="caption" color="muted" center>
-            Track total time across all categories
-          </Text>
-        </Pressable>
       )}
 
-      {/* Section Divider */}
-      <View style={styles.sectionDivider}>
-        <Text variant="label" color="muted">
-          Category Goals
-        </Text>
-      </View>
-
       {/* Category Goals */}
+      {hasCategories && (
+        <View style={styles.sectionDivider}>
+          <Text variant="label" color="muted">
+            Category Goals
+          </Text>
+        </View>
+      )}
       {progressData?.categories.map(catProgress => {
         const catDetails = getCategoryDetails(catProgress.goal.category_id);
         return (
@@ -356,33 +365,17 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
         );
       })}
 
-      {/* Add Category Goal Button */}
-      {categories && categories.length > 0 && (
-        <Pressable
-          style={styles.addGoalCard}
-          onPress={() => onAddGoal?.('category')}
-          accessibilityRole="button"
-          accessibilityLabel="Add category goal"
-        >
-          <Text variant="body" color="primary" center>
-            + Add Category Goal
-          </Text>
-          <Text variant="caption" color="muted" center>
-            Set a target for a specific category
-          </Text>
-        </Pressable>
-      )}
-
-      {/* Section Divider - Type Goals */}
-      <View style={styles.sectionDivider}>
-        <Text variant="label" color="muted">
-          Type Goals
-        </Text>
-      </View>
-
       {/* Type Goals */}
-      {progressData?.types.map(typeProgress => {
-        return (
+      {hasTypeGoals && (
+        <View style={styles.sectionDivider}>
+          <Text variant="label" color="muted">
+            Type Goals
+          </Text>
+        </View>
+      )}
+      {progressData?.types
+        .filter(tp => tp.goal.category_type !== '__earnings__')
+        .map(typeProgress => (
           <GoalProgressItem
             key={typeProgress.goal.id}
             progress={typeProgress}
@@ -392,25 +385,40 @@ export function GoalList({ month, onEditGoal, onAddGoal }: GoalListProps): React
             }
             isDeleting={deletingId === typeProgress.goal.id}
           />
-        );
-      })}
+        ))}
 
-      {/* Add Type Goal Button */}
-      {categories && categories.length > 0 && (
-        <Pressable
-          style={styles.addGoalCard}
-          onPress={() => onAddGoal?.('type')}
-          accessibilityRole="button"
-          accessibilityLabel="Add type goal"
-        >
-          <Text variant="body" color="primary" center>
-            + Add Type Goal
+      {/* Earnings Goals */}
+      {earningsGoals.length > 0 && (
+        <View style={styles.sectionDivider}>
+          <Text variant="label" color="muted">
+            Earnings Goals
           </Text>
-          <Text variant="caption" color="muted" center>
-            Set a target for all categories of a type
-          </Text>
-        </Pressable>
+        </View>
       )}
+      {earningsGoals.map(ep => (
+        <GoalProgressItem
+          key={ep.goal.id}
+          progress={ep}
+          onEdit={onEditGoal ? () => onEditGoal(ep.goal) : undefined}
+          onDelete={() => handleDelete(ep.goal, 'Monthly Earnings Goal')}
+          isDeleting={deletingId === ep.goal.id}
+        />
+      ))}
+
+      {/* Unified Add Goal Button */}
+      <Pressable
+        style={styles.addGoalCard}
+        onPress={() => onAddGoal?.('overall')}
+        accessibilityRole="button"
+        accessibilityLabel="Add goal"
+      >
+        <Text variant="body" color="primary" center>
+          + Add Goal
+        </Text>
+        <Text variant="caption" color="muted" center>
+          Set an hours or earnings target
+        </Text>
+      </Pressable>
 
       {/* Empty State - No Categories */}
       {(!categories || categories.length === 0) && (

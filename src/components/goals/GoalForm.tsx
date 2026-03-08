@@ -47,7 +47,7 @@ export interface GoalFormProps {
   month: string;
 
   /** Type of goal to create */
-  type: 'overall' | 'category' | 'type';
+  type: 'overall' | 'category' | 'type' | 'earnings';
 
   /** Initial category ID (for category goals) */
   initialCategoryId?: string;
@@ -88,9 +88,18 @@ function formatMonthDisplay(month: string): string {
 /**
  * GoalForm component for creating/updating monthly goals
  */
+const GOAL_KIND_OPTIONS = [
+  { key: 'overall' as const, label: 'Overall Hours' },
+  { key: 'category' as const, label: 'Category Hours' },
+  { key: 'type' as const, label: 'Type Hours' },
+  { key: 'earnings' as const, label: 'Monthly Earnings' },
+];
+
+const QUICK_SET_EARNINGS = [500, 1000, 2000, 5000, 10000] as const;
+
 export function GoalForm({
   month,
-  type,
+  type: initialType,
   initialCategoryId,
   initialCategoryType,
   initialTargetHours,
@@ -98,6 +107,9 @@ export function GoalForm({
   onCancel,
 }: GoalFormProps): React.ReactElement {
   // State
+  const [goalKind, setGoalKind] = React.useState<'overall' | 'category' | 'type' | 'earnings'>(
+    initialType
+  );
   const [targetHours, setTargetHours] = React.useState<string>(
     initialTargetHours?.toString() ?? ''
   );
@@ -108,6 +120,8 @@ export function GoalForm({
     initialCategoryType ?? null
   );
   const [error, setError] = React.useState<string | null>(null);
+
+  const type = goalKind;
 
   // Hooks
   const { data: categories, isLoading: categoriesLoading } = useCategories({
@@ -163,7 +177,11 @@ export function GoalForm({
     const targetHoursNum = parseFloat(targetHours);
 
     if (isNaN(targetHoursNum) || targetHoursNum <= 0) {
-      setError('Target hours must be a positive number');
+      setError(
+        type === 'earnings'
+          ? 'Target amount must be a positive number'
+          : 'Target hours must be a positive number'
+      );
       return { valid: false };
     }
 
@@ -205,6 +223,12 @@ export function GoalForm({
         await setCategoryGoal.mutateAsync({
           month,
           category_id: selectedCategoryId,
+          target_hours: validation.targetHoursNum,
+        });
+      } else if (type === 'earnings') {
+        await setTypeGoal.mutateAsync({
+          month,
+          category_type: '__earnings__',
           target_hours: validation.targetHoursNum,
         });
       } else {
@@ -249,16 +273,42 @@ export function GoalForm({
   return (
     <Card padding="lg" elevation="md" style={styles.card}>
       <Text variant="headingSmall" style={styles.title}>
-        {type === 'overall'
-          ? 'Set Overall Goal'
-          : type === 'category'
-            ? 'Set Category Goal'
-            : 'Set Type Goal'}
+        {initialType !== goalKind || !initialTargetHours ? 'New Goal' : 'Edit Goal'}
       </Text>
 
       <Text variant="bodySmall" color="secondary" style={styles.subtitle}>
         {formatMonthDisplay(month)}
       </Text>
+
+      {/* Goal Kind Selector */}
+      <View style={styles.section}>
+        <Text variant="label" style={styles.sectionLabel}>
+          Goal Type
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          contentContainerStyle={styles.categoryScrollContent}
+        >
+          {GOAL_KIND_OPTIONS.map(opt => (
+            <Pressable
+              key={opt.key}
+              onPress={() => {
+                setGoalKind(opt.key);
+                setError(null);
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: goalKind === opt.key }}
+              style={[styles.categoryChip, goalKind === opt.key && styles.categoryChipSelected]}
+            >
+              <Text variant="bodySmall" color={goalKind === opt.key ? 'default' : 'secondary'}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Category Selector (only for category goals) */}
       {type === 'category' && (
@@ -376,11 +426,11 @@ export function GoalForm({
         </View>
       )}
 
-      {/* Target Hours Input */}
+      {/* Target Input */}
       <View style={styles.section}>
         <Input
-          label="Target Hours"
-          placeholder="Enter target hours"
+          label={type === 'earnings' ? 'Target Amount ($)' : 'Target Hours'}
+          placeholder={type === 'earnings' ? 'Enter target amount' : 'Enter target hours'}
           value={targetHours}
           onChangeText={text => {
             setTargetHours(text);
@@ -397,18 +447,31 @@ export function GoalForm({
           Quick Set
         </Text>
         <View style={styles.quickSetContainer}>
-          {QUICK_SET_VALUES.map(hours => (
-            <Button
-              key={hours}
-              variant={targetHours === hours.toString() ? 'primary' : 'outline'}
-              size="sm"
-              onPress={() => handleQuickSet(hours)}
-              style={styles.quickSetButton}
-              accessibilityLabel={`Set target to ${hours} hours`}
-            >
-              {hours}h
-            </Button>
-          ))}
+          {type === 'earnings'
+            ? QUICK_SET_EARNINGS.map(amount => (
+                <Button
+                  key={amount}
+                  variant={targetHours === amount.toString() ? 'primary' : 'outline'}
+                  size="sm"
+                  onPress={() => handleQuickSet(amount)}
+                  style={styles.quickSetButton}
+                  accessibilityLabel={`Set target to $${amount}`}
+                >
+                  ${amount}
+                </Button>
+              ))
+            : QUICK_SET_VALUES.map(hours => (
+                <Button
+                  key={hours}
+                  variant={targetHours === hours.toString() ? 'primary' : 'outline'}
+                  size="sm"
+                  onPress={() => handleQuickSet(hours)}
+                  style={styles.quickSetButton}
+                  accessibilityLabel={`Set target to ${hours} hours`}
+                >
+                  {hours}h
+                </Button>
+              ))}
         </View>
       </View>
 

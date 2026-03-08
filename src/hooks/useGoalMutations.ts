@@ -469,6 +469,42 @@ export function useSetTypeGoal(options?: UseSetTypeGoalOptions) {
 }
 
 // ============================================================================
+// SET EARNINGS GOAL (category_type = '__earnings__')
+// ============================================================================
+
+export interface SetEarningsGoalInput {
+  month: string;
+  target_amount: number;
+}
+
+export interface UseSetEarningsGoalOptions {
+  onSuccess?: (goal: MonthlyGoal) => void;
+  onError?: (error: GoalMutationError) => void;
+}
+
+export function useSetEarningsGoal(options?: UseSetEarningsGoalOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: SetEarningsGoalInput) =>
+      setTypeGoal({
+        month: input.month,
+        category_type: '__earnings__',
+        target_hours: input.target_amount,
+      }),
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.goals(data.month) });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      const mutationError =
+        error instanceof GoalMutationError ? error : new GoalMutationError(error.message);
+      options?.onError?.(mutationError);
+    },
+  });
+}
+
+// ============================================================================
 // DELETE GOAL
 // ============================================================================
 

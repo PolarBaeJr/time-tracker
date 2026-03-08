@@ -35,7 +35,6 @@ import {
   getLastNDays,
   getLastNWeeks,
   getLastNMonths,
-  getHourFromISOString,
   getHourOfDay,
   getDayOfWeekFromISOString,
   type DayOfWeek,
@@ -581,6 +580,191 @@ export function useDayOfWeekDistribution(options?: UseDayOfWeekDistributionOptio
 }
 
 // ============================================================================
+// EARNINGS
+// ============================================================================
+
+export interface EarningsData {
+  todayEarnings: number;
+  weekEarnings: number;
+  monthEarnings: number;
+}
+
+async function fetchEarnings(options: DateRangeOptions): Promise<EarningsData> {
+  const dayRanges = getLastNDays(1, options);
+  const weekRanges = getLastNWeeks(1, options);
+  const monthRanges = getLastNMonths(1, options);
+
+  const startDate = monthRanges[0].start;
+  const endDate = dayRanges[0].end;
+
+  const { data, error } = await supabase
+    .from('time_entries')
+    .select('start_at, duration_seconds, is_billable, category_id')
+    .eq('is_billable', true)
+    .gte('start_at', startDate)
+    .lte('start_at', endDate);
+
+  if (error) {
+    throw new AnalyticsFetchError(error.message, error.code);
+  }
+
+  const { data: categories, error: catError } = await supabase
+    .from('categories')
+    .select('id, hourly_rate');
+
+  if (catError) {
+    throw new AnalyticsFetchError(catError.message, catError.code);
+  }
+
+  const rateMap = new Map<string, number>();
+  for (const cat of categories ?? []) {
+    if (cat.hourly_rate != null) {
+      rateMap.set(cat.id, cat.hourly_rate);
+    }
+  }
+
+  let todayEarnings = 0;
+  let weekEarnings = 0;
+  let monthEarnings = 0;
+
+  const todayStart = new Date(dayRanges[0].start);
+  const todayEnd = new Date(dayRanges[0].end);
+  const weekStart = new Date(weekRanges[0].start);
+  const weekEnd = new Date(weekRanges[0].end);
+
+  for (const entry of data ?? []) {
+    if (!entry.start_at || !entry.duration_seconds || !entry.category_id) continue;
+    const rate = rateMap.get(entry.category_id);
+    if (!rate) continue;
+
+    const earned = (rate * entry.duration_seconds) / 3600;
+    const entryDate = new Date(entry.start_at);
+
+    monthEarnings += earned;
+    if (entryDate >= weekStart && entryDate <= weekEnd) {
+      weekEarnings += earned;
+    }
+    if (entryDate >= todayStart && entryDate <= todayEnd) {
+      todayEarnings += earned;
+    }
+  }
+
+  return { todayEarnings, weekEarnings, monthEarnings };
+}
+
+export interface UseEarningsOptions {
+  enabled?: boolean;
+  staleTime?: number;
+}
+
+export function useEarnings(options?: UseEarningsOptions) {
+  const { enabled = true, staleTime } = options ?? {};
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.analytics.earnings,
+    queryFn: () =>
+      fetchEarnings({
+        timezone: user?.timezone ?? 'UTC',
+        weekStartDay: (user?.week_start_day ?? 1) as DayOfWeek,
+      }),
+    enabled,
+    staleTime,
+  });
+}
+
+// ============================================================================
+// MONTHLY EARNINGS
+// ============================================================================
+
+export interface MonthlyEarningsEntry {
+  month: string;
+  earnings: number;
+}
+
+async function fetchMonthlyEarnings(
+  months: number,
+  options: DateRangeOptions
+): Promise<MonthlyEarningsEntry[]> {
+  const monthRanges = getLastNMonths(months, options);
+
+  const { data, error } = await supabase
+    .from('time_entries')
+    .select('start_at, duration_seconds, is_billable, category_id')
+    .eq('is_billable', true)
+    .gte('start_at', monthRanges[monthRanges.length - 1].start)
+    .lte('start_at', monthRanges[0].end);
+
+  if (error) {
+    throw new AnalyticsFetchError(error.message, error.code);
+  }
+
+  const { data: categories, error: catError } = await supabase
+    .from('categories')
+    .select('id, hourly_rate');
+
+  if (catError) {
+    throw new AnalyticsFetchError(catError.message, catError.code);
+  }
+
+  const rateMap = new Map<string, number>();
+  for (const cat of categories ?? []) {
+    if (cat.hourly_rate != null) {
+      rateMap.set(cat.id, cat.hourly_rate);
+    }
+  }
+
+  const earningsMap = new Map<string, number>();
+  for (const range of monthRanges) {
+    earningsMap.set(range.month, 0);
+  }
+
+  for (const entry of data ?? []) {
+    if (!entry.start_at || !entry.duration_seconds || !entry.category_id) continue;
+    const rate = rateMap.get(entry.category_id);
+    if (!rate) continue;
+
+    const earned = (rate * entry.duration_seconds) / 3600;
+    const entryDate = new Date(entry.start_at);
+
+    for (const range of monthRanges) {
+      const rangeStart = new Date(range.start);
+      const rangeEnd = new Date(range.end);
+      if (entryDate >= rangeStart && entryDate <= rangeEnd) {
+        earningsMap.set(range.month, (earningsMap.get(range.month) ?? 0) + earned);
+        break;
+      }
+    }
+  }
+
+  return monthRanges.map(range => ({
+    month: range.month,
+    earnings: earningsMap.get(range.month) ?? 0,
+  }));
+}
+
+export interface UseMonthlyEarningsOptions {
+  months?: number;
+  enabled?: boolean;
+  staleTime?: number;
+}
+
+export function useMonthlyEarnings(options?: UseMonthlyEarningsOptions) {
+  const { months = 6, enabled = true, staleTime } = options ?? {};
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.analytics.monthlyEarnings(months),
+    queryFn: () =>
+      fetchMonthlyEarnings(months, {
+        timezone: user?.timezone ?? 'UTC',
+      }),
+    enabled,
+    staleTime,
+  });
+}
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -589,6 +773,8 @@ export type UseWeeklyTotalsResult = ReturnType<typeof useWeeklyTotals>;
 export type UseMonthlyTotalsResult = ReturnType<typeof useMonthlyTotals>;
 export type UseHourOfDayDistributionResult = ReturnType<typeof useHourOfDayDistribution>;
 export type UseDayOfWeekDistributionResult = ReturnType<typeof useDayOfWeekDistribution>;
+export type UseEarningsResult = ReturnType<typeof useEarnings>;
+export type UseMonthlyEarningsResult = ReturnType<typeof useMonthlyEarnings>;
 
 /**
  * Export fetch functions for direct use in services
@@ -599,4 +785,6 @@ export {
   fetchMonthlyTotals,
   fetchHourOfDayDistribution,
   fetchDayOfWeekDistribution,
+  fetchEarnings,
+  fetchMonthlyEarnings,
 };

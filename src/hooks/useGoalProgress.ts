@@ -169,10 +169,10 @@ async function fetchGoalProgress({ month }: FetchGoalProgressParams): Promise<Go
       .order('category_id', { ascending: true, nullsFirst: true }),
     supabase
       .from('time_entries')
-      .select('duration_seconds, category_id')
+      .select('duration_seconds, category_id, is_billable')
       .gte('start_at', monthStart)
       .lte('start_at', monthEnd),
-    supabase.from('categories').select('id, type'),
+    supabase.from('categories').select('id, type, hourly_rate'),
   ]);
 
   if (goalsResult.error) {
@@ -191,10 +191,14 @@ async function fetchGoalProgress({ month }: FetchGoalProgressParams): Promise<Go
   const timeEntries = timeEntriesResult.data ?? [];
   const categoriesData = categoriesResult.data ?? [];
 
-  // Build a map from category ID to type
+  // Build maps from category ID to type and hourly rate
   const categoryIdToType = new Map<string, string>();
+  const categoryIdToRate = new Map<string, number>();
   for (const cat of categoriesData) {
     categoryIdToType.set(cat.id, cat.type);
+    if (cat.hourly_rate != null) {
+      categoryIdToRate.set(cat.id, cat.hourly_rate);
+    }
   }
 
   // Validate goals
@@ -222,6 +226,7 @@ async function fetchGoalProgress({ month }: FetchGoalProgressParams): Promise<Go
 
   // Build hours by type map
   const hoursByType = new Map<string, number>();
+  let totalEarnings = 0;
   for (const entry of timeEntries) {
     const categoryId = entry.category_id as string | null;
     if (categoryId) {
@@ -229,6 +234,12 @@ async function fetchGoalProgress({ month }: FetchGoalProgressParams): Promise<Go
       if (type) {
         const existing = hoursByType.get(type) ?? 0;
         hoursByType.set(type, existing + (entry.duration_seconds || 0));
+      }
+      if ((entry as { is_billable?: boolean }).is_billable) {
+        const rate = categoryIdToRate.get(categoryId);
+        if (rate) {
+          totalEarnings += (rate * (entry.duration_seconds || 0)) / 3600;
+        }
       }
     }
   }
@@ -254,6 +265,9 @@ async function fetchGoalProgress({ month }: FetchGoalProgressParams): Promise<Go
   // Calculate per-type progress
   const typeGoals = validatedGoals.filter(g => g.category_type !== null);
   const typeProgress = typeGoals.map(goal => {
+    if (goal.category_type === '__earnings__') {
+      return calculateProgress(goal, totalEarnings, daysRemaining);
+    }
     const typeSeconds = hoursByType.get(goal.category_type!) ?? 0;
     return calculateProgress(goal, typeSeconds / 3600, daysRemaining);
   });

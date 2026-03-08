@@ -92,7 +92,9 @@ export function GoalsScreen(): React.ReactElement {
   // State
   const [selectedMonth, setSelectedMonth] = React.useState<string>(getCurrentMonth());
   const [isFormVisible, setIsFormVisible] = React.useState(false);
-  const [formType, setFormType] = React.useState<'overall' | 'category' | 'type'>('overall');
+  const [formType, setFormType] = React.useState<'overall' | 'category' | 'type' | 'earnings'>(
+    'overall'
+  );
   const [editingGoal, setEditingGoal] = React.useState<MonthlyGoal | null>(null);
 
   // We need a key to force GoalList to refresh after mutations
@@ -116,7 +118,7 @@ export function GoalsScreen(): React.ReactElement {
   /**
    * Handle opening the goal form
    */
-  const handleAddGoal = (type: 'overall' | 'category' | 'type'): void => {
+  const handleAddGoal = (type: 'overall' | 'category' | 'type' | 'earnings'): void => {
     setFormType(type);
     setEditingGoal(null);
     setIsFormVisible(true);
@@ -126,7 +128,9 @@ export function GoalsScreen(): React.ReactElement {
    * Handle editing an existing goal
    */
   const handleEditGoal = (goal: MonthlyGoal): void => {
-    if (goal.category_type !== null) {
+    if (goal.category_type === '__earnings__') {
+      setFormType('earnings');
+    } else if (goal.category_type !== null) {
       setFormType('type');
     } else if (goal.category_id !== null) {
       setFormType('category');

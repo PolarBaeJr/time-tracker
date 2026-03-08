@@ -33,6 +33,10 @@ export type { WeeklyChartProps } from './WeeklyChart';
 export { MonthlyChart } from './MonthlyChart';
 export type { MonthlyChartProps } from './MonthlyChart';
 
+// Earnings chart
+export { EarningsChart } from './EarningsChart';
+export type { EarningsChartProps } from './EarningsChart';
+
 // Heatmap chart
 export { HeatmapChart } from './HeatmapChart';
 export type { HeatmapChartProps } from './HeatmapChart';

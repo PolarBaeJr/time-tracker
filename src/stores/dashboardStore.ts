@@ -11,6 +11,7 @@ export type DashboardWidgetId =
   | 'daily-chart'
   | 'weekly-chart'
   | 'monthly-chart'
+  | 'earnings-chart'
   | 'heatmap';
 
 export interface DashboardWidgetConfig {
@@ -32,6 +33,7 @@ const ALL_WIDGET_IDS: DashboardWidgetId[] = [
   'daily-chart',
   'weekly-chart',
   'monthly-chart',
+  'earnings-chart',
   'heatmap',
 ];
 

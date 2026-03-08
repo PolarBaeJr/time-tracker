@@ -42,6 +42,7 @@ import {
   DailyChart,
   WeeklyChart,
   MonthlyChart,
+  EarningsChart,
   HeatmapChart,
 } from '@/components/charts';
 import { Text, Icon } from '@/components/ui';
@@ -51,6 +52,7 @@ import {
   useMonthlyTotals,
   useHourOfDayDistribution,
   useDayOfWeekDistribution,
+  useMonthlyEarnings,
 } from '@/hooks/useAnalytics';
 import { queryClient } from '@/lib/queryClient';
 import { useDashboardLayout, setWidgetOrder, setEditMode } from '@/stores';
@@ -147,6 +149,7 @@ export function AnalyticsScreen(): React.ReactElement {
   const monthlyQuery = useMonthlyTotals({ months: MONTHLY_CHART_MONTHS });
   const hourOfDayQuery = useHourOfDayDistribution({ days: HEATMAP_DAYS });
   const dayOfWeekQuery = useDayOfWeekDistribution({ weeks: 4 });
+  const earningsQuery = useMonthlyEarnings({ months: MONTHLY_CHART_MONTHS });
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -239,6 +242,23 @@ export function AnalyticsScreen(): React.ReactElement {
               minHeight={180}
             >
               {monthlyQuery.data && <MonthlyChart data={monthlyQuery.data} />}
+            </ChartContainer>
+          </View>
+        );
+      case 'earnings-chart':
+        if (!earningsQuery.data?.some(e => e.earnings > 0)) return null;
+        return (
+          <View style={styles.section}>
+            <ChartContainer
+              title="Monthly Earnings"
+              subtitle="Billable earnings by month"
+              isLoading={earningsQuery.isLoading}
+              error={earningsQuery.error as Error | null}
+              isEmpty={!earningsQuery.data?.some(e => e.earnings > 0)}
+              emptyMessage="No billable earnings in the last 6 months"
+              minHeight={180}
+            >
+              {earningsQuery.data && <EarningsChart data={earningsQuery.data} />}
             </ChartContainer>
           </View>
         );

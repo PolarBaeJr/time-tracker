@@ -21,6 +21,7 @@ const WIDGET_DISPLAY_NAMES: Record<DashboardWidgetId, string> = {
   'daily-chart': 'Daily Chart',
   'weekly-chart': 'Weekly Chart',
   'monthly-chart': 'Monthly Chart',
+  'earnings-chart': 'Monthly Earnings',
   heatmap: 'Activity Heatmap',
 };
 

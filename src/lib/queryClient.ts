@@ -127,6 +127,12 @@ export const queryKeys = {
     /** Day of week distribution (last N weeks) */
     dayOfWeek: (weeks: number) => ['analytics', 'dayOfWeek', weeks] as const,
 
+    /** Earnings data */
+    earnings: ['analytics', 'earnings'] as const,
+
+    /** Monthly earnings for the last N months */
+    monthlyEarnings: (months: number) => ['analytics', 'monthlyEarnings', months] as const,
+
     /** All analytics queries (for invalidation) */
     all: ['analytics'] as const,
   },

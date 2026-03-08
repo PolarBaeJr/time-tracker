@@ -52,6 +52,8 @@ import {
   useKeyboardShortcuts,
   sendNotification,
   useTraySync,
+  useEarnings,
+  useGoalProgress,
 } from '@/hooks';
 import { useTimerSounds } from '@/hooks/useTimerSounds';
 import { useIdleDetection } from '@/hooks/useIdleDetection';
@@ -467,6 +469,39 @@ export function TimerScreen(): React.ReactElement {
   }, []);
 
   const localElapsed = useTimerStore(state => state.localElapsed);
+
+  // Earnings tracking
+  const activeTimerCategoryForEarnings = useMemo(() => {
+    if (!activeTimer?.category_id) return null;
+    const cat = categories.find(c => c.id === activeTimer.category_id);
+    return cat?.hourly_rate ? cat : null;
+  }, [activeTimer, categories]);
+
+  const currentSessionEarnings = useMemo(() => {
+    if (!activeTimerCategoryForEarnings?.hourly_rate) return null;
+    return (localElapsed / 3600) * activeTimerCategoryForEarnings.hourly_rate;
+  }, [localElapsed, activeTimerCategoryForEarnings]);
+
+  const currentMonth = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    return `${year}-${month}-01`;
+  }, []);
+
+  const { data: earningsData } = useEarnings({
+    enabled: activeTimerCategoryForEarnings != null,
+  });
+
+  const { data: goalProgress } = useGoalProgress({
+    month: currentMonth,
+    enabled: activeTimerCategoryForEarnings != null,
+  });
+
+  const earningsGoalProgress = useMemo(() => {
+    if (!goalProgress) return null;
+    return goalProgress.types.find(tp => tp.goal.category_type === '__earnings__') ?? null;
+  }, [goalProgress]);
   const hasActiveTimer = activeTimer !== null;
   const isPomodoroActive = activeTimer?.timer_mode === 'pomodoro';
   const isCountdownActive = activeTimer?.timer_mode === 'countdown';
@@ -781,6 +816,44 @@ export function TimerScreen(): React.ReactElement {
             />
           </Card>
 
+          {/* Session earnings display */}
+          {hasActiveTimer && currentSessionEarnings != null && (
+            <Card style={styles.earningsCard} padding="md" elevation="sm">
+              <View style={styles.earningsRow}>
+                <Text variant="caption" color="muted">
+                  Session Earnings
+                </Text>
+                <Text variant="headingSmall" style={{ color: colors.success }}>
+                  ${currentSessionEarnings.toFixed(2)}
+                </Text>
+              </View>
+              {earningsData && (
+                <View style={styles.earningsRow}>
+                  <Text variant="caption" color="muted">
+                    Today
+                  </Text>
+                  <Text variant="body">
+                    ${(earningsData.todayEarnings + currentSessionEarnings).toFixed(2)}
+                  </Text>
+                </View>
+              )}
+              {earningsGoalProgress && earningsGoalProgress.remainingHours > 0 && (
+                <View style={styles.earningsRow}>
+                  <Text variant="caption" color="muted">
+                    Monthly goal remaining
+                  </Text>
+                  <Text variant="body">
+                    $
+                    {Math.max(
+                      0,
+                      earningsGoalProgress.remainingHours - currentSessionEarnings
+                    ).toFixed(2)}
+                  </Text>
+                </View>
+              )}
+            </Card>
+          )}
+
           {/* Spotify mini player */}
           <SpotifyMiniPlayer />
 
@@ -920,6 +993,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  earningsCard: {
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  earningsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
   },
 });
 
