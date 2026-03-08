@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 import { UserSchema } from '@/schemas';
 import { supabase, type Session } from '@/lib';
@@ -182,14 +184,15 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     setLoading(true);
 
     const isElectron = typeof window !== 'undefined' && window.desktop?.platform?.isElectron;
+    const isNative = Platform.OS !== 'web';
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: getAuthRedirectUrl(),
-        // In Electron, skip the automatic browser redirect so the PKCE flow
-        // state is fully stored before we open the system browser ourselves.
-        skipBrowserRedirect: isElectron ? true : undefined,
+        // Skip automatic browser redirect on Electron and native so we can
+        // open the URL ourselves via the appropriate mechanism.
+        skipBrowserRedirect: isElectron || isNative ? true : undefined,
       },
     });
 
@@ -200,6 +203,43 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
 
     if (isElectron && data.url) {
       await window.desktop!.openExternalUrl(data.url);
+    } else if (isNative && data.url) {
+      // Open system browser for OAuth, then handle deep link redirect back
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        Linking.createURL('auth/callback')
+      );
+
+      if (result.type === 'success') {
+        const url = result.url;
+        // PKCE flow: Supabase redirects with ?code= query param
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get('code');
+
+        if (code) {
+          const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+          if (sessionError) {
+            console.error('[AuthContext] Native OAuth code exchange failed:', sessionError.message);
+          }
+        } else {
+          // Fallback: check for tokens in fragment (implicit flow)
+          const params = new URLSearchParams(url.split('#')[1] ?? '');
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (sessionError) {
+              console.error('[AuthContext] Native OAuth setSession failed:', sessionError.message);
+            }
+          }
+        }
+      }
+
+      setLoading(false);
     }
   };
 
