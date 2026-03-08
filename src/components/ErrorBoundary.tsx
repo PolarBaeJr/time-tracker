@@ -1,7 +1,5 @@
 import * as React from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Text } from '@/components/ui';
-import { colors, spacing } from '@/theme';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 
 interface Props {
   children: React.ReactNode;
@@ -30,24 +28,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text variant="heading" style={styles.title}>
-            Something went wrong
-          </Text>
+          <Text style={styles.title}>Something went wrong</Text>
           <ScrollView style={styles.scroll}>
-            <Text variant="body" color="muted" style={styles.message}>
-              {this.state.error?.message ?? 'Unknown error'}
-            </Text>
-            <Text variant="caption" color="muted" style={styles.stack}>
-              {this.state.error?.stack?.slice(0, 500) ?? ''}
-            </Text>
+            <Text style={styles.message}>{this.state.error?.message ?? 'Unknown error'}</Text>
+            <Text style={styles.stack}>{this.state.error?.stack?.slice(0, 800) ?? ''}</Text>
           </ScrollView>
           <Pressable
             style={styles.button}
             onPress={() => this.setState({ hasError: false, error: null })}
           >
-            <Text variant="body" style={styles.buttonText}>
-              Try Again
-            </Text>
+            <Text style={styles.buttonText}>Try Again</Text>
           </Pressable>
         </View>
       );
@@ -60,33 +50,40 @@ export class ErrorBoundary extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.lg,
+    backgroundColor: '#0F0F0F',
+    padding: 24,
     justifyContent: 'center',
   },
   title: {
-    marginBottom: spacing.md,
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
     textAlign: 'center',
   },
   scroll: {
-    maxHeight: 300,
-    marginBottom: spacing.lg,
+    maxHeight: 400,
+    marginBottom: 24,
   },
   message: {
-    marginBottom: spacing.sm,
+    color: '#ff6b6b',
+    fontSize: 14,
+    marginBottom: 12,
   },
   stack: {
-    fontFamily: 'monospace',
+    color: '#888',
     fontSize: 10,
+    fontFamily: 'monospace',
   },
   button: {
-    backgroundColor: colors.primary,
-    padding: spacing.md,
+    backgroundColor: '#6366f1',
+    padding: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
+    fontSize: 16,
   },
 });
