@@ -119,7 +119,7 @@ export function Text({
     <RNText
       {...textProps}
       style={[
-        { color: colors.text },
+        { color: colors.text, fontSize: fontSizes.md },
         variantStyles[variant],
         { color: colorMap[color] },
         bold && styles.bold,
