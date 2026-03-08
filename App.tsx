@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/ui';
 import { AuthProvider } from '@/contexts';
 import { useAuth, useSplashScreen } from '@/hooks';
@@ -74,9 +75,11 @@ export default function App(): React.ReactElement {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ErrorBoundary>
       </ThemeProvider>
     </QueryClientProvider>
   );

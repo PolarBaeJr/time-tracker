@@ -108,7 +108,12 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
 
       setLoading(true);
 
-      const nextUser = await fetchUserProfile(nextSession.user.id);
+      let nextUser: UserProfile | null = null;
+      try {
+        nextUser = await fetchUserProfile(nextSession.user.id);
+      } catch (err) {
+        console.warn('[AuthContext] Profile fetch failed:', err);
+      }
 
       if (!isActive || requestId !== latestRequestId) {
         return;
