@@ -21,7 +21,7 @@
  */
 
 import * as React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, Platform, ViewStyle } from 'react-native';
 
 import { Card, Text, Spinner } from '@/components/ui';
 import { usePomodoroStats } from '@/hooks/usePomodoroStats';
@@ -213,8 +213,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   cardTitle: {
+    fontSize: 12,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   cardValue: {
     marginVertical: spacing.xs,

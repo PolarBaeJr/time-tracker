@@ -284,6 +284,9 @@ async function updateTimeEntry({ id, data }: UpdateTimeEntryParams): Promise<Tim
   if (validatedInput.is_billable !== undefined) {
     updateData.is_billable = validatedInput.is_billable;
   }
+  if (validatedInput.billing_rate !== undefined) {
+    updateData.billing_rate = validatedInput.billing_rate;
+  }
 
   // RLS ensures user can only update their own entries
   const { data: result, error } = await supabase
@@ -365,13 +368,13 @@ export function useUpdateTimeEntry(options?: UseUpdateTimeEntryOptions) {
       queryClient.setQueriesData<{ pages: TimeEntriesPage[]; pageParams: unknown[] }>(
         { queryKey: ['timeEntries'] },
         old => {
-          if (!old) return old;
+          if (!old?.pages) return old;
 
           return {
             ...old,
             pages: old.pages.map(page => ({
               ...page,
-              data: page.data.map(entry =>
+              data: (page.data ?? []).map(entry =>
                 entry.id === id
                   ? { ...entry, ...data, updated_at: new Date().toISOString() }
                   : entry
@@ -486,13 +489,13 @@ export function useDeleteTimeEntry(options?: UseDeleteTimeEntryOptions) {
       queryClient.setQueriesData<{ pages: TimeEntriesPage[]; pageParams: unknown[] }>(
         { queryKey: ['timeEntries'] },
         old => {
-          if (!old) return old;
+          if (!old?.pages) return old;
 
           return {
             ...old,
             pages: old.pages.map(page => ({
               ...page,
-              data: page.data.filter(entry => entry.id !== id),
+              data: page.data?.filter(entry => entry.id !== id) ?? [],
             })),
           };
         }
@@ -615,6 +618,7 @@ async function duplicateTimeEntry(id: string): Promise<TimeEntry> {
       notes: original.notes,
       entry_type: original.entry_type,
       is_billable: original.is_billable,
+      billing_rate: original.billing_rate,
     })
     .select()
     .single();
@@ -739,12 +743,12 @@ export function useBulkDeleteEntries(options?: {
       queryClient.setQueriesData<{ pages: TimeEntriesPage[]; pageParams: unknown[] }>(
         { queryKey: ['timeEntries'] },
         old => {
-          if (!old) return old;
+          if (!old?.pages) return old;
           return {
             ...old,
             pages: old.pages.map(page => ({
               ...page,
-              data: page.data.filter(entry => !ids.includes(entry.id)),
+              data: page.data?.filter(entry => !ids.includes(entry.id)) ?? [],
             })),
           };
         }
@@ -834,6 +838,7 @@ async function splitTimeEntry({
       end_at: original.end_at,
       duration_seconds: originalDuration - splitAtSeconds,
       notes: original.notes,
+      billing_rate: original.billing_rate,
     })
     .select()
     .single();
@@ -917,6 +922,7 @@ async function mergeTimeEntries(ids: string[]): Promise<TimeEntry> {
       end_at: latestEnd,
       duration_seconds: totalDuration,
       notes: notes || null,
+      billing_rate: entries[0].billing_rate,
     })
     .select()
     .single();

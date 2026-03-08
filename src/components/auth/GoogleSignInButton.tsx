@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
 import { borderRadius, colors, spacing } from '@/theme';
@@ -62,7 +62,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   label: {
-    letterSpacing: 0.2,
+    fontSize: 14,
+    ...Platform.select({
+      ios: { letterSpacing: 0.2 },
+      default: { letterSpacing: 0.2 },
+      android: {},
+    }),
   },
 });
 

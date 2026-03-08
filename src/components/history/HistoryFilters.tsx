@@ -363,25 +363,48 @@ export function HistoryFilters({
 
   return (
     <View style={styles.container}>
-      {/* Collapsed header */}
-      <Pressable
-        style={styles.header}
-        onPress={() => setExpanded(!expanded)}
-        accessibilityRole="button"
-        accessibilityLabel={expanded ? 'Collapse filters' : 'Expand filters'}
-        disabled={disabled}
-      >
-        <View style={styles.headerLeft}>
-          <Icon name="filter" size={18} color={colors.text} />
-          <Text style={styles.headerTitle}>Filters</Text>
-          {hasActiveFilters && <View style={styles.activeIndicator} />}
-        </View>
-        <Icon
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={18}
-          color={colors.textSecondary}
-        />
-      </Pressable>
+      {/* Filter toggle button */}
+      <View style={styles.headerRow}>
+        <Pressable
+          style={[
+            styles.filterToggle,
+            expanded ? styles.filterToggleActive : undefined,
+            hasActiveFilters && !expanded ? styles.filterToggleHasFilters : undefined,
+          ]}
+          onPress={() => setExpanded(!expanded)}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Collapse filters' : 'Expand filters'}
+          disabled={disabled}
+        >
+          <Icon
+            name="filter"
+            size={14}
+            color={expanded ? '#fff' : hasActiveFilters ? colors.primary : colors.textSecondary}
+          />
+          <Text
+            style={{
+              fontSize: fontSizes.sm,
+              fontWeight: '600',
+              color: expanded ? '#fff' : hasActiveFilters ? colors.primary : colors.textSecondary,
+              marginLeft: spacing.xs,
+            }}
+          >
+            {expanded ? 'Close' : hasActiveFilters ? 'Filters Active' : 'Filters'}
+          </Text>
+          {hasActiveFilters && !expanded && <View style={styles.activeIndicator} />}
+        </Pressable>
+        {hasActiveFilters && !expanded && (
+          <Pressable
+            onPress={handleClearFilters}
+            style={styles.clearInlineButton}
+            accessibilityLabel="Clear filters"
+          >
+            <Text style={{ fontSize: fontSizes.sm, color: colors.error, fontWeight: '500' }}>
+              Clear
+            </Text>
+          </Pressable>
+        )}
+      </View>
 
       {/* Expanded filter panel */}
       {expanded && (
@@ -733,29 +756,41 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
-  headerLeft: {
+  filterToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surfaceVariant,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  headerTitle: {
-    fontSize: fontSizes.md,
-    color: colors.text,
-    fontWeight: '500',
-    marginLeft: spacing.sm,
+  filterToggleActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterToggleHasFilters: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '15',
   },
   activeIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.primary,
     marginLeft: spacing.xs,
+  },
+  clearInlineButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   panel: {
     paddingHorizontal: spacing.md,

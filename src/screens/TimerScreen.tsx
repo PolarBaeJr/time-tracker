@@ -54,6 +54,7 @@ import {
   useTraySync,
   useEarnings,
   useGoalProgress,
+  useDailyTotals,
 } from '@/hooks';
 import { useTimerSounds } from '@/hooks/useTimerSounds';
 import { useIdleDetection } from '@/hooks/useIdleDetection';
@@ -493,6 +494,9 @@ export function TimerScreen(): React.ReactElement {
     enabled: activeTimerCategoryForEarnings != null,
   });
 
+  const { data: dailyData } = useDailyTotals({ days: 1 });
+  const todaySeconds = dailyData?.[0]?.totalSeconds ?? 0;
+
   const { data: goalProgress } = useGoalProgress({
     month: currentMonth,
     enabled: activeTimerCategoryForEarnings != null,
@@ -695,16 +699,6 @@ export function TimerScreen(): React.ReactElement {
             </View>
           </View>
 
-          {/* Quick timer presets (only when no timer is active) */}
-          {!hasActiveTimer && (
-            <QuickTimerPresets
-              onSelectPreset={handleSelectQuickPreset}
-              currentMode={timerMode}
-              currentCategoryId={selectedCategoryId}
-              currentDurationSeconds={currentDurationSeconds}
-            />
-          )}
-
           {/* Main timer card */}
           <Card style={styles.timerCard} padding="lg" elevation="md">
             {/* Pomodoro info (when in pomodoro mode) */}
@@ -816,6 +810,49 @@ export function TimerScreen(): React.ReactElement {
             />
           </Card>
 
+          {/* Quick timer presets (below timer when idle) */}
+          {!hasActiveTimer && (
+            <QuickTimerPresets
+              onSelectPreset={handleSelectQuickPreset}
+              currentMode={timerMode}
+              currentCategoryId={selectedCategoryId}
+              currentDurationSeconds={currentDurationSeconds}
+            />
+          )}
+
+          {/* Today's summary (when idle) */}
+          {!hasActiveTimer && (
+            <Card style={styles.todaySummaryCard} padding="md" elevation="sm">
+              <Text variant="label" color="muted" style={{ marginBottom: spacing.sm }}>
+                Today
+              </Text>
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryItem}>
+                  <Text variant="headingSmall">
+                    {todaySeconds >= 3600
+                      ? `${Math.floor(todaySeconds / 3600)}h ${Math.floor((todaySeconds % 3600) / 60)}m`
+                      : todaySeconds > 0
+                        ? `${Math.floor(todaySeconds / 60)}m`
+                        : '0m'}
+                  </Text>
+                  <Text variant="caption" color="muted">
+                    Time Tracked
+                  </Text>
+                </View>
+                {earningsData && earningsData.todayEarnings > 0 && (
+                  <View style={styles.summaryItem}>
+                    <Text variant="headingSmall" style={{ color: colors.success }}>
+                      ${earningsData.todayEarnings.toFixed(2)}
+                    </Text>
+                    <Text variant="caption" color="muted">
+                      Earned
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </Card>
+          )}
+
           {/* Session earnings display */}
           {hasActiveTimer && currentSessionEarnings != null && (
             <Card style={styles.earningsCard} padding="md" elevation="sm">
@@ -912,6 +949,7 @@ const styles = StyleSheet.create({
   timerCard: {
     alignItems: 'center',
     backgroundColor: colors.surface,
+    paddingVertical: spacing.xl,
   },
   pomodoroInfo: {
     marginBottom: spacing.sm,
@@ -968,7 +1006,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   controls: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
     width: '100%',
   },
   syncToast: {
@@ -990,9 +1028,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceVariant,
   },
   focusButtonText: {
+    fontSize: 12,
     color: colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...Platform.select({ ios: { letterSpacing: 1 }, default: { letterSpacing: 1 }, android: {} }),
+  },
+  todaySummaryCard: {
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  summaryItem: {
+    alignItems: 'center',
   },
   earningsCard: {
     marginTop: spacing.md,

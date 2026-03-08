@@ -55,7 +55,7 @@ export function TimerControls({
   style,
 }: TimerControlsProps): React.ReactElement {
   // Get timer state from store
-  const activeTimer = useTimerStore((state) => state.activeTimer);
+  const activeTimer = useTimerStore(state => state.activeTimer);
 
   // Determine if timer is active
   const hasActiveTimer = activeTimer !== null;
@@ -76,13 +76,6 @@ export function TimerControls({
         >
           <View style={styles.buttonContent}>
             <Icon name="play" size={24} color={colors.text} />
-            <View style={styles.buttonTextContainer}>
-              {!isStarting && (
-                <View style={styles.startText}>
-                  <Icon name="play" size={0} color="transparent" />
-                </View>
-              )}
-            </View>
           </View>
         </Button>
       </View>

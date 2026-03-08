@@ -26,8 +26,8 @@ export const iconMap = {
   'list-outline': '\u2261', // identical to
   'bar-chart': '\u2593', // dark shade
   'bar-chart-outline': '\u2591', // light shade
-  folder: '\u{1F4C1}', // open folder
-  'folder-outline': '\u{1F4C2}', // open file folder
+  folder: '\u25A6', // category squares filled
+  'folder-outline': '\u25A1', // category square outline
   flag: '\u2691', // black flag
   'flag-outline': '\u2690', // white flag
   settings: '\u2699', // gear
@@ -89,14 +89,16 @@ export function Icon({ name, size = 24, color, style }: IconProps): React.ReactE
   const { colors } = useTheme();
   const iconColor = color ?? colors.text;
   const symbol = iconMap[name] ?? '?';
+  // Ensure fontSize is never 0 (crashes Android Fabric: TextAttributeProps.getLetterSpacing)
+  const safeSize = Math.max(size, 1);
 
   return (
     <Text
       style={[
         styles.icon,
         {
-          fontSize: size,
-          lineHeight: size * 1.2,
+          fontSize: safeSize,
+          lineHeight: safeSize * 1.2,
           color: iconColor,
         },
         style,

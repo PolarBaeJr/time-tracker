@@ -167,6 +167,11 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       applyServerPreferences(user.preferences as Parameters<typeof applyServerPreferences>[0]);
     }
 
+    // Purge soft-deleted entries older than 30 days (fire-and-forget)
+    void supabase.rpc('purge_old_soft_deleted_entries').then(({ error }) => {
+      if (error) console.warn('[AuthContext] Purge failed:', error.message);
+    });
+
     // Set up callback to push local changes to server (fire-and-forget)
     setSyncCallback(prefs => {
       void supabase

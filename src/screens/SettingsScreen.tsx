@@ -253,13 +253,15 @@ export function SettingsScreen(): React.ReactElement {
           </Card>
         </View>
 
-        {/* Integrations */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Integrations</Text>
-          <Card padding="md" elevation="none" style={styles.sectionCard}>
-            <SpotifySettings disabled={isUpdating} />
-          </Card>
-        </View>
+        {/* Integrations — only shown on web (Spotify is web-only) */}
+        {Platform.OS === 'web' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Integrations</Text>
+            <Card padding="md" elevation="none" style={styles.sectionCard}>
+              <SpotifySettings disabled={isUpdating} />
+            </Card>
+          </View>
+        )}
 
         {/* Account Settings */}
         <View style={styles.section}>
@@ -322,7 +324,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.sm,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   sectionCard: {
     borderColor: colors.border,

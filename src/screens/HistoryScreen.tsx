@@ -308,9 +308,31 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="heading" style={styles.title}>
-          {isSelectMode ? `${selectedCount} selected` : 'History'}
-        </Text>
+        <View style={styles.headerLeft}>
+          <Text variant="heading" style={styles.title}>
+            {isSelectMode ? `${selectedCount} selected` : 'History'}
+          </Text>
+          {isSelectMode && (
+            <Pressable
+              onPress={() => {
+                if (selectedIds.size === entries.length) {
+                  setSelectedIds(new Set());
+                } else {
+                  setSelectedIds(new Set(entries.map(e => e.id)));
+                }
+              }}
+              style={styles.selectAllButton}
+              accessibilityRole="button"
+              accessibilityLabel={
+                selectedIds.size === entries.length ? 'Deselect all' : 'Select all'
+              }
+            >
+              <Text style={styles.selectAllText}>
+                {selectedIds.size === entries.length ? 'Deselect All' : 'Select All'}
+              </Text>
+            </Pressable>
+          )}
+        </View>
         <View style={styles.headerRight}>
           {!isSelectMode && entries.length > 0 && (
             <Text style={styles.entryCount}>
@@ -542,10 +564,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '700',
     color: colors.text,
+  },
+  selectAllButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary + '15',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  selectAllText: {
+    fontSize: fontSizes.sm,
+    color: colors.primary,
+    fontWeight: '600',
   },
   headerRight: {
     flexDirection: 'row',

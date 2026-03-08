@@ -246,7 +246,6 @@ export function AnalyticsScreen(): React.ReactElement {
           </View>
         );
       case 'earnings-chart':
-        if (!earningsQuery.data?.some(e => e.earnings > 0)) return null;
         return (
           <View style={styles.section}>
             <ChartContainer
@@ -300,15 +299,19 @@ export function AnalyticsScreen(): React.ReactElement {
           </View>
           <Pressable
             onPress={() => setEditMode(!isEditMode)}
-            style={styles.editButton}
-            accessibilityLabel="Customize dashboard"
+            style={[styles.editButton, isEditMode && { backgroundColor: colors.primary }]}
+            accessibilityLabel="Select charts to display"
             accessibilityRole="button"
           >
-            <Icon
-              name="settings"
-              size={20}
-              color={isEditMode ? colors.primary : colors.textSecondary}
-            />
+            <Text
+              variant="caption"
+              style={{
+                color: isEditMode ? '#fff' : colors.primary,
+                fontWeight: '600',
+              }}
+            >
+              {isEditMode ? 'Done' : 'Select Charts'}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -388,7 +391,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   editButton: {
-    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   scrollView: {
     flex: 1,
@@ -406,9 +413,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
+    fontSize: 12,
     marginBottom: spacing.md,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   emptyTip: {
     padding: spacing.lg,

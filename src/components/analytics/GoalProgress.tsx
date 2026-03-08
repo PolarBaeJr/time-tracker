@@ -21,7 +21,7 @@
  */
 
 import * as React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, Platform, ViewStyle } from 'react-native';
 
 import { Card, Text, Spinner } from '@/components/ui';
 import { useGoalProgress } from '@/hooks/useGoalProgress';
@@ -211,13 +211,16 @@ function CategoryGoalItem({
   categoryName,
   categoryColor,
 }: CategoryGoalItemProps): React.ReactElement {
-  const progressColor = categoryColor ?? getProgressColor(progress.progressPercent, progress.isAchieved);
+  const progressColor =
+    categoryColor ?? getProgressColor(progress.progressPercent, progress.isAchieved);
 
   return (
     <View style={styles.categoryItem}>
       <View style={styles.categoryHeader}>
         <View style={styles.categoryNameRow}>
-          <View style={[styles.categoryDot, { backgroundColor: categoryColor ?? colors.textMuted }]} />
+          <View
+            style={[styles.categoryDot, { backgroundColor: categoryColor ?? colors.textMuted }]}
+          />
           <Text variant="bodySmall" style={styles.categoryName}>
             {categoryName ?? 'Unknown Category'}
           </Text>
@@ -270,7 +273,11 @@ export function GoalProgress({
   style,
   showCategories = true,
 }: GoalProgressProps): React.ReactElement {
-  const { data: progressData, isLoading: progressLoading, error: progressError } = useGoalProgress({
+  const {
+    data: progressData,
+    isLoading: progressLoading,
+    error: progressError,
+  } = useGoalProgress({
     month,
   });
   const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -314,7 +321,10 @@ export function GoalProgress({
   }
 
   // No goals set
-  if (!progressData?.overall && (!progressData?.categories || progressData.categories.length === 0)) {
+  if (
+    !progressData?.overall &&
+    (!progressData?.categories || progressData.categories.length === 0)
+  ) {
     return <NoGoalsState />;
   }
 
@@ -329,7 +339,7 @@ export function GoalProgress({
           <Text variant="label" color="secondary" style={styles.categoriesTitle}>
             Category Goals
           </Text>
-          {progressData.categories.map((catProgress) => {
+          {progressData.categories.map(catProgress => {
             const catInfo = catProgress.goal.category_id
               ? categoryMap.get(catProgress.goal.category_id)
               : null;
@@ -433,9 +443,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   categoriesTitle: {
+    fontSize: 12,
     marginBottom: spacing.md,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   categoryItem: {
     marginBottom: spacing.md,

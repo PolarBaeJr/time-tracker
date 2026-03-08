@@ -36,15 +36,13 @@ function AppContent(): React.ReactElement | null {
   // Control splash screen visibility based on auth loading state
   const { isReady, onLayoutRootView } = useSplashScreen({
     authLoading: loading,
-    minimumDisplayTime: 500, // Show splash for at least 500ms to prevent flash
+    minimumDisplayTime: 500,
   });
 
-  // Keep the splash screen visible while loading
   if (!isReady) {
     return null;
   }
 
-  // NavigationProvider renders RootNavigator which handles auth-based routing
   return (
     <View
       style={[styles.container, { backgroundColor: colors.background }]}

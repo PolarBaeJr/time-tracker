@@ -79,6 +79,7 @@ interface FormState {
   endDate: string;
   endTime: string;
   notes: string;
+  billingRate: string;
 }
 
 /**
@@ -89,6 +90,7 @@ interface FormErrors {
   startTime?: string;
   endDate?: string;
   endTime?: string;
+  billingRate?: string;
   general?: string;
 }
 
@@ -239,6 +241,7 @@ export function EntryEditModal({
     endDate: '',
     endTime: '',
     notes: '',
+    billingRate: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -259,6 +262,7 @@ export function EntryEditModal({
         endDate: entry.end_at ? extractDate(entry.end_at) : '',
         endTime: entry.end_at ? extractTime(entry.end_at) : '',
         notes: entry.notes || '',
+        billingRate: entry.billing_rate != null ? String(entry.billing_rate) : '',
       });
       setErrors({});
     }
@@ -319,6 +323,13 @@ export function EntryEditModal({
       newErrors.endTime = 'Use HH:MM format';
     }
 
+    if (form.billingRate.trim() !== '') {
+      const parsed = parseFloat(form.billingRate);
+      if (isNaN(parsed) || parsed < 0) {
+        newErrors.billingRate = 'Must be a valid non-negative number';
+      }
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return null;
@@ -337,6 +348,7 @@ export function EntryEditModal({
         end_at: endIso,
         duration_seconds: duration,
         notes: form.notes.trim() || null,
+        billing_rate: form.billingRate.trim() === '' ? null : parseFloat(form.billingRate),
       };
 
       // Validate against schema
@@ -408,7 +420,8 @@ export function EntryEditModal({
       form.startTime !== extractTime(entry.start_at) ||
       form.endDate !== (entry.end_at ? extractDate(entry.end_at) : '') ||
       form.endTime !== (entry.end_at ? extractTime(entry.end_at) : '') ||
-      form.notes !== (entry.notes || '')
+      form.notes !== (entry.notes || '') ||
+      form.billingRate !== (entry.billing_rate != null ? String(entry.billing_rate) : '')
     );
   }, [entry, form]);
 
@@ -536,6 +549,17 @@ export function EntryEditModal({
                 </Text>
               </View>
             )}
+
+            {/* Billing Rate */}
+            <Input
+              label="Billing Rate ($/hr)"
+              value={form.billingRate}
+              onChangeText={text => setForm(prev => ({ ...prev, billingRate: text }))}
+              placeholder="Category default"
+              keyboardType="decimal-pad"
+              error={errors.billingRate}
+              disabled={isSubmitting || !isOwnEntry}
+            />
 
             {/* Notes */}
             <Input
@@ -711,6 +735,7 @@ const styles = StyleSheet.create({
     color: colors.warning,
   },
   form: {
+    flex: 1,
     padding: spacing.lg,
   },
   field: {

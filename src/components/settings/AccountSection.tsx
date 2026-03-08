@@ -6,15 +6,7 @@
 
 import * as React from 'react';
 import { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  Alert,
-  Platform,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { View, Text, Image, Alert, Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { Button } from '@/components/ui';
 import { colors, spacing, fontSizes, fontWeights, borderRadius } from '@/theme';
 
@@ -96,18 +88,14 @@ export function AccountSection({
         void performSignOut();
       }
     } else {
-      Alert.alert(
-        'Sign Out',
-        'Are you sure you want to sign out?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: () => void performSignOut(),
-          },
-        ]
-      );
+      Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => void performSignOut(),
+        },
+      ]);
     }
   }, [onSignOut]);
 
@@ -184,7 +172,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.sm,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   card: {
     backgroundColor: colors.surface,

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet, Platform } from 'react-native';
 
 import { Card } from '@/components/ui/Card';
 import { Text } from '@/components/ui/Text';
@@ -67,9 +67,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
+    fontSize: 12,
     marginBottom: 12,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   widgetRow: {
     flexDirection: 'row',

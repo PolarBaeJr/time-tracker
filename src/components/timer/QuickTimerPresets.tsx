@@ -199,6 +199,7 @@ export function QuickTimerPresets({
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 16,
     marginBottom: 12,
   },
   scrollContent: {

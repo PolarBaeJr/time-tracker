@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   TouchableWithoutFeedback,
+  Platform,
   type TextStyle,
 } from 'react-native';
 
@@ -491,7 +492,11 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: fontWeights.semibold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
     marginBottom: spacing.sm,
   },
   modeRow: {

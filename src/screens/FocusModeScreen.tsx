@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xl,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 2,
+    ...Platform.select({ ios: { letterSpacing: 2 }, default: { letterSpacing: 2 }, android: {} }),
     marginBottom: spacing.sm,
   },
   pomodoroProgress: {

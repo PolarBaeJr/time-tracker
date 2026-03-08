@@ -127,19 +127,14 @@ export function RootNavigator(): React.ReactElement {
       }}
     >
       {!isAuthenticated ? (
-        // Unauthenticated stack
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{
-            animationTypeForReplace: 'pop',
-          }}
+          options={{ animationTypeForReplace: 'pop' }}
         />
       ) : !user?.onboarding_complete ? (
-        // Onboarding: force settings setup before accessing the app
         <Stack.Screen name="Setup" component={SetupScreen} />
       ) : (
-        // Authenticated stack
         <>
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen
@@ -149,9 +144,7 @@ export function RootNavigator(): React.ReactElement {
               presentation: 'modal',
               headerShown: true,
               headerTitle: 'Edit Entry',
-              headerStyle: {
-                backgroundColor: colors.surface,
-              },
+              headerStyle: { backgroundColor: colors.surface },
               headerTintColor: colors.text,
               headerShadowVisible: false,
             }}
@@ -159,10 +152,7 @@ export function RootNavigator(): React.ReactElement {
           <Stack.Screen
             name="FocusMode"
             component={FocusModeScreen}
-            options={{
-              presentation: 'fullScreenModal',
-              headerShown: false,
-            }}
+            options={{ presentation: 'fullScreenModal', headerShown: false }}
           />
         </>
       )}

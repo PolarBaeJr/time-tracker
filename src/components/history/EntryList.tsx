@@ -25,7 +25,14 @@
 
 import * as React from 'react';
 import { useMemo, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { EntryCard } from './EntryCard';
 import { Text, Spinner, Card, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
@@ -366,7 +373,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Platform.select({
+      ios: { letterSpacing: 0.5 },
+      default: { letterSpacing: 0.5 },
+      android: {},
+    }),
   },
   footer: {
     flexDirection: 'row',

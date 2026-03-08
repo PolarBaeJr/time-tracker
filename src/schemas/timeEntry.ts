@@ -42,6 +42,9 @@ export const TimeEntrySchema = z.object({
   /** Whether this entry is billable */
   is_billable: z.boolean().default(false),
 
+  /** Per-entry billing rate override (null = use category default) */
+  billing_rate: z.number().nullable().optional(),
+
   /** Soft delete timestamp (null if not deleted) */
   deleted_at: z.string().datetime({ offset: true }).nullable().optional(),
 
@@ -77,6 +80,9 @@ export const CreateTimeEntrySchema = z
 
     /** Whether this entry is billable */
     is_billable: z.boolean().optional(),
+
+    /** Per-entry billing rate override */
+    billing_rate: z.number().nonnegative().nullable().optional(),
   })
   .refine(
     data => {
@@ -137,6 +143,9 @@ export const UpdateTimeEntrySchema = z
 
     /** Whether this entry is billable */
     is_billable: z.boolean().optional(),
+
+    /** Per-entry billing rate override */
+    billing_rate: z.number().nonnegative().nullable().optional(),
   })
   .refine(
     data => {

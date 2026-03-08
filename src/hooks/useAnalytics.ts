@@ -599,7 +599,7 @@ async function fetchEarnings(options: DateRangeOptions): Promise<EarningsData> {
 
   const { data, error } = await supabase
     .from('time_entries')
-    .select('start_at, duration_seconds, is_billable, category_id')
+    .select('start_at, duration_seconds, is_billable, category_id, billing_rate')
     .eq('is_billable', true)
     .gte('start_at', startDate)
     .lte('start_at', endDate);
@@ -633,8 +633,9 @@ async function fetchEarnings(options: DateRangeOptions): Promise<EarningsData> {
   const weekEnd = new Date(weekRanges[0].end);
 
   for (const entry of data ?? []) {
-    if (!entry.start_at || !entry.duration_seconds || !entry.category_id) continue;
-    const rate = rateMap.get(entry.category_id);
+    if (!entry.start_at || !entry.duration_seconds) continue;
+    const rate =
+      entry.billing_rate ?? (entry.category_id ? rateMap.get(entry.category_id) : undefined);
     if (!rate) continue;
 
     const earned = (rate * entry.duration_seconds) / 3600;
@@ -690,7 +691,7 @@ async function fetchMonthlyEarnings(
 
   const { data, error } = await supabase
     .from('time_entries')
-    .select('start_at, duration_seconds, is_billable, category_id')
+    .select('start_at, duration_seconds, is_billable, category_id, billing_rate')
     .eq('is_billable', true)
     .gte('start_at', monthRanges[monthRanges.length - 1].start)
     .lte('start_at', monthRanges[0].end);
@@ -720,8 +721,9 @@ async function fetchMonthlyEarnings(
   }
 
   for (const entry of data ?? []) {
-    if (!entry.start_at || !entry.duration_seconds || !entry.category_id) continue;
-    const rate = rateMap.get(entry.category_id);
+    if (!entry.start_at || !entry.duration_seconds) continue;
+    const rate =
+      entry.billing_rate ?? (entry.category_id ? rateMap.get(entry.category_id) : undefined);
     if (!rate) continue;
 
     const earned = (rate * entry.duration_seconds) / 3600;

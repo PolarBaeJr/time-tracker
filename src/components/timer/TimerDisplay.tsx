@@ -12,7 +12,7 @@
 
 import * as React from 'react';
 import { useMemo } from 'react';
-import { View, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
+import { View, StyleSheet, Platform, type ViewStyle, type TextStyle } from 'react-native';
 
 import { Text } from '@/components/ui';
 import { useTimerStore } from '@/stores';
@@ -119,22 +119,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontVariant: ['tabular-nums'], // Monospace numbers for stable width
     color: colors.text,
-    letterSpacing: 2,
+    ...Platform.select({ ios: { letterSpacing: 2 }, default: { letterSpacing: 2 }, android: {} }),
   },
   idleTime: {
     fontSize: fontSizes.display + 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
     color: colors.textMuted,
-    letterSpacing: 2,
+    ...Platform.select({ ios: { letterSpacing: 2 }, default: { letterSpacing: 2 }, android: {} }),
   },
   runningTime: {
     color: colors.primary,
   },
   statusText: {
+    fontSize: 14,
     marginTop: spacing.sm,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...Platform.select({ ios: { letterSpacing: 1 }, default: { letterSpacing: 1 }, android: {} }),
   },
   elapsedText: {
     marginTop: spacing.xs,

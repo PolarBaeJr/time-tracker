@@ -254,8 +254,9 @@ export function EntryCard({
   const isBreak = entry.entry_type && entry.entry_type !== 'work';
   const breakLabel = entry.entry_type === 'long_break' ? 'Long Break' : 'Break';
   const isBillable = entry.is_billable === true;
+  const effectiveRate = entry.billing_rate ?? categoryHourlyRate;
   const earnings =
-    isBillable && categoryHourlyRate ? (categoryHourlyRate * entry.duration_seconds) / 3600 : null;
+    isBillable && effectiveRate ? (effectiveRate * entry.duration_seconds) / 3600 : null;
 
   return (
     <Card
@@ -373,7 +374,7 @@ export function EntryCard({
         </View>
       </View>
 
-      {/* Row 4: Break badge + Duration */}
+      {/* Row 4: Type + Duration + Earned */}
       <View style={styles.metaRow}>
         {isBreak && (
           <View
@@ -390,23 +391,16 @@ export function EntryCard({
                 ]) as TextStyle
               }
             >
-              {breakLabel}: {formatDuration(entry.duration_seconds)}
+              {breakLabel}
             </Text>
           </View>
         )}
         <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>
-            Duration: {formatDuration(entry.duration_seconds)}
-          </Text>
+          <Text style={styles.durationText}>{formatDuration(entry.duration_seconds)}</Text>
         </View>
-        {isBillable && (
-          <View style={styles.billableBadge}>
-            <Text style={styles.billableText}>$</Text>
-          </View>
-        )}
         {earnings !== null && (
           <View style={styles.earningsBadge}>
-            <Text style={styles.earningsText}>${earnings.toFixed(2)}</Text>
+            <Text style={styles.earningsText}>Earned: ${earnings.toFixed(2)}</Text>
           </View>
         )}
       </View>

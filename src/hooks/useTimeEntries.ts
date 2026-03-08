@@ -126,6 +126,7 @@ async function fetchTimeEntries({
   let query = supabase
     .from('time_entries')
     .select('*')
+    .is('deleted_at', null)
     .order(sortColumn, { ascending: sortAscending });
 
   // Add secondary sort for stable pagination (skip if already sorting by created_at desc)

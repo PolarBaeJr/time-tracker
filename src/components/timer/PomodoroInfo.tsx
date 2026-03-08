@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
+import { View, StyleSheet, Platform, type ViewStyle, type TextStyle } from 'react-native';
 
 import { Text } from '@/components/ui';
 import { colors, spacing, borderRadius } from '@/theme';
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   phaseText: {
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...Platform.select({ ios: { letterSpacing: 1 }, default: { letterSpacing: 1 }, android: {} }),
     fontSize: 14,
   },
   dots: {
