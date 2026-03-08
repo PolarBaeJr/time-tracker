@@ -41,8 +41,11 @@ interface NavigationProviderProps {
  */
 /**
  * Handle auth callback deep links before React Navigation sees them.
- * Extracts the PKCE code and exchanges it for a session, then returns
- * null so navigation ignores the URL.
+ *
+ * On web: extracts the PKCE code and exchanges it for a session.
+ * On native: only intercepts the URL to prevent navigation confusion.
+ *   The code exchange is handled by AuthContext via openAuthSessionAsync,
+ *   so we must NOT exchange again here (PKCE codes are single-use).
  */
 function handleAuthCallback(url: string): boolean {
   if (!url.includes('/auth/callback')) return false;
@@ -52,7 +55,20 @@ function handleAuthCallback(url: string): boolean {
   const code = params.get('code');
 
   if (code) {
-    void supabase.auth.exchangeCodeForSession(code);
+    if (Platform.OS === 'web') {
+      // Web: always exchange here
+      void supabase.auth.exchangeCodeForSession(code);
+    } else {
+      // Native: only exchange if this is a cold start (getInitialURL path).
+      // When openAuthSessionAsync is active, IT handles the exchange and
+      // this subscribe handler won't fire. But if the app was killed and
+      // relaunched via the deep link, we need to exchange here.
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) {
+          void supabase.auth.exchangeCodeForSession(code);
+        }
+      });
+    }
   }
 
   return true;

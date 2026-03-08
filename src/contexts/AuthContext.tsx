@@ -221,7 +221,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
           const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
           if (sessionError) {
             console.error('[AuthContext] Native OAuth code exchange failed:', sessionError.message);
+            setLoading(false);
           }
+          // On success, onAuthStateChange fires syncSession which handles loading state
         } else {
           // Fallback: check for tokens in fragment (implicit flow)
           const fragment = url.split('#')[1] ?? '';
@@ -236,12 +238,17 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
             });
             if (sessionError) {
               console.error('[AuthContext] Native OAuth setSession failed:', sessionError.message);
+              setLoading(false);
             }
+            // On success, onAuthStateChange fires syncSession which handles loading state
+          } else {
+            setLoading(false);
           }
         }
+      } else {
+        // User cancelled or dismissed the browser
+        setLoading(false);
       }
-
-      setLoading(false);
     }
   };
 
