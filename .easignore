@@ -1,0 +1,86 @@
+# EAS Build ignore file
+# Same as .gitignore but includes .env files for native builds
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Build directories
+build/
+out/
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# NOTE: .env files are NOT excluded here (unlike .gitignore)
+# so that SUPABASE_URL and SUPABASE_ANON_KEY are available during native builds
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# Electron
+electron/dist/
+electron/out/
+electron-dist/
+electron/*.js
+electron/*.js.map
+
+# Testing
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Local certificates and ACME artifacts
+certs/
+
+# Supabase local
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# Conductor / Codex / Claude Code local state
+.conductor/
+.codex/
+.claude/
+
+# Deploy script (local only)
+deploy.sh
+
+# Android APK builds
+build-*.apk
