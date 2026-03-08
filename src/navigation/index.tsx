@@ -12,8 +12,9 @@ import {
   DarkTheme,
   type Theme as NavigationTheme,
 } from '@react-navigation/native';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
+import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/theme';
 
 import { RootNavigator } from './RootNavigator';
@@ -38,6 +39,25 @@ interface NavigationProviderProps {
  * Wraps the app with NavigationContainer and applies the custom theme.
  * Should be used at the root of the app inside AuthProvider.
  */
+/**
+ * Handle auth callback deep links before React Navigation sees them.
+ * Extracts the PKCE code and exchanges it for a session, then returns
+ * null so navigation ignores the URL.
+ */
+function handleAuthCallback(url: string): boolean {
+  if (!url.includes('/auth/callback')) return false;
+
+  const queryString = url.split('?')[1]?.split('#')[0] ?? '';
+  const params = new URLSearchParams(queryString);
+  const code = params.get('code');
+
+  if (code) {
+    void supabase.auth.exchangeCodeForSession(code);
+  }
+
+  return true;
+}
+
 const linking = {
   prefixes:
     Platform.OS === 'web' && typeof window !== 'undefined'
@@ -59,6 +79,20 @@ const linking = {
       },
       EntryEdit: 'entry/:entryId',
     },
+  },
+  // Intercept auth callbacks so they don't confuse React Navigation
+  async getInitialURL() {
+    const url = await Linking.getInitialURL();
+    if (url && handleAuthCallback(url)) return null;
+    return url;
+  },
+  subscribe(listener: (url: string) => void) {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (!handleAuthCallback(url)) {
+        listener(url);
+      }
+    });
+    return () => subscription.remove();
   },
 };
 

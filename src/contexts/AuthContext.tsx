@@ -212,9 +212,10 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
 
       if (result.type === 'success') {
         const url = result.url;
-        // PKCE flow: Supabase redirects with ?code= query param
-        const urlObj = new URL(url);
-        const code = urlObj.searchParams.get('code');
+        // Extract query params manually (URL constructor may not support custom schemes)
+        const queryString = url.split('?')[1]?.split('#')[0] ?? '';
+        const params = new URLSearchParams(queryString);
+        const code = params.get('code');
 
         if (code) {
           const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
@@ -223,9 +224,10 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
           }
         } else {
           // Fallback: check for tokens in fragment (implicit flow)
-          const params = new URLSearchParams(url.split('#')[1] ?? '');
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
+          const fragment = url.split('#')[1] ?? '';
+          const fragParams = new URLSearchParams(fragment);
+          const accessToken = fragParams.get('access_token');
+          const refreshToken = fragParams.get('refresh_token');
 
           if (accessToken && refreshToken) {
             const { error: sessionError } = await supabase.auth.setSession({

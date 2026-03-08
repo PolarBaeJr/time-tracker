@@ -87,3 +87,7 @@ deploy.sh
 
 # Android APK builds
 build-*.apk
+WorkTracker-*.apk
+
+# Latest builds folder (local only)
+latest/
