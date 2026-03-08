@@ -70,7 +70,7 @@
       "orientation": "portrait",
       "scope": "/"
     },
-    "plugins": [],
+    "plugins": ["./plugins/exclude-jitpack-bouncycastle"],
     "extra": {
       "eas": {
         "projectId": "29ee1370-b8ab-4bd3-9cd7-3da465732d29"

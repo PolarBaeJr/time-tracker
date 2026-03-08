@@ -84,3 +84,6 @@ supabase/.temp/
 
 # Deploy script (local only)
 deploy.sh
+
+# Android APK builds
+build-*.apk
