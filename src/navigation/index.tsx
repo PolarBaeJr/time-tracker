@@ -15,6 +15,7 @@ import {
 import { Linking, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { exchangeCodeForTokens } from '@/lib/spotify';
 import { useTheme } from '@/theme';
 
 import { RootNavigator } from './RootNavigator';
@@ -47,6 +48,77 @@ interface NavigationProviderProps {
  *   The code exchange is handled by AuthContext via openAuthSessionAsync,
  *   so we must NOT exchange again here (PKCE codes are single-use).
  */
+/**
+ * Handle Spotify OAuth callback.
+ * Extracts the authorization code from the URL, exchanges it for tokens,
+ * stores the connection in the database, and navigates to settings.
+ */
+function handleSpotifyCallback(url: string): boolean {
+  if (!url.includes('/spotify/callback')) return false;
+
+  const queryString = url.split('?')[1]?.split('#')[0] ?? '';
+  const params = new URLSearchParams(queryString);
+  const code = params.get('code');
+  const state = params.get('state');
+
+  if (!code) {
+    console.warn('[Spotify] No code in callback URL');
+    return true;
+  }
+
+  // Verify state matches
+  const savedState = sessionStorage.getItem('spotify_oauth_state');
+  if (state && savedState && state !== savedState) {
+    console.warn('[Spotify] State mismatch');
+    return true;
+  }
+
+  const codeVerifier = sessionStorage.getItem('spotify_code_verifier');
+  const redirectUri = sessionStorage.getItem('spotify_redirect_uri');
+
+  if (!codeVerifier || !redirectUri) {
+    console.warn('[Spotify] Missing code verifier or redirect URI in sessionStorage');
+    return true;
+  }
+
+  // Exchange code for tokens (fire-and-forget, async)
+  void (async () => {
+    try {
+      const tokens = await exchangeCodeForTokens({ code, codeVerifier, redirectUri });
+      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.from('spotify_connections').upsert(
+        {
+          user_id: user.id,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: expiresAt,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+      if (error) throw new Error(error.message);
+
+      // Clean up session storage
+      sessionStorage.removeItem('spotify_code_verifier');
+      sessionStorage.removeItem('spotify_oauth_state');
+      sessionStorage.removeItem('spotify_redirect_uri');
+
+      console.log('[Spotify] Connected successfully');
+    } catch (err) {
+      console.error('[Spotify] Token exchange failed:', err);
+    }
+  })();
+
+  return true;
+}
+
 function handleAuthCallback(url: string): boolean {
   if (!url.includes('/auth/callback')) return false;
 
@@ -96,14 +168,16 @@ const linking = {
       EntryEdit: 'entry/:entryId',
     },
   },
-  // Intercept auth callbacks so they don't confuse React Navigation
+  // Intercept auth/Spotify callbacks so they don't confuse React Navigation
   async getInitialURL() {
     const url = await Linking.getInitialURL();
+    if (url && handleSpotifyCallback(url)) return null;
     if (url && handleAuthCallback(url)) return null;
     return url;
   },
   subscribe(listener: (url: string) => void) {
     const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (handleSpotifyCallback(url)) return;
       if (!handleAuthCallback(url)) {
         listener(url);
       }

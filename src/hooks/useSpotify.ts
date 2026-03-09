@@ -176,7 +176,8 @@ export function useConnectSpotify() {
       if (window.desktop?.openExternalUrl) {
         await window.desktop.openExternalUrl(authorizeUrl);
       } else {
-        window.open(authorizeUrl, '_blank');
+        // Navigate in same window so sessionStorage (code verifier) is preserved
+        window.location.href = authorizeUrl;
       }
     },
   });
