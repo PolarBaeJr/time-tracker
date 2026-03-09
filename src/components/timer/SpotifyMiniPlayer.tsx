@@ -93,15 +93,16 @@ function SpotifyMiniPlayerWeb({ style }: SpotifyMiniPlayerProps): React.ReactEle
     [volumeBarWidth, controls]
   );
 
-  if (!isConnected || !playback?.track) {
+  if (!isConnected) {
     return null;
   }
 
-  const { track, isPlaying } = playback;
+  const track = playback?.track ?? null;
+  const isPlaying = playback?.isPlaying ?? false;
 
   // Use SDK progress when available, otherwise fall back to track data
-  const displayProgress = useSdkState ? progressMs : (track.progressMs ?? 0);
-  const displayDuration = useSdkState ? durationMs : (track.durationMs ?? 0);
+  const displayProgress = useSdkState ? progressMs : (track?.progressMs ?? 0);
+  const displayDuration = useSdkState ? durationMs : (track?.durationMs ?? 0);
   const progressRatio = displayDuration > 0 ? displayProgress / displayDuration : 0;
 
   return (
@@ -117,11 +118,25 @@ function SpotifyMiniPlayerWeb({ style }: SpotifyMiniPlayerProps): React.ReactEle
       elevation="sm"
     >
       <View style={styles.content}>
-        {track.albumArt && (
+        {track?.albumArt ? (
           <Image
             source={{ uri: track.albumArt }}
             style={[styles.albumArt, { borderRadius: borderRadius.sm }]}
           />
+        ) : (
+          <View
+            style={[
+              styles.albumArt,
+              {
+                borderRadius: borderRadius.sm,
+                backgroundColor: colors.surfaceVariant,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}
+          >
+            <Text style={{ color: SPOTIFY_GREEN, fontSize: 18 }}>{'\u266B'}</Text>
+          </View>
         )}
 
         <View style={styles.trackInfo}>
@@ -130,10 +145,10 @@ function SpotifyMiniPlayerWeb({ style }: SpotifyMiniPlayerProps): React.ReactEle
             numberOfLines={1}
             style={{ color: colors.text, fontWeight: '600' }}
           >
-            {track.name}
+            {track?.name ?? 'Spotify Connected'}
           </Text>
           <Text variant="caption" numberOfLines={1} style={{ color: colors.textSecondary }}>
-            {track.artist}
+            {track?.artist ?? 'No track playing'}
           </Text>
         </View>
 
@@ -169,27 +184,29 @@ function SpotifyMiniPlayerWeb({ style }: SpotifyMiniPlayerProps): React.ReactEle
         </View>
       </View>
 
-      {/* Progress bar */}
-      <View style={styles.progressSection}>
-        <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 10 }}>
-          {formatTime(displayProgress)}
-        </Text>
-        <Pressable
-          onPress={handleProgressSeek}
-          onLayout={onProgressBarLayout}
-          style={[styles.progressBarTrack, { backgroundColor: colors.surfaceVariant }]}
-        >
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${Math.min(100, progressRatio * 100)}%`, backgroundColor: SPOTIFY_GREEN },
-            ]}
-          />
-        </Pressable>
-        <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 10 }}>
-          {formatTime(displayDuration)}
-        </Text>
-      </View>
+      {/* Progress bar (only when track is playing) */}
+      {track && (
+        <View style={styles.progressSection}>
+          <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 10 }}>
+            {formatTime(displayProgress)}
+          </Text>
+          <Pressable
+            onPress={handleProgressSeek}
+            onLayout={onProgressBarLayout}
+            style={[styles.progressBarTrack, { backgroundColor: colors.surfaceVariant }]}
+          >
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${Math.min(100, progressRatio * 100)}%`, backgroundColor: SPOTIFY_GREEN },
+              ]}
+            />
+          </Pressable>
+          <Text variant="caption" style={{ color: colors.textSecondary, fontSize: 10 }}>
+            {formatTime(displayDuration)}
+          </Text>
+        </View>
+      )}
 
       {/* Volume control (only when SDK is active) */}
       {useSdkState && (
