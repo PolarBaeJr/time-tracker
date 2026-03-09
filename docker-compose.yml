@@ -2,7 +2,7 @@ name: worktracker
 
 services:
   web:
-    image: worktracker-web:dev
+    image: worktracker-web:latest
     build:
       context: .
       dockerfile: Dockerfile

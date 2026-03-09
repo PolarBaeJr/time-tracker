@@ -83,19 +83,38 @@ function handleSpotifyCallback(url: string): boolean {
   }
 
   // Exchange code for tokens (fire-and-forget, async)
+  // Wait for auth session to be restored on page reload before storing tokens
   void (async () => {
     try {
       const tokens = await exchangeCodeForTokens({ code, codeVerifier, redirectUri });
       const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Try getSession first (reads from localStorage, available immediately)
+      let userId: string | undefined;
+      const { data: sessionData } = await supabase.auth.getSession();
+      userId = sessionData?.session?.user?.id;
+
+      // If session not ready yet, wait for onAuthStateChange
+      if (!userId) {
+        userId = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Auth timeout')), 10000);
+          const {
+            data: { subscription },
+          } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user?.id) {
+              clearTimeout(timeout);
+              subscription.unsubscribe();
+              resolve(session.user.id);
+            }
+          });
+        });
+      }
+
+      if (!userId) throw new Error('Not authenticated');
 
       const { error } = await supabase.from('spotify_connections').upsert(
         {
-          user_id: user.id,
+          user_id: userId,
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
           expires_at: expiresAt,
