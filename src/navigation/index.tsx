@@ -16,6 +16,7 @@ import { Linking, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { exchangeCodeForTokens } from '@/lib/spotify';
+import { queryClient, queryKeys } from '@/lib/queryClient';
 import { useTheme } from '@/theme';
 
 import { RootNavigator } from './RootNavigator';
@@ -110,6 +111,8 @@ function handleSpotifyCallback(url: string): boolean {
       sessionStorage.removeItem('spotify_oauth_state');
       sessionStorage.removeItem('spotify_redirect_uri');
 
+      // Invalidate the query cache so the UI picks up the new connection
+      await queryClient.invalidateQueries({ queryKey: queryKeys.spotifyConnection });
       console.log('[Spotify] Connected successfully');
     } catch (err) {
       console.error('[Spotify] Token exchange failed:', err);
