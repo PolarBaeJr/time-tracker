@@ -67,6 +67,8 @@ export interface EntryEditModalProps {
   onSaveSuccess?: () => void;
   /** Callback when entry is successfully deleted */
   onDeleteSuccess?: () => void;
+  /** When true, renders without Modal wrapper (for use inside navigation screens) */
+  embedded?: boolean;
 }
 
 /**
@@ -209,6 +211,7 @@ export function EntryEditModal({
   onClose,
   onSaveSuccess,
   onDeleteSuccess,
+  embedded = false,
 }: EntryEditModalProps): React.ReactElement {
   const { user } = useAuth();
 
@@ -427,12 +430,254 @@ export function EntryEditModal({
 
   const isSubmitting = updateEntry.isPending || deleteEntry.isPending;
 
+  // Shared form content rendered in both modal and embedded modes
+  const formContent = (
+    <>
+      {/* Permission warning */}
+      {entry && !isOwnEntry && (
+        <Card padding="sm" style={styles.warningCard}>
+          <View style={styles.warningContent}>
+            <Icon name="alert" size={18} color={colors.warning} />
+            <Text style={styles.warningText}>
+              You cannot edit this entry as it belongs to another user.
+            </Text>
+          </View>
+        </Card>
+      )}
+
+      <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+        {/* Category selector */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Category</Text>
+          <Pressable
+            style={styles.selectorButton}
+            onPress={() => setCategoryModalVisible(true)}
+            disabled={isSubmitting || !isOwnEntry}
+            accessibilityRole="button"
+            accessibilityLabel="Select category"
+          >
+            {selectedCategory ? (
+              <>
+                <View style={[styles.categoryColor, { backgroundColor: selectedCategory.color }]} />
+                <Text style={styles.selectorText}>{selectedCategory.name}</Text>
+              </>
+            ) : (
+              <Text style={StyleSheet.flatten([styles.selectorText, styles.selectorPlaceholder])}>
+                No category
+              </Text>
+            )}
+            <Icon name="chevron-down" size={16} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+
+        {/* Start date/time */}
+        <Text style={styles.sectionLabel}>Start</Text>
+        <View style={styles.dateTimeRow}>
+          <View style={styles.dateField}>
+            <Input
+              label="Date"
+              value={form.startDate}
+              onChangeText={text => setForm(prev => ({ ...prev, startDate: text }))}
+              placeholder="YYYY-MM-DD"
+              error={errors.startDate}
+              disabled={isSubmitting || !isOwnEntry}
+            />
+          </View>
+          <View style={styles.timeField}>
+            <Input
+              label="Time"
+              value={form.startTime}
+              onChangeText={text => setForm(prev => ({ ...prev, startTime: text }))}
+              placeholder="HH:MM"
+              error={errors.startTime}
+              disabled={isSubmitting || !isOwnEntry}
+            />
+          </View>
+        </View>
+
+        {/* End date/time */}
+        <Text style={styles.sectionLabel}>End</Text>
+        <View style={styles.dateTimeRow}>
+          <View style={styles.dateField}>
+            <Input
+              label="Date"
+              value={form.endDate}
+              onChangeText={text => setForm(prev => ({ ...prev, endDate: text }))}
+              placeholder="YYYY-MM-DD"
+              error={errors.endDate}
+              disabled={isSubmitting || !isOwnEntry}
+            />
+          </View>
+          <View style={styles.timeField}>
+            <Input
+              label="Time"
+              value={form.endTime}
+              onChangeText={text => setForm(prev => ({ ...prev, endTime: text }))}
+              placeholder="HH:MM"
+              error={errors.endTime}
+              disabled={isSubmitting || !isOwnEntry}
+            />
+          </View>
+        </View>
+
+        {/* Computed duration */}
+        {computedDuration !== null && (
+          <View style={styles.durationDisplay}>
+            <Icon name="clock" size={16} color={colors.primary} />
+            <Text style={styles.durationText}>Duration: {formatDuration(computedDuration)}</Text>
+          </View>
+        )}
+
+        {/* Billing Rate */}
+        <Input
+          label="Billing Rate ($/hr)"
+          value={form.billingRate}
+          onChangeText={text => setForm(prev => ({ ...prev, billingRate: text }))}
+          placeholder="Category default"
+          keyboardType="decimal-pad"
+          error={errors.billingRate}
+          disabled={isSubmitting || !isOwnEntry}
+        />
+
+        {/* Notes */}
+        <Input
+          label="Notes"
+          value={form.notes}
+          onChangeText={text => setForm(prev => ({ ...prev, notes: text }))}
+          placeholder="Add notes about this entry..."
+          multiline
+          numberOfLines={4}
+          disabled={isSubmitting || !isOwnEntry}
+        />
+
+        {/* Tags */}
+        <TagSelector
+          selectedTagIds={selectedTagIds}
+          onTagsChange={setSelectedTagIds}
+          disabled={isSubmitting || !isOwnEntry}
+        />
+
+        {/* Comments */}
+        {entry && <EntryComments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />}
+
+        {/* Attachments */}
+        {entry && <EntryAttachments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />}
+
+        {/* General error */}
+        {errors.general && (
+          <View style={styles.errorContainer}>
+            <Icon name="alert" size={16} color={colors.error} />
+            <Text style={styles.errorText}>{errors.general}</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Footer actions */}
+      <View style={styles.footer}>
+        <Button
+          variant="danger"
+          onPress={handleDelete}
+          disabled={isSubmitting || !isOwnEntry}
+          loading={deleteEntry.isPending}
+          style={styles.deleteButton}
+        >
+          Delete
+        </Button>
+        <View style={styles.footerRight}>
+          <Button
+            variant="outline"
+            onPress={onClose}
+            disabled={isSubmitting}
+            style={styles.cancelButton}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onPress={handleSave}
+            disabled={isSubmitting || !hasChanges || !isOwnEntry}
+            loading={updateEntry.isPending}
+          >
+            Save
+          </Button>
+        </View>
+      </View>
+    </>
+  );
+
+  // Category picker modal (shared between both modes)
+  const categoryModal = (
+    <Modal
+      visible={categoryModalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setCategoryModalVisible(false)}
+    >
+      <View style={styles.categoryModalOverlay}>
+        <View style={styles.categoryModalContent}>
+          <Text variant="heading" style={styles.categoryModalTitle}>
+            Select Category
+          </Text>
+
+          <ScrollView style={styles.categoryList}>
+            {/* No category option */}
+            <Pressable
+              style={[
+                styles.categoryOption,
+                form.categoryId === null && styles.categoryOptionActive,
+              ]}
+              onPress={() => handleCategorySelect(null)}
+            >
+              <Text style={styles.categoryOptionText}>No Category</Text>
+            </Pressable>
+
+            {/* Category list */}
+            {categories.map(category => (
+              <Pressable
+                key={category.id}
+                style={[
+                  styles.categoryOption,
+                  form.categoryId === category.id && styles.categoryOptionActive,
+                ]}
+                onPress={() => handleCategorySelect(category.id)}
+              >
+                <View style={styles.categoryOptionContent}>
+                  <View style={[styles.categoryColor, { backgroundColor: category.color }]} />
+                  <View style={styles.categoryInfo}>
+                    <Text style={styles.categoryOptionText}>{category.name}</Text>
+                    <Text style={styles.categoryTypeText}>{category.type}</Text>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          <Button variant="outline" onPress={() => setCategoryModalVisible(false)}>
+            Cancel
+          </Button>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Embedded mode: render directly without Modal wrapper (used inside navigation screens)
+  if (embedded) {
+    return (
+      <View style={styles.embeddedContainer}>
+        {formContent}
+        {categoryModal}
+      </View>
+    );
+  }
+
+  // Standard mode: render inside a Modal
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.modalOverlay}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        <Pressable style={styles.overlayTouchable} onPress={onClose} />
         <View style={styles.modalContent}>
           {/* Header */}
           <View style={styles.header}>
@@ -448,239 +693,10 @@ export function EntryEditModal({
               <Icon name="close" size={24} color={colors.text} />
             </Pressable>
           </View>
-
-          {/* Permission warning */}
-          {entry && !isOwnEntry && (
-            <Card padding="sm" style={styles.warningCard}>
-              <View style={styles.warningContent}>
-                <Icon name="alert" size={18} color={colors.warning} />
-                <Text style={styles.warningText}>
-                  You cannot edit this entry as it belongs to another user.
-                </Text>
-              </View>
-            </Card>
-          )}
-
-          <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
-            {/* Category selector */}
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Category</Text>
-              <Pressable
-                style={styles.selectorButton}
-                onPress={() => setCategoryModalVisible(true)}
-                disabled={isSubmitting || !isOwnEntry}
-                accessibilityRole="button"
-                accessibilityLabel="Select category"
-              >
-                {selectedCategory ? (
-                  <>
-                    <View
-                      style={[styles.categoryColor, { backgroundColor: selectedCategory.color }]}
-                    />
-                    <Text style={styles.selectorText}>{selectedCategory.name}</Text>
-                  </>
-                ) : (
-                  <Text
-                    style={StyleSheet.flatten([styles.selectorText, styles.selectorPlaceholder])}
-                  >
-                    No category
-                  </Text>
-                )}
-                <Icon name="chevron-down" size={16} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-
-            {/* Start date/time */}
-            <Text style={styles.sectionLabel}>Start</Text>
-            <View style={styles.dateTimeRow}>
-              <View style={styles.dateField}>
-                <Input
-                  label="Date"
-                  value={form.startDate}
-                  onChangeText={text => setForm(prev => ({ ...prev, startDate: text }))}
-                  placeholder="YYYY-MM-DD"
-                  error={errors.startDate}
-                  disabled={isSubmitting || !isOwnEntry}
-                />
-              </View>
-              <View style={styles.timeField}>
-                <Input
-                  label="Time"
-                  value={form.startTime}
-                  onChangeText={text => setForm(prev => ({ ...prev, startTime: text }))}
-                  placeholder="HH:MM"
-                  error={errors.startTime}
-                  disabled={isSubmitting || !isOwnEntry}
-                />
-              </View>
-            </View>
-
-            {/* End date/time */}
-            <Text style={styles.sectionLabel}>End</Text>
-            <View style={styles.dateTimeRow}>
-              <View style={styles.dateField}>
-                <Input
-                  label="Date"
-                  value={form.endDate}
-                  onChangeText={text => setForm(prev => ({ ...prev, endDate: text }))}
-                  placeholder="YYYY-MM-DD"
-                  error={errors.endDate}
-                  disabled={isSubmitting || !isOwnEntry}
-                />
-              </View>
-              <View style={styles.timeField}>
-                <Input
-                  label="Time"
-                  value={form.endTime}
-                  onChangeText={text => setForm(prev => ({ ...prev, endTime: text }))}
-                  placeholder="HH:MM"
-                  error={errors.endTime}
-                  disabled={isSubmitting || !isOwnEntry}
-                />
-              </View>
-            </View>
-
-            {/* Computed duration */}
-            {computedDuration !== null && (
-              <View style={styles.durationDisplay}>
-                <Icon name="clock" size={16} color={colors.primary} />
-                <Text style={styles.durationText}>
-                  Duration: {formatDuration(computedDuration)}
-                </Text>
-              </View>
-            )}
-
-            {/* Billing Rate */}
-            <Input
-              label="Billing Rate ($/hr)"
-              value={form.billingRate}
-              onChangeText={text => setForm(prev => ({ ...prev, billingRate: text }))}
-              placeholder="Category default"
-              keyboardType="decimal-pad"
-              error={errors.billingRate}
-              disabled={isSubmitting || !isOwnEntry}
-            />
-
-            {/* Notes */}
-            <Input
-              label="Notes"
-              value={form.notes}
-              onChangeText={text => setForm(prev => ({ ...prev, notes: text }))}
-              placeholder="Add notes about this entry..."
-              multiline
-              numberOfLines={4}
-              disabled={isSubmitting || !isOwnEntry}
-            />
-
-            {/* Tags */}
-            <TagSelector
-              selectedTagIds={selectedTagIds}
-              onTagsChange={setSelectedTagIds}
-              disabled={isSubmitting || !isOwnEntry}
-            />
-
-            {/* Comments */}
-            {entry && <EntryComments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />}
-
-            {/* Attachments */}
-            {entry && (
-              <EntryAttachments entryId={entry.id} disabled={isSubmitting || !isOwnEntry} />
-            )}
-
-            {/* General error */}
-            {errors.general && (
-              <View style={styles.errorContainer}>
-                <Icon name="alert" size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.general}</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* Footer actions */}
-          <View style={styles.footer}>
-            <Button
-              variant="danger"
-              onPress={handleDelete}
-              disabled={isSubmitting || !isOwnEntry}
-              loading={deleteEntry.isPending}
-              style={styles.deleteButton}
-            >
-              Delete
-            </Button>
-            <View style={styles.footerRight}>
-              <Button
-                variant="outline"
-                onPress={onClose}
-                disabled={isSubmitting}
-                style={styles.cancelButton}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onPress={handleSave}
-                disabled={isSubmitting || !hasChanges || !isOwnEntry}
-                loading={updateEntry.isPending}
-              >
-                Save
-              </Button>
-            </View>
-          </View>
+          {formContent}
         </View>
       </KeyboardAvoidingView>
-
-      {/* Category selection modal */}
-      <Modal
-        visible={categoryModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCategoryModalVisible(false)}
-      >
-        <View style={styles.categoryModalOverlay}>
-          <View style={styles.categoryModalContent}>
-            <Text variant="heading" style={styles.categoryModalTitle}>
-              Select Category
-            </Text>
-
-            <ScrollView style={styles.categoryList}>
-              {/* No category option */}
-              <Pressable
-                style={[
-                  styles.categoryOption,
-                  form.categoryId === null && styles.categoryOptionActive,
-                ]}
-                onPress={() => handleCategorySelect(null)}
-              >
-                <Text style={styles.categoryOptionText}>No Category</Text>
-              </Pressable>
-
-              {/* Category list */}
-              {categories.map(category => (
-                <Pressable
-                  key={category.id}
-                  style={[
-                    styles.categoryOption,
-                    form.categoryId === category.id && styles.categoryOptionActive,
-                  ]}
-                  onPress={() => handleCategorySelect(category.id)}
-                >
-                  <View style={styles.categoryOptionContent}>
-                    <View style={[styles.categoryColor, { backgroundColor: category.color }]} />
-                    <View style={styles.categoryInfo}>
-                      <Text style={styles.categoryOptionText}>{category.name}</Text>
-                      <Text style={styles.categoryTypeText}>{category.type}</Text>
-                    </View>
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            <Button variant="outline" onPress={() => setCategoryModalVisible(false)}>
-              Cancel
-            </Button>
-          </View>
-        </View>
-      </Modal>
+      {categoryModal}
     </Modal>
   );
 }
@@ -690,6 +706,10 @@ export function EntryEditModal({
 // ============================================================================
 
 const styles = StyleSheet.create({
+  embeddedContainer: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
   modalOverlay: {
     position: 'absolute',
     top: 0,
@@ -698,6 +718,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
+  },
+  overlayTouchable: {
+    flex: 1,
   },
   modalContent: {
     backgroundColor: colors.surface,

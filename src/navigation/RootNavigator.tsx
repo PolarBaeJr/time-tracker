@@ -98,6 +98,7 @@ function EntryEditScreen({
       onClose={handleClose}
       onSaveSuccess={handleClose}
       onDeleteSuccess={handleClose}
+      embedded
     />
   );
 }

@@ -8,10 +8,10 @@ DROP POLICY IF EXISTS time_entries_select_own ON public.time_entries;
 
 CREATE POLICY time_entries_select_own ON public.time_entries
     FOR SELECT
-    USING (auth.uid() = user_id AND deleted_at IS NULL);
+    USING (auth.uid() = user_id);
 
 COMMENT ON POLICY time_entries_select_own ON public.time_entries IS
-    'Users can only read their own non-deleted time entries';
+    'Users can only read their own time entries (soft-delete filtered client-side)';
 
 -- Update policy must allow restoring (updating deleted_at back to NULL)
 -- so it should not filter on deleted_at
