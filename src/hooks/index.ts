@@ -332,3 +332,9 @@ export {
   type SpotifyTrack,
   type SpotifyPlaybackState,
 } from './useSpotify';
+
+// AI hooks
+export { useAIConnection, useConfigureAI, useDisconnectAI, useInitializeAI } from './useAI';
+
+// Widget layout hooks
+export { useWidgetLayout, type UseWidgetLayoutResult } from './useWidgetLayout';
