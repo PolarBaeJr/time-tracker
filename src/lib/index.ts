@@ -24,6 +24,17 @@ export {
 // React Query client
 export { queryClient, queryKeys, type QueryKeys } from './queryClient';
 
+// AI Engine
+export { aiEngine } from './ai';
+export type {
+  AIProvider,
+  AIProviderType,
+  AIProviderConfig,
+  ChatMessage,
+  AIOptions,
+  AIResponse,
+} from './ai';
+
 // Deep linking
 export {
   linking,

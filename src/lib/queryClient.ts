@@ -157,6 +157,9 @@ export const queryKeys = {
 
   /** Spotify playback state */
   spotifyPlayback: ['spotifyPlayback'] as const,
+
+  /** AI connection configuration for the current user */
+  aiConnection: ['aiConnection'] as const,
 } as const;
 
 export type QueryKeys = typeof queryKeys;
