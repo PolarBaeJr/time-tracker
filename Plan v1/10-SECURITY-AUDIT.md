@@ -54,12 +54,20 @@
 
 **Risk**: User API keys (Claude, OpenAI) stored in Supabase
 **Threat**: Database breach exposes all user API keys
-**Mitigation**:
-- Encrypt API keys client-side before storing
-- Use `pgcrypto` with per-user encryption key derived from auth token
+**Mitigation** (IMPLEMENTED):
+- **Server-side encryption** via Supabase Edge Functions (`encrypt-api-key`, `decrypt-api-key`)
+- Encryption key stored as Supabase secret (`ENCRYPTION_KEY`) - never exposed to client
+- Uses AES-256-GCM with per-user key derivation (HKDF from master key + user ID)
+- Client sends API keys over HTTPS to Edge Function for encryption
+- Database stores only encrypted keys
 - Never log API keys in error messages
 - Mask keys in UI (show only last 4 chars)
 - Implement key rotation reminders
+
+**Setup Required**:
+1. Generate encryption key: `openssl rand -base64 32`
+2. Set as Supabase secret: `supabase secrets set ENCRYPTION_KEY="your-key"`
+3. Deploy edge functions: `supabase functions deploy`
 
 ### 2. Email Content Storage
 

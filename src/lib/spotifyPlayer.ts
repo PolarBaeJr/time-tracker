@@ -95,7 +95,9 @@ export function getIsPremium(): boolean {
 export function subscribePlayerState(cb: () => void): () => void {
   const s = getSingleton();
   s.stateListeners.add(cb);
-  return () => { s.stateListeners.delete(cb); };
+  return () => {
+    s.stateListeners.delete(cb);
+  };
 }
 
 export function getPlayerStateSnapshot(): PlayerState | null {
@@ -105,7 +107,9 @@ export function getPlayerStateSnapshot(): PlayerState | null {
 export function subscribePlayerError(cb: () => void): () => void {
   const s = getSingleton();
   s.errorListeners.add(cb);
-  return () => { s.errorListeners.delete(cb); };
+  return () => {
+    s.errorListeners.delete(cb);
+  };
 }
 
 export function getPlayerErrorSnapshot(): PlayerError | null {
@@ -116,9 +120,7 @@ export function getPlayerErrorSnapshot(): PlayerError | null {
 // INIT / DESTROY
 // ============================================================================
 
-export async function initPlayer(
-  getAccessToken: () => Promise<string>
-): Promise<void> {
+export async function initPlayer(getAccessToken: () => Promise<string>): Promise<void> {
   const s = getSingleton();
 
   // Already initialised
@@ -129,6 +131,10 @@ export async function initPlayer(
     s.player.disconnect();
     s.player = null;
     s.deviceId = null;
+  }
+
+  if (!window.Spotify) {
+    throw new Error('Spotify SDK not loaded');
   }
 
   const player = new window.Spotify.Player({
@@ -170,7 +176,7 @@ export async function initPlayer(
       track: track
         ? {
             name: track.name,
-            artist: track.artists?.map(a => a.name).join(', ') ?? 'Unknown',
+            artist: track.artists?.map((a: { name: string }) => a.name).join(', ') ?? 'Unknown',
             albumArt: track.album?.images?.[0]?.url ?? null,
             durationMs: state.duration,
           }

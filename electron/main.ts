@@ -112,8 +112,7 @@ else{document.querySelector('p').textContent='Something went wrong — no tokens
 }
 
 // Development mode detection
-// TEMP: force dev mode to test if EME works with packaged binary + dev server
-const isDev = true; // process.env.NODE_ENV === 'development' || !app.isPackaged;
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 // Web build URL configuration
 const DEV_URL = 'http://localhost:19006';
@@ -127,17 +126,29 @@ function startProdFileServer(): void {
   if (isDev || prodServer) return;
   const distDir = path.join(__dirname, '../dist');
   const mimeTypes: Record<string, string> = {
-    '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css',
-    '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-    '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff': 'font/woff',
-    '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.map': 'application/json',
+    '.html': 'text/html',
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.map': 'application/json',
   };
   prodServer = http.createServer((req, res) => {
     let pathname = new URL(req.url ?? '/', `http://localhost:${PROD_SERVER_PORT}`).pathname;
     if (pathname === '/') pathname = '/index.html';
     const filePath = path.join(distDir, pathname);
     // Security: prevent path traversal
-    if (!filePath.startsWith(distDir)) { res.writeHead(403); res.end(); return; }
+    if (!filePath.startsWith(distDir)) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
     const ext = path.extname(filePath);
     const contentType = mimeTypes[ext] || 'application/octet-stream';
     const fs = require('fs') as typeof import('fs');
@@ -145,10 +156,13 @@ function startProdFileServer(): void {
       if (err) {
         // SPA fallback: serve index.html for missing routes
         if (err.code === 'ENOENT' && ext === '') {
-          fs.readFile(path.join(distDir, 'index.html'), (_e: NodeJS.ErrnoException | null, html: Buffer) => {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(html);
-          });
+          fs.readFile(
+            path.join(distDir, 'index.html'),
+            (_e: NodeJS.ErrnoException | null, html: Buffer) => {
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(html);
+            }
+          );
           return;
         }
         res.writeHead(404);
@@ -203,7 +217,6 @@ const CSP_POLICY = [
  * Create the main application window
  */
 function createWindow(): void {
-
   // Set Content Security Policy before window creation
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
@@ -508,14 +521,23 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     // Register app:// protocol to serve dist/ files from a secure context (needed for EME/Widevine)
     const distDir = path.join(__dirname, '../dist');
-    protocol.handle('app', (request) => {
+    protocol.handle('app', request => {
       const url = new URL(request.url);
       let filePath = path.join(distDir, decodeURIComponent(url.pathname));
       // Default to index.html for directory requests
       if (filePath.endsWith('/') || !path.extname(filePath)) {
         filePath = path.join(distDir, 'index.html');
       }
-      return net.fetch(`file://${filePath}`);
+      // Security: prevent path traversal - ensure resolved path stays within distDir
+      const resolvedPath = path.resolve(filePath);
+      const resolvedDistDir = path.resolve(distDir);
+      if (
+        !resolvedPath.startsWith(resolvedDistDir + path.sep) &&
+        resolvedPath !== resolvedDistDir
+      ) {
+        return new Response('Forbidden', { status: 403 });
+      }
+      return net.fetch(`file://${resolvedPath}`);
     });
 
     startProdFileServer();
@@ -598,10 +620,39 @@ if (!gotTheLock) {
   });
 
   // Open a URL in the system browser from the renderer
+  // Security: only allow specific protocols and trusted domains
+  const ALLOWED_EXTERNAL_PROTOCOLS = ['https:', 'http:'];
+  const ALLOWED_EXTERNAL_DOMAINS = [
+    'accounts.google.com',
+    'accounts.spotify.com',
+    'github.com',
+    'supabase.co',
+    'supabase.in',
+  ];
   ipcMain.handle('open-external-url', (_event, url: string) => {
-    const { shell } = require('electron');
-    startOAuthCallbackServer();
-    return shell.openExternal(url);
+    try {
+      const parsedUrl = new URL(url);
+      // Only allow http/https protocols
+      if (!ALLOWED_EXTERNAL_PROTOCOLS.includes(parsedUrl.protocol)) {
+        console.warn(`Blocked external URL with disallowed protocol: ${url}`);
+        return Promise.reject(new Error('Disallowed protocol'));
+      }
+      // Check if domain is in allowlist or is a subdomain of an allowed domain
+      const hostname = parsedUrl.hostname.toLowerCase();
+      const isAllowed = ALLOWED_EXTERNAL_DOMAINS.some(
+        domain => hostname === domain || hostname.endsWith('.' + domain)
+      );
+      if (!isAllowed) {
+        console.warn(`Blocked external URL with disallowed domain: ${url}`);
+        return Promise.reject(new Error('Disallowed domain'));
+      }
+      const { shell } = require('electron');
+      startOAuthCallbackServer();
+      return shell.openExternal(url);
+    } catch (err) {
+      console.warn(`Blocked malformed external URL: ${url}`);
+      return Promise.reject(new Error('Invalid URL'));
+    }
   });
 }
 

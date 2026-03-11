@@ -93,6 +93,7 @@
     "node_modules",
     "electron",
     "dist",
-    "electron-dist"
+    "electron-dist",
+    "supabase/functions"
   ]
 }

@@ -54,11 +54,44 @@ interface NavigationProviderProps {
  * Extracts the authorization code from the URL, exchanges it for tokens,
  * stores the connection in the database, and navigates to settings.
  */
+/**
+ * Debug logging for Spotify OAuth flow.
+ * In development only - sanitizes sensitive data to prevent leaking auth tokens.
+ */
 function spotifyDebug(step: string, data?: unknown) {
-  const log = JSON.parse(localStorage.getItem('spotify_debug') || '[]');
-  log.push({ step, data: data ?? null, ts: new Date().toISOString() });
-  localStorage.setItem('spotify_debug', JSON.stringify(log));
-  console.log(`[Spotify] ${step}`, data ?? '');
+  // Only log in development mode
+  if (process.env.NODE_ENV === 'production') return;
+
+  // Sanitize data to remove sensitive fields before logging
+  let sanitizedData = data;
+  if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    sanitizedData = { ...obj };
+    // Remove or redact sensitive fields
+    if ('url' in obj && typeof obj.url === 'string') {
+      // Redact code and state parameters from URLs
+      try {
+        const url = new URL(obj.url, 'https://placeholder.com');
+        if (url.searchParams.has('code')) {
+          url.searchParams.set('code', '[REDACTED]');
+        }
+        if (url.searchParams.has('state')) {
+          url.searchParams.set('state', '[REDACTED]');
+        }
+        (sanitizedData as Record<string, unknown>).url = url.pathname + url.search;
+      } catch {
+        (sanitizedData as Record<string, unknown>).url = '[URL REDACTED]';
+      }
+    }
+    // Redact other sensitive fields
+    for (const key of ['code', 'state', 'access_token', 'refresh_token', 'codeVerifier']) {
+      if (key in obj) {
+        (sanitizedData as Record<string, unknown>)[key] = '[REDACTED]';
+      }
+    }
+  }
+  // Only log to console, never persist to localStorage (to prevent sensitive data exposure)
+  console.log(`[Spotify] ${step}`, sanitizedData ?? '');
 }
 
 function handleSpotifyCallback(url: string): boolean {
@@ -105,7 +138,11 @@ function handleSpotifyCallback(url: string): boolean {
     try {
       spotifyDebug('exchanging_tokens');
       const tokens = await exchangeCodeForTokens({ code, codeVerifier, redirectUri });
-      spotifyDebug('tokens_received', { hasAccess: !!tokens.access_token, hasRefresh: !!tokens.refresh_token, expiresIn: tokens.expires_in });
+      spotifyDebug('tokens_received', {
+        hasAccess: !!tokens.access_token,
+        hasRefresh: !!tokens.refresh_token,
+        expiresIn: tokens.expires_in,
+      });
       const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
       // Try getSession first (reads from localStorage, available immediately)
