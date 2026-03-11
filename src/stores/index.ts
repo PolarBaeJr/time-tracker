@@ -48,3 +48,12 @@ export {
   applyServerDashboardPrefs,
 } from './dashboardStore';
 export type { DashboardWidgetId, DashboardWidgetConfig } from './dashboardStore';
+
+export {
+  ACCENT_PRESETS,
+  setAccentColor,
+  getAccentColor,
+  subscribeAccentStore,
+  useAccentColor,
+} from './accentStore';
+export type { AccentStoreState } from './accentStore';
