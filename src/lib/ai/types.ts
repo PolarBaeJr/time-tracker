@@ -31,3 +31,13 @@ export interface AIProvider {
   defaultModel: string;
   availableModels: string[];
 }
+
+/**
+ * Configuration options for email/calendar summarization
+ */
+export interface SummarizationOptions {
+  /** Maximum length of output in characters (default: 500) */
+  maxLength?: number;
+  /** Summary style: 'brief' for short summaries, 'detailed' for longer ones */
+  style?: 'brief' | 'detailed';
+}

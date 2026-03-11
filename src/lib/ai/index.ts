@@ -1,2 +1,19 @@
 export { aiEngine } from './AIEngine';
-export type { AIProvider, AIProviderType, AIProviderConfig, ChatMessage, AIOptions, AIResponse } from './types';
+export type {
+  AIProvider,
+  AIProviderType,
+  AIProviderConfig,
+  ChatMessage,
+  AIOptions,
+  AIResponse,
+  SummarizationOptions,
+} from './types';
+
+// Email and Calendar summarization functions
+export {
+  summarizeEmails,
+  summarizeEmail,
+  summarizeCalendarDay,
+  summarizeEvent,
+  sanitizeForAI,
+} from './summarization';
