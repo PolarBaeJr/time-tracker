@@ -19,6 +19,7 @@ import {
   TimerSoundSettings,
   IdleDetectionSettings,
   SpotifySettings,
+  AISettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -259,6 +260,16 @@ export function SettingsScreen(): React.ReactElement {
             <Text style={styles.sectionTitle}>Integrations</Text>
             <Card padding="md" elevation="none" style={styles.sectionCard}>
               <SpotifySettings disabled={isUpdating} />
+            </Card>
+          </View>
+        )}
+
+        {/* AI Assistant — only shown on web */}
+        {Platform.OS === 'web' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>AI Assistant</Text>
+            <Card padding="md" elevation="none" style={styles.sectionCard}>
+              <AISettings disabled={isUpdating} />
             </Card>
           </View>
         )}

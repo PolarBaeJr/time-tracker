@@ -11,3 +11,4 @@ export { ThemeSelector, type ThemeSelectorProps } from './ThemeSelector';
 export { TimerSoundSettings, type TimerSoundSettingsProps } from './TimerSoundSettings';
 export { IdleDetectionSettings, type IdleDetectionSettingsProps } from './IdleDetectionSettings';
 export { SpotifySettings, type SpotifySettingsProps } from './SpotifySettings';
+export { AISettings, type AISettingsProps } from './AISettings';
