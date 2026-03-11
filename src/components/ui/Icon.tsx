@@ -19,6 +19,8 @@ import { useTheme } from '@/theme';
  */
 export const iconMap = {
   // Navigation icons
+  home: '\u{1F3E0}', // house
+  'home-outline': '\u2302', // house outline
   time: '\u23F1', // stopwatch
   'time-outline': '\u23F0', // alarm clock
   clock: '\u{1F550}', // clock face

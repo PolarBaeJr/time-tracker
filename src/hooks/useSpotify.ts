@@ -5,7 +5,7 @@
  * fetching playback state, and controlling playback.
  */
 
-import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
@@ -16,6 +16,7 @@ import {
   exchangeCodeForTokens,
   refreshAccessToken,
   spotifyFetch,
+  loadSpotifyPlaybackSDK,
 } from '@/lib/spotify';
 import {
   initPlayer,
@@ -61,6 +62,28 @@ export interface SpotifyPlaybackState {
 // HELPERS
 // ============================================================================
 
+// Listeners for Spotify token death (auto-disconnect)
+const tokenDeathListeners = new Set<() => void>();
+let tokenDead = false;
+
+function notifyTokenDeath() {
+  tokenDead = true;
+  tokenDeathListeners.forEach(l => l());
+}
+
+async function autoDisconnect() {
+  try {
+    destroyPlayer();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('spotify_connections').delete().eq('user_id', user.id);
+    }
+    notifyTokenDeath();
+  } catch (e) {
+    console.warn('Auto-disconnect failed:', e);
+  }
+}
+
 async function getValidAccessToken(connection: SpotifyConnection): Promise<string> {
   const expiresAt = new Date(connection.expires_at).getTime();
   const now = Date.now();
@@ -83,7 +106,12 @@ async function getValidAccessToken(connection: SpotifyConnection): Promise<strin
 
       return tokens.access_token;
     } catch (err) {
-      console.warn('Failed to refresh Spotify token:', err);
+      const msg = String(err);
+      // If refresh token is revoked/invalid, auto-disconnect
+      if (msg.includes('revoked') || msg.includes('invalid_grant')) {
+        console.warn('Spotify token revoked, auto-disconnecting');
+        void autoDisconnect();
+      }
       throw err;
     }
   }
@@ -140,6 +168,29 @@ async function fetchPlaybackState(connection: SpotifyConnection): Promise<Spotif
 // ============================================================================
 // HOOKS
 // ============================================================================
+
+export function useSpotifyTokenDeath() {
+  const queryClient = useQueryClient();
+  const [dead, setDead] = useState(tokenDead);
+
+  useEffect(() => {
+    const cb = () => {
+      setDead(true);
+      // Invalidate queries so UI updates
+      queryClient.invalidateQueries({ queryKey: queryKeys.spotifyConnection });
+      queryClient.invalidateQueries({ queryKey: queryKeys.spotifyPlayback });
+    };
+    tokenDeathListeners.add(cb);
+    return () => { tokenDeathListeners.delete(cb); };
+  }, [queryClient]);
+
+  const reset = useCallback(() => {
+    tokenDead = false;
+    setDead(false);
+  }, []);
+
+  return { isDead: dead, reset };
+}
 
 export function useSpotifyConnection() {
   const query = useQuery({
@@ -235,11 +286,20 @@ export function useDisconnectSpotify() {
 
   return useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('spotify_connections').delete().neq('id', '');
+      // Get current user to scope the delete
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('spotify_connections')
+        .delete()
+        .eq('user_id', user.id);
 
       if (error) {
         throw new Error(error.message);
       }
+
+      destroyPlayer();
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.spotifyConnection });
@@ -255,71 +315,101 @@ export function useSpotifyPlayback(enabled: boolean) {
     queryKey: queryKeys.spotifyPlayback,
     queryFn: () => fetchPlaybackState(connection!),
     enabled: enabled && !!connection,
-    refetchInterval: 5000,
-    staleTime: 3000,
+    refetchInterval: 2000,
+    staleTime: 1000,
   });
 }
 
 export function useSpotifyControls() {
   const { data: connection } = useSpotifyConnection();
+  const queryClient = useQueryClient();
+  const transferringRef = useRef(false);
 
-  const callApi = async (path: string, method: string = 'PUT') => {
+  const useSdk = () => (getDeviceId() ? getPlayer() : null);
+
+  const refetchPlayback = () => {
+    // Short delay so Spotify's state has time to update
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.spotifyPlayback });
+    }, 300);
+  };
+
+  const callApi = async (path: string, method: string = 'PUT', body?: string) => {
     if (!connection) {
       console.warn('No Spotify connection');
-      return;
+      return null;
     }
 
     try {
       const accessToken = await getValidAccessToken(connection);
-      const response = await spotifyFetch(accessToken, path, { method });
+      const opts: RequestInit = { method };
+      if (body) opts.body = body;
+      const response = await spotifyFetch(accessToken, path, opts);
 
       if (!response.ok && response.status !== 204) {
         console.warn(`Spotify API error (${path}):`, response.status);
       }
+      return response;
     } catch (err) {
       console.warn(`Spotify control failed (${path}):`, err);
+      return null;
     }
   };
 
   return {
-    togglePlay: async () => {
-      const p = getPlayer();
-      if (p) {
-        await p.togglePlay();
+    togglePlay: async (isCurrentlyPlaying?: boolean) => {
+      const sdk = useSdk();
+      if (sdk) {
+        const state = await sdk.getCurrentState();
+        if (state) {
+          await sdk.togglePlay();
+          return;
+        }
+        // No state — transfer playback to this device
+        if (!transferringRef.current) {
+          transferringRef.current = true;
+          setTimeout(() => { transferringRef.current = false; }, 3000);
+          const deviceId = getDeviceId();
+          if (deviceId) {
+            await callApi('/me/player', 'PUT', JSON.stringify({
+              device_ids: [deviceId],
+              play: true,
+            }));
+            return;
+          }
+        }
+      }
+      // Fall through to REST
+      if (isCurrentlyPlaying) {
+        await callApi('/me/player/pause');
       } else {
-        // Determine current state to decide play vs pause
         await callApi('/me/player/play');
       }
+      refetchPlayback();
     },
-    play: () => callApi('/me/player/play'),
-    pause: () => callApi('/me/player/pause'),
+    play: async () => { await callApi('/me/player/play'); refetchPlayback(); },
+    pause: async () => { await callApi('/me/player/pause'); refetchPlayback(); },
     next: async () => {
-      const p = getPlayer();
-      if (p) {
-        await p.nextTrack();
-      } else {
-        await callApi('/me/player/next', 'POST');
-      }
+      const sdk = useSdk();
+      if (sdk) { await sdk.nextTrack(); return; }
+      await callApi('/me/player/next', 'POST');
+      refetchPlayback();
     },
     previous: async () => {
-      const p = getPlayer();
-      if (p) {
-        await p.previousTrack();
-      } else {
-        await callApi('/me/player/previous', 'POST');
-      }
+      const sdk = useSdk();
+      if (sdk) { await sdk.previousTrack(); return; }
+      await callApi('/me/player/previous', 'POST');
+      refetchPlayback();
     },
     seek: async (ms: number) => {
-      const p = getPlayer();
-      if (p) {
-        await p.seek(ms);
-      }
+      const sdk = useSdk();
+      if (sdk) { await sdk.seek(ms); return; }
+      await callApi(`/me/player/seek?position_ms=${ms}`, 'PUT');
     },
     setVolume: async (v: number) => {
-      const p = getPlayer();
-      if (p) {
-        await p.setVolume(v);
-      }
+      const sdk = useSdk();
+      if (sdk) { await sdk.setVolume(v); return; }
+      await callApi(`/me/player/volume?volume_percent=${Math.round(v * 100)}`, 'PUT');
     },
   };
 }
@@ -330,78 +420,55 @@ export function useSpotifyPlayer(connection: SpotifyConnection | null | undefine
 
   useEffect(() => {
     if (!connection) return;
-
+    // Skip Web Playback SDK on Electron — DRM/Widevine not available in packaged builds.
+    // Falls back to REST API remote control.
+    if (typeof window !== 'undefined' && window.desktop) return;
     let cancelled = false;
 
-    const getAccessToken = async () => {
-      return getValidAccessToken(connection);
-    };
+    const getAccessToken = async () => getValidAccessToken(connection);
 
-    initPlayer(getAccessToken)
+    loadSpotifyPlaybackSDK()
+      .then(() => initPlayer(getAccessToken))
       .then(() => {
         if (!cancelled) setIsReady(!!getDeviceId());
-        // Poll briefly for device_id since 'ready' fires async
         const check = setInterval(() => {
-          if (cancelled) {
-            clearInterval(check);
-            return;
-          }
-          if (getDeviceId()) {
-            setIsReady(true);
-            clearInterval(check);
-          }
+          if (cancelled) { clearInterval(check); return; }
+          if (getDeviceId()) { setIsReady(true); clearInterval(check); }
         }, 200);
         setTimeout(() => clearInterval(check), 5000);
       })
-      .catch(err => {
-        console.warn('Spotify SDK init failed:', err);
-      });
+      .catch(err => console.warn('Spotify SDK init failed:', err));
 
-    return () => {
-      cancelled = true;
-      destroyPlayer();
-      setIsReady(false);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-init when connection row changes
+    return () => { cancelled = true; };
   }, [connection?.id]);
 
-  return {
-    isReady,
-    error,
-    isPremium: getIsPremium(),
-  };
+  return { isReady, error, isPremium: getIsPremium() };
 }
 
 export function useSpotifySDKPlayback(): SpotifyPlaybackState | null {
   const state = useSyncExternalStore(subscribePlayerState, getPlayerStateSnapshot, () => null);
-
   if (!state) return null;
-
   return {
-    track: state.track
-      ? {
-          name: state.track.name,
-          artist: state.track.artist,
-          albumArt: state.track.albumArt,
-          durationMs: state.track.durationMs,
-          progressMs: state.progressMs,
-        }
-      : null,
+    track: state.track ? {
+      name: state.track.name,
+      artist: state.track.artist,
+      albumArt: state.track.albumArt,
+      durationMs: state.track.durationMs,
+      progressMs: state.progressMs,
+    } : null,
     isPlaying: state.isPlaying,
   };
 }
 
-export function useSpotifyProgress(sdkState: SpotifyPlaybackState | null) {
-  const currentProgressMs = sdkState?.track?.progressMs ?? 0;
-  const isPlaying = sdkState?.isPlaying ?? false;
-  const durationMs = sdkState?.track?.durationMs ?? 0;
+export function useSpotifyProgress(playback: SpotifyPlaybackState | null) {
+  const currentProgressMs = playback?.track?.progressMs ?? 0;
+  const isPlaying = playback?.isPlaying ?? false;
+  const durationMs = playback?.track?.durationMs ?? 0;
 
   const [interpolated, setInterpolated] = useState(0);
   const baseRef = useRef({ progressMs: 0, timestamp: 0 });
 
-  // Interpolation timer: runs when playing, syncs base on SDK state changes
   useEffect(() => {
-    // Always update base from latest SDK state
     baseRef.current = { progressMs: currentProgressMs, timestamp: Date.now() };
 
     if (!isPlaying || !durationMs) return;
@@ -415,7 +482,7 @@ export function useSpotifyProgress(sdkState: SpotifyPlaybackState | null) {
   }, [currentProgressMs, isPlaying, durationMs]);
 
   return {
-    progressMs: sdkState?.track ? (isPlaying ? interpolated : currentProgressMs) : 0,
+    progressMs: playback?.track ? (isPlaying ? interpolated : currentProgressMs) : 0,
     durationMs,
   };
 }

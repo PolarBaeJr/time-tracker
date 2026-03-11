@@ -54,8 +54,17 @@ interface NavigationProviderProps {
  * Extracts the authorization code from the URL, exchanges it for tokens,
  * stores the connection in the database, and navigates to settings.
  */
+function spotifyDebug(step: string, data?: unknown) {
+  const log = JSON.parse(localStorage.getItem('spotify_debug') || '[]');
+  log.push({ step, data: data ?? null, ts: new Date().toISOString() });
+  localStorage.setItem('spotify_debug', JSON.stringify(log));
+  console.log(`[Spotify] ${step}`, data ?? '');
+}
+
 function handleSpotifyCallback(url: string): boolean {
   if (!url.includes('/spotify/callback')) return false;
+
+  spotifyDebug('callback_hit', { url });
 
   const queryString = url.split('?')[1]?.split('#')[0] ?? '';
   const params = new URLSearchParams(queryString);
@@ -63,22 +72,30 @@ function handleSpotifyCallback(url: string): boolean {
   const state = params.get('state');
 
   if (!code) {
-    console.warn('[Spotify] No code in callback URL');
+    spotifyDebug('no_code_in_url');
     return true;
   }
+
+  spotifyDebug('code_found', { codeLen: code.length, state });
 
   // Verify state matches
   const savedState = sessionStorage.getItem('spotify_oauth_state');
   if (state && savedState && state !== savedState) {
-    console.warn('[Spotify] State mismatch');
+    spotifyDebug('state_mismatch', { expected: savedState, got: state });
     return true;
   }
 
   const codeVerifier = sessionStorage.getItem('spotify_code_verifier');
   const redirectUri = sessionStorage.getItem('spotify_redirect_uri');
 
+  spotifyDebug('session_storage', {
+    hasVerifier: !!codeVerifier,
+    hasRedirectUri: !!redirectUri,
+    redirectUri,
+  });
+
   if (!codeVerifier || !redirectUri) {
-    console.warn('[Spotify] Missing code verifier or redirect URI in sessionStorage');
+    spotifyDebug('missing_session_storage');
     return true;
   }
 
@@ -86,16 +103,20 @@ function handleSpotifyCallback(url: string): boolean {
   // Wait for auth session to be restored on page reload before storing tokens
   void (async () => {
     try {
+      spotifyDebug('exchanging_tokens');
       const tokens = await exchangeCodeForTokens({ code, codeVerifier, redirectUri });
+      spotifyDebug('tokens_received', { hasAccess: !!tokens.access_token, hasRefresh: !!tokens.refresh_token, expiresIn: tokens.expires_in });
       const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
       // Try getSession first (reads from localStorage, available immediately)
       let userId: string | undefined;
       const { data: sessionData } = await supabase.auth.getSession();
       userId = sessionData?.session?.user?.id;
+      spotifyDebug('get_session', { userId: userId ?? 'none' });
 
       // If session not ready yet, wait for onAuthStateChange
       if (!userId) {
+        spotifyDebug('waiting_for_auth');
         userId = await new Promise<string>((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error('Auth timeout')), 10000);
           const {
@@ -108,10 +129,12 @@ function handleSpotifyCallback(url: string): boolean {
             }
           });
         });
+        spotifyDebug('auth_resolved', { userId });
       }
 
       if (!userId) throw new Error('Not authenticated');
 
+      spotifyDebug('upserting', { userId });
       const { error } = await supabase.from('spotify_connections').upsert(
         {
           user_id: userId,
@@ -123,7 +146,12 @@ function handleSpotifyCallback(url: string): boolean {
         { onConflict: 'user_id' }
       );
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        spotifyDebug('upsert_error', { message: error.message, code: error.code });
+        throw new Error(error.message);
+      }
+
+      spotifyDebug('upsert_success');
 
       // Clean up session storage
       sessionStorage.removeItem('spotify_code_verifier');
@@ -132,9 +160,9 @@ function handleSpotifyCallback(url: string): boolean {
 
       // Invalidate the query cache so the UI picks up the new connection
       await queryClient.invalidateQueries({ queryKey: queryKeys.spotifyConnection });
-      console.log('[Spotify] Connected successfully');
+      spotifyDebug('complete');
     } catch (err) {
-      console.error('[Spotify] Token exchange failed:', err);
+      spotifyDebug('error', { message: String(err), stack: (err as Error)?.stack });
     }
   })();
 
@@ -168,6 +196,31 @@ function handleAuthCallback(url: string): boolean {
   return true;
 }
 
+// Handle Spotify and auth callbacks immediately on web page load,
+// BEFORE React Navigation mounts (getInitialURL in linking config
+// is not reliably called on React Native Web).
+let webCallbackHandled = false;
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  const url = window.location.href;
+  spotifyDebug('module_init', { url });
+  if (handleSpotifyCallback(url) || handleAuthCallback(url)) {
+    webCallbackHandled = true;
+    // Clean the URL so React Navigation doesn't try to parse the callback path
+    window.history.replaceState(null, '', '/');
+  }
+
+  // Electron: listen for Spotify PKCE callback via IPC
+  if (window.desktop?.onSpotifyCallback) {
+    window.desktop.onSpotifyCallback((code: string, state: string) => {
+      spotifyDebug('electron_ipc_callback', { codeLen: code.length });
+      // Build a synthetic URL so handleSpotifyCallback can process it
+      let syntheticUrl = `/spotify/callback?code=${encodeURIComponent(code)}`;
+      if (state) syntheticUrl += `&state=${encodeURIComponent(state)}`;
+      handleSpotifyCallback(syntheticUrl);
+    });
+  }
+}
+
 const linking = {
   prefixes:
     Platform.OS === 'web' && typeof window !== 'undefined'
@@ -190,8 +243,9 @@ const linking = {
       EntryEdit: 'entry/:entryId',
     },
   },
-  // Intercept auth/Spotify callbacks so they don't confuse React Navigation
   async getInitialURL() {
+    // On web, callbacks are already handled at module scope above
+    if (webCallbackHandled) return null;
     const url = await Linking.getInitialURL();
     if (url && handleSpotifyCallback(url)) return null;
     if (url && handleAuthCallback(url)) return null;

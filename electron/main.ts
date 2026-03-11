@@ -23,10 +23,26 @@ import {
   Menu,
   nativeImage,
   globalShortcut,
+  protocol,
+  net,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import * as http from 'http';
 import * as path from 'path';
+// Register custom protocol as privileged BEFORE app is ready.
+// This makes the 'app://' scheme a secure context, enabling EME/Widevine DRM.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      stream: true,
+      bypassCSP: false,
+    },
+  },
+]);
 
 // Local HTTP server port for receiving the OAuth callback in the system browser.
 // Add http://127.0.0.1:54321/auth/callback to Supabase/Spotify redirect allow-list.
@@ -40,7 +56,27 @@ function startOAuthCallbackServer(): void {
     const url = new URL(req.url ?? '/', `http://127.0.0.1:${OAUTH_CALLBACK_PORT}`);
 
     if (url.pathname === '/auth/callback') {
-      // Implicit flow: tokens are in the URL hash which browsers don't send
+      // Check if this is a Spotify PKCE callback (has code query param)
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      if (code) {
+        // Spotify PKCE flow: forward code to renderer via IPC
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(`<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+<div style="text-align:center"><h2>Spotify connected!</h2><p>Returning to WorkTracker...</p></div>
+<script>setTimeout(function(){window.close()},1000)</script>
+</body></html>`);
+        if (mainWindow) {
+          mainWindow.webContents.send('spotify-callback', code, state ?? '');
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          app.focus({ steal: true });
+          mainWindow.focus();
+        }
+        return;
+      }
+
+      // Supabase implicit flow: tokens are in the URL hash which browsers don't send
       // to the server. Serve a page whose JS reads the hash and POSTs it back.
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`<!DOCTYPE html><html><body style="background:#0F0F0F;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
@@ -76,11 +112,55 @@ else{document.querySelector('p').textContent='Something went wrong — no tokens
 }
 
 // Development mode detection
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+// TEMP: force dev mode to test if EME works with packaged binary + dev server
+const isDev = true; // process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 // Web build URL configuration
 const DEV_URL = 'http://localhost:19006';
-const PROD_URL = `file://${path.join(__dirname, '../dist/index.html')}`;
+const PROD_SERVER_PORT = 19007;
+const PROD_URL = isDev ? DEV_URL : `http://localhost:${PROD_SERVER_PORT}/index.html`;
+
+// In production, serve dist/ from a local HTTP server.
+// EME/Widevine requires HTTP(S) origin — file:// and custom protocols don't work.
+let prodServer: http.Server | null = null;
+function startProdFileServer(): void {
+  if (isDev || prodServer) return;
+  const distDir = path.join(__dirname, '../dist');
+  const mimeTypes: Record<string, string> = {
+    '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css',
+    '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
+    '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff': 'font/woff',
+    '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.map': 'application/json',
+  };
+  prodServer = http.createServer((req, res) => {
+    let pathname = new URL(req.url ?? '/', `http://localhost:${PROD_SERVER_PORT}`).pathname;
+    if (pathname === '/') pathname = '/index.html';
+    const filePath = path.join(distDir, pathname);
+    // Security: prevent path traversal
+    if (!filePath.startsWith(distDir)) { res.writeHead(403); res.end(); return; }
+    const ext = path.extname(filePath);
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const fs = require('fs') as typeof import('fs');
+    fs.readFile(filePath, (err: NodeJS.ErrnoException | null, data: Buffer) => {
+      if (err) {
+        // SPA fallback: serve index.html for missing routes
+        if (err.code === 'ENOENT' && ext === '') {
+          fs.readFile(path.join(distDir, 'index.html'), (_e: NodeJS.ErrnoException | null, html: Buffer) => {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+          });
+          return;
+        }
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(data);
+    });
+  });
+  prodServer.listen(PROD_SERVER_PORT, '127.0.0.1');
+}
 
 /**
  * Main application window reference
@@ -109,12 +189,13 @@ let tray: Tray | null = null;
  */
 const CSP_POLICY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://sdk.scdn.co",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://apis.google.com https://api.github.com https://github.com",
-  "frame-src 'self' https://accounts.google.com",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://apis.google.com https://api.github.com https://github.com https://accounts.spotify.com https://api.spotify.com https://*.spotify.com wss://*.spotify.com https://*.scdn.co https://*.spotifycdn.com",
+  "frame-src 'self' https://accounts.google.com https://sdk.scdn.co https://*.spotify.com",
+  "media-src 'self' blob: https://*.spotify.com https://*.scdn.co https://*.spotifycdn.com",
   "worker-src 'self' blob:",
 ].join('; ');
 
@@ -122,25 +203,6 @@ const CSP_POLICY = [
  * Create the main application window
  */
 function createWindow(): void {
-  const distDir = path.join(__dirname, '../dist');
-
-  // Expo web exports use absolute paths (/_expo/*, /favicon.ico) which
-  // resolve to file:/// root and 404. Intercept and redirect to dist/.
-  session.defaultSession.webRequest.onBeforeRequest(
-    { urls: ['file://*/*'] },
-    (details, callback) => {
-      const url = new URL(details.url);
-      if (
-        url.pathname.startsWith('/_expo/') ||
-        url.pathname.startsWith('/assets/') ||
-        url.pathname === '/favicon.ico'
-      ) {
-        callback({ redirectURL: `file://${path.join(distDir, url.pathname)}` });
-      } else {
-        callback({});
-      }
-    }
-  );
 
   // Set Content Security Policy before window creation
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -214,8 +276,8 @@ function createWindow(): void {
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const parsedUrl = new URL(url);
 
-    // Allow file:// protocol
-    if (parsedUrl.protocol === 'file:') {
+    // Allow file:// and app:// protocols
+    if (parsedUrl.protocol === 'file:' || parsedUrl.protocol === 'app:') {
       return;
     }
 
@@ -444,6 +506,19 @@ if (!gotTheLock) {
 
   // App is ready to create windows
   app.whenReady().then(() => {
+    // Register app:// protocol to serve dist/ files from a secure context (needed for EME/Widevine)
+    const distDir = path.join(__dirname, '../dist');
+    protocol.handle('app', (request) => {
+      const url = new URL(request.url);
+      let filePath = path.join(distDir, decodeURIComponent(url.pathname));
+      // Default to index.html for directory requests
+      if (filePath.endsWith('/') || !path.extname(filePath)) {
+        filePath = path.join(distDir, 'index.html');
+      }
+      return net.fetch(`file://${filePath}`);
+    });
+
+    startProdFileServer();
     createWindow();
     createTray();
 

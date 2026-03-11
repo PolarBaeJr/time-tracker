@@ -121,35 +121,21 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 }
 
 /**
- * Load the Spotify Web Playback SDK script (web only)
+ * Load the Spotify Web Playback SDK script dynamically
  */
 export function loadSpotifyPlaybackSDK(): Promise<void> {
-  if (typeof document === 'undefined') {
-    return Promise.reject(new Error('Spotify Web Playback SDK requires a browser environment'));
-  }
-
-  if (typeof window !== 'undefined' && window.Spotify) {
-    return Promise.resolve();
-  }
-
-  return new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('Spotify Web Playback SDK load timed out'));
-    }, 10_000);
-
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      clearTimeout(timeout);
-      resolve();
-    };
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return reject(new Error('No window'));
+    if (window.Spotify?.Player) return resolve();
 
     const script = document.createElement('script');
     script.src = 'https://sdk.scdn.co/spotify-player.js';
     script.async = true;
-    script.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error('Failed to load Spotify Web Playback SDK'));
-    };
-    document.head.appendChild(script);
+
+    window.onSpotifyWebPlaybackSDKReady = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Spotify SDK'));
+
+    document.body.appendChild(script);
   });
 }
 

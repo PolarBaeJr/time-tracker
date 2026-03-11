@@ -53,6 +53,8 @@ interface DesktopAPI {
   openExternalUrl: (url: string) => Promise<void>;
   /** Listen for OAuth callback URL from main process (full worktracker:// URL) */
   onOAuthCallback: (callback: (url: string) => void) => void;
+  /** Listen for Spotify PKCE callback (code + state from redirect) */
+  onSpotifyCallback: (callback: (code: string, state: string) => void) => void;
   /** Check for app updates */
   checkForUpdates: () => Promise<unknown>;
   /** Get current app version */
@@ -102,6 +104,9 @@ const desktopAPI: DesktopAPI = {
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url) as Promise<void>,
   onOAuthCallback: (callback: (url: string) => void) => {
     ipcRenderer.on('oauth-callback', (_event, url: string) => callback(url));
+  },
+  onSpotifyCallback: (callback: (code: string, state: string) => void) => {
+    ipcRenderer.on('spotify-callback', (_event, code: string, state: string) => callback(code, state));
   },
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates') as Promise<unknown>,
   getAppVersion: () => ipcRenderer.invoke('get-app-version') as Promise<string>,

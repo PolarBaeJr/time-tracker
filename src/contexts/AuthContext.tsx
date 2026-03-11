@@ -28,7 +28,7 @@ function getAuthRedirectUrl(): string {
   // Electron: use localhost callback server so the system browser handles
   // the OAuth flow (including passkeys/Touch ID) and auto-closes after sign-in.
   if (typeof window !== 'undefined' && window.desktop?.platform?.isElectron) {
-    return 'http://localhost:54321/auth/callback';
+    return 'http://127.0.0.1:54321/auth/callback';
   }
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {

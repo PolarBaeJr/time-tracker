@@ -11,6 +11,9 @@ directories:
   output: electron-dist
   buildResources: assets
 
+# Use locally installed castLabs Electron (with Widevine CDM)
+electronDist: node_modules/electron/dist
+
 # Override package.json main for Electron (Expo uses its own entry point)
 extraMetadata:
   main: electron/main.js
@@ -50,6 +53,7 @@ asarUnpack:
 
 # macOS configuration
 mac:
+  identity: null
   category: public.app-category.productivity
   target:
     - target: dmg
@@ -121,9 +125,9 @@ publish:
   repo: time-tracker
   releaseType: release
 
-# Build hooks
-afterSign: null
+# Build hooks — signing done manually after build (codesign then VMP)
 afterPack: null
+afterSign: null
 
 # Compression
 compression: normal

@@ -22,7 +22,10 @@ import {
   type FontWeights,
   type LineHeights,
 } from './typography';
+import { useAccentColor } from '@/stores/accentStore';
 import { useThemePreference } from '@/stores/themeStore';
+
+import { generateAccentPalette } from './accentUtils';
 
 /**
  * Border radius scale for consistent rounded corners
@@ -102,6 +105,7 @@ export interface Theme {
   borderRadius: BorderRadius;
   shadows: Shadows;
   isDark: boolean;
+  accentColor: string;
 }
 
 /**
@@ -110,6 +114,7 @@ export interface Theme {
 export const ThemeContext = createContext<Theme>({
   ...theme,
   isDark: true,
+  accentColor: '#6366F1',
 });
 
 /**
@@ -139,10 +144,18 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.ReactElem
   const resolved = useThemePreference(s => s.resolved);
   const isDark = resolved === 'dark';
   const currentColors = isDark ? darkColors : lightColors;
+  const accentColor = useAccentColor();
 
-  const value = React.useMemo<Theme>(
-    () => ({
-      colors: currentColors,
+  const value = React.useMemo<Theme>(() => {
+    const accent = generateAccentPalette(accentColor);
+    const colorsWithAccent: Colors = {
+      ...currentColors,
+      primary: accent.primary,
+      primaryVariant: accent.primaryVariant,
+    };
+
+    return {
+      colors: colorsWithAccent,
       spacing,
       fontSizes,
       fontWeights,
@@ -150,9 +163,9 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.ReactElem
       borderRadius,
       shadows,
       isDark,
-    }),
-    [isDark, currentColors]
-  );
+      accentColor,
+    };
+  }, [isDark, currentColors, accentColor]);
 
   return React.createElement(ThemeContext.Provider, { value }, children);
 }
