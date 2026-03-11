@@ -50,6 +50,7 @@ export type RootStackParamList = {
  * Main Tab Navigator Parameter List
  *
  * The bottom tab navigator with all main app screens:
+ * - Hub: Dashboard home with widget grid
  * - Timer: Main timer interface
  * - History: Time entry history with filters
  * - Analytics: Dashboard with charts and stats
@@ -58,6 +59,9 @@ export type RootStackParamList = {
  * - Settings: User preferences
  */
 export type MainTabParamList = {
+  /** Hub screen - dashboard home with widgets */
+  Hub: undefined;
+
   /** Timer screen - no parameters needed */
   Timer: undefined;
 
