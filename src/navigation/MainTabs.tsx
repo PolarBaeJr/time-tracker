@@ -3,6 +3,7 @@
  *
  * Bottom tab navigator with themed tab bar and icons.
  * Provides navigation between the main app screens:
+ * - Hub: Dashboard home with widget grid (default landing screen)
  * - Timer: Main timer interface
  * - History: Time entry history
  * - Analytics: Dashboard with charts
@@ -19,6 +20,7 @@ import { KeyboardShortcutProvider } from '@/components/KeyboardShortcutProvider'
 import { useTheme } from '@/theme';
 import { spacing } from '@/theme';
 import {
+  HubScreen as HubScreenComponent,
   TimerScreen as TimerScreenComponent,
   HistoryScreen as HistoryScreenComponent,
   AnalyticsScreen as AnalyticsScreenComponent,
@@ -40,6 +42,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
  */
 function getTabIcon(routeName: keyof MainTabParamList, focused: boolean): IconName {
   const iconMap: Record<keyof MainTabParamList, { active: IconName; inactive: IconName }> = {
+    Hub: { active: 'home', inactive: 'home-outline' },
     Timer: { active: 'time', inactive: 'time-outline' },
     History: { active: 'list', inactive: 'list-outline' },
     Analytics: { active: 'bar-chart', inactive: 'bar-chart-outline' },
@@ -95,8 +98,9 @@ export function MainTabs(): React.ReactElement {
             />
           ),
         })}
-        initialRouteName="Timer"
+        initialRouteName="Hub"
       >
+        <Tab.Screen name="Hub" component={HubScreenComponent} options={{ title: 'Hub' }} />
         <Tab.Screen name="Timer" component={TimerScreenComponent} options={{ title: 'Timer' }} />
         <Tab.Screen
           name="History"
