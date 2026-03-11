@@ -160,6 +160,36 @@ export const queryKeys = {
 
   /** AI connection configuration for the current user */
   aiConnection: ['aiConnection'] as const,
+
+  /** Email connections for current user */
+  emailConnections: ['emailConnections'] as const,
+
+  /** Single email connection by ID */
+  emailConnection: (id: string) => ['emailConnections', id] as const,
+
+  /** Email messages for a connection */
+  emailMessages: (connectionId: string) => ['emailMessages', connectionId] as const,
+
+  /** Recent emails across all connections */
+  recentEmails: ['recentEmails'] as const,
+
+  /** Calendar connections for current user */
+  calendarConnections: ['calendarConnections'] as const,
+
+  /** Single calendar connection by ID */
+  calendarConnection: (id: string) => ['calendarConnections', id] as const,
+
+  /** Calendar events for a connection */
+  calendarEvents: (connectionId: string, dateRange?: { start: string; end: string }) =>
+    dateRange
+      ? (['calendarEvents', connectionId, dateRange] as const)
+      : (['calendarEvents', connectionId] as const),
+
+  /** Today's events across all calendars */
+  todayEvents: ['todayEvents'] as const,
+
+  /** Upcoming events across all calendars */
+  upcomingEvents: (days: number) => ['upcomingEvents', days] as const,
 } as const;
 
 export type QueryKeys = typeof queryKeys;
