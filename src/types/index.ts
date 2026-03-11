@@ -39,6 +39,28 @@ export type {
   SetOverallGoalInput,
   SetCategoryGoalInput,
   GoalProgress,
+  // Email types
+  EmailProvider,
+  EmailConnection,
+  CreateEmailConnectionOAuthInput,
+  CreateEmailConnectionIMAPInput,
+  CreateEmailConnectionInput,
+  EmailMessage,
+  EmailMessagesList,
+  EmailSyncOptions,
+  EmailSyncResult,
+  // Calendar types
+  CalendarProvider,
+  CalendarConnection,
+  CreateCalendarConnectionInput,
+  EventStatus,
+  EventAttendee,
+  CalendarEvent,
+  CalendarEventsList,
+  CalendarDateRange,
+  CalendarSyncOptions,
+  CalendarSyncResult,
+  TodayEventsSummary,
 } from '../schemas';
 
 /**

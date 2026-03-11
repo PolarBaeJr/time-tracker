@@ -118,3 +118,51 @@ export {
   type CreateEntryTemplateInput,
   type UpdateEntryTemplateInput,
 } from './entryTemplate';
+
+// Email schemas and types
+export {
+  EmailProviderEnum,
+  EmailConnectionSchema,
+  CreateEmailConnectionOAuthSchema,
+  CreateEmailConnectionIMAPSchema,
+  CreateEmailConnectionSchema,
+  EmailMessageSchema,
+  EmailMessagesListSchema,
+  EmailSyncOptionsSchema,
+  EmailSyncResultSchema,
+  type EmailProvider,
+  type EmailConnection,
+  type CreateEmailConnectionOAuthInput,
+  type CreateEmailConnectionIMAPInput,
+  type CreateEmailConnectionInput,
+  type EmailMessage,
+  type EmailMessagesList,
+  type EmailSyncOptions,
+  type EmailSyncResult,
+} from './email';
+
+// Calendar schemas and types
+export {
+  CalendarProviderEnum,
+  CalendarConnectionSchema,
+  CreateCalendarConnectionSchema,
+  EventStatusEnum,
+  EventAttendeeSchema,
+  CalendarEventSchema,
+  CalendarEventsListSchema,
+  CalendarDateRangeSchema,
+  CalendarSyncOptionsSchema,
+  CalendarSyncResultSchema,
+  TodayEventsSummarySchema,
+  type CalendarProvider,
+  type CalendarConnection,
+  type CreateCalendarConnectionInput,
+  type EventStatus,
+  type EventAttendee,
+  type CalendarEvent,
+  type CalendarEventsList,
+  type CalendarDateRange,
+  type CalendarSyncOptions,
+  type CalendarSyncResult,
+  type TodayEventsSummary,
+} from './calendar';
