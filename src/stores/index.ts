@@ -57,3 +57,13 @@ export {
   useAccentColor,
 } from './accentStore';
 export type { AccentStoreState } from './accentStore';
+
+export {
+  useHubLayout,
+  setWidgetLayout,
+  toggleWidgetVisibility as toggleHubWidgetVisibility,
+  moveWidget as moveHubWidget,
+  resetToDefault as resetHubLayout,
+  setEditMode as setHubEditMode,
+} from './hubStore';
+export type { HubWidgetType, HubWidgetConfig } from './hubStore';
