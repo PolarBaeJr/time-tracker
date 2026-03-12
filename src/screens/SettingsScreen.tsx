@@ -20,6 +20,8 @@ import {
   IdleDetectionSettings,
   SpotifySettings,
   AISettings,
+  EmailSettings,
+  CalendarSettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -270,6 +272,26 @@ export function SettingsScreen(): React.ReactElement {
             <Text style={styles.sectionTitle}>AI Assistant</Text>
             <Card padding="md" elevation="none" style={styles.sectionCard}>
               <AISettings disabled={isUpdating} />
+            </Card>
+          </View>
+        )}
+
+        {/* Email — only shown on web (OAuth requires web environment) */}
+        {Platform.OS === 'web' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Email</Text>
+            <Card padding="md" elevation="none" style={styles.sectionCard}>
+              <EmailSettings disabled={isUpdating} />
+            </Card>
+          </View>
+        )}
+
+        {/* Calendar — only shown on web (OAuth requires web environment) */}
+        {Platform.OS === 'web' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Calendar</Text>
+            <Card padding="md" elevation="none" style={styles.sectionCard}>
+              <CalendarSettings disabled={isUpdating} />
             </Card>
           </View>
         )}
