@@ -12,7 +12,7 @@ import { View, StyleSheet, RefreshControl, ScrollView, Pressable } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { WidgetGrid, TimerWidget } from '@/components/hub';
+import { WidgetGrid, TimerWidget, EmailWidget, CalendarWidget } from '@/components/hub';
 import { Text, Icon, Button } from '@/components/ui';
 import { useWidgetLayout, useAuth, useUserSettings } from '@/hooks';
 import { useTheme, spacing } from '@/theme';
@@ -106,6 +106,10 @@ export function HubScreen(): React.ReactElement {
     switch (widget.type) {
       case 'timer':
         return <TimerWidget key={widget.id} size={widget.size} />;
+      case 'email':
+        return <EmailWidget key={widget.id} size={widget.size} />;
+      case 'calendar':
+        return <CalendarWidget key={widget.id} size={widget.size} />;
       default:
         // Future widget types will be added here
         return (

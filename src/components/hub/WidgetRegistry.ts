@@ -15,7 +15,7 @@ import type { IconName } from '@/components/ui';
  * Available widget types in the Hub
  * Add new widget types here as they are implemented
  */
-export type WidgetType = 'timer';
+export type WidgetType = 'timer' | 'email' | 'calendar';
 
 /**
  * Widget size variants
@@ -64,6 +64,24 @@ export const WIDGET_CONFIGS: Record<WidgetType, WidgetConfigWithoutId> = {
     minSize: 'small',
     resizable: true,
     requiresAuth: null,
+  },
+  email: {
+    type: 'email',
+    title: 'Email',
+    icon: 'mail',
+    defaultSize: 'medium',
+    minSize: 'small',
+    resizable: true,
+    requiresAuth: 'gmail',
+  },
+  calendar: {
+    type: 'calendar',
+    title: 'Calendar',
+    icon: 'calendar',
+    defaultSize: 'medium',
+    minSize: 'small',
+    resizable: true,
+    requiresAuth: 'google_calendar',
   },
 };
 
