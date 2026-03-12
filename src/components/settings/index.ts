@@ -12,3 +12,5 @@ export { TimerSoundSettings, type TimerSoundSettingsProps } from './TimerSoundSe
 export { IdleDetectionSettings, type IdleDetectionSettingsProps } from './IdleDetectionSettings';
 export { SpotifySettings, type SpotifySettingsProps } from './SpotifySettings';
 export { AISettings, type AISettingsProps } from './AISettings';
+export { CalendarSettings, type CalendarSettingsProps } from './CalendarSettings';
+export { EmailSettings, type EmailSettingsProps } from './EmailSettings';
