@@ -140,3 +140,14 @@ export type {
   OutlookCalendarList,
   ListEventsOptions as CalendarListEventsOptions,
 } from './calendar';
+
+// OAuth callback handlers
+export {
+  handleOAuthCallback,
+  detectOAuthCallbackType,
+  isOAuthCallback,
+  setupElectronOAuthListeners,
+  processWebCallback,
+} from './oauth';
+
+export type { OAuthCallbackType, OAuthCallbackResult } from './oauth';

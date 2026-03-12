@@ -17,6 +17,7 @@ import { Linking, Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { exchangeCodeForTokens } from '@/lib/spotify';
 import { queryClient, queryKeys } from '@/lib/queryClient';
+import { handleOAuthCallback, setupElectronOAuthListeners } from '@/lib/oauth/callback';
 import { useTheme } from '@/theme';
 
 import { RootNavigator } from './RootNavigator';
@@ -233,14 +234,14 @@ function handleAuthCallback(url: string): boolean {
   return true;
 }
 
-// Handle Spotify and auth callbacks immediately on web page load,
+// Handle Spotify, auth, email, and calendar OAuth callbacks immediately on web page load,
 // BEFORE React Navigation mounts (getInitialURL in linking config
 // is not reliably called on React Native Web).
 let webCallbackHandled = false;
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
   const url = window.location.href;
   spotifyDebug('module_init', { url });
-  if (handleSpotifyCallback(url) || handleAuthCallback(url)) {
+  if (handleSpotifyCallback(url) || handleAuthCallback(url) || handleOAuthCallback(url)) {
     webCallbackHandled = true;
     // Clean the URL so React Navigation doesn't try to parse the callback path
     window.history.replaceState(null, '', '/');
@@ -256,6 +257,9 @@ if (Platform.OS === 'web' && typeof window !== 'undefined') {
       handleSpotifyCallback(syntheticUrl);
     });
   }
+
+  // Electron: listen for email/calendar OAuth callbacks via IPC
+  setupElectronOAuthListeners();
 }
 
 const linking = {
@@ -286,14 +290,15 @@ const linking = {
     const url = await Linking.getInitialURL();
     if (url && handleSpotifyCallback(url)) return null;
     if (url && handleAuthCallback(url)) return null;
+    if (url && handleOAuthCallback(url)) return null;
     return url;
   },
   subscribe(listener: (url: string) => void) {
     const subscription = Linking.addEventListener('url', ({ url }) => {
       if (handleSpotifyCallback(url)) return;
-      if (!handleAuthCallback(url)) {
-        listener(url);
-      }
+      if (handleAuthCallback(url)) return;
+      if (handleOAuthCallback(url)) return;
+      listener(url);
     });
     return () => subscription.remove();
   },
