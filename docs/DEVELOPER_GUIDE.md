@@ -155,6 +155,67 @@ Integration tests in `src/__tests__/integration/` are skipped unless `INTEGRATIO
 | `EXPO_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Dev only | Service role key for seed scripts (never bundled) |
+| `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | For Email/Calendar | Google OAuth client ID for Gmail and Google Calendar |
+| `EXPO_PUBLIC_MICROSOFT_CLIENT_ID` | For Email/Calendar | Microsoft OAuth client ID for Outlook Email and Calendar |
 | `INTEGRATION_TESTS` | CI only | Set to `true` to run integration tests |
 
 All `EXPO_PUBLIC_*` variables are embedded in the app bundle at build time. Never put secrets in `EXPO_PUBLIC_*` variables.
+
+## Email and Calendar OAuth Setup
+
+### Google (Gmail & Google Calendar)
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create or select a project
+3. Navigate to **APIs & Services > Credentials**
+4. Create an **OAuth 2.0 Client ID** with application type **Web application**
+5. Add authorized JavaScript origins:
+   - `http://localhost:8081` (development)
+   - `http://localhost:19006` (Expo web)
+   - Your production domain
+6. Add authorized redirect URIs:
+   - `http://localhost:8081/email/gmail/callback`
+   - `http://localhost:8081/calendar/google/callback`
+   - Production equivalents
+7. Enable the following APIs in **APIs & Services > Library**:
+   - Gmail API
+   - Google Calendar API
+8. Copy the client ID to `.env` as `EXPO_PUBLIC_GOOGLE_CLIENT_ID`
+
+**Required OAuth Scopes:**
+- Gmail: `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/userinfo.email`
+- Calendar: `https://www.googleapis.com/auth/calendar.readonly`, `https://www.googleapis.com/auth/userinfo.email`
+
+### Microsoft (Outlook Email & Calendar)
+
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Navigate to **Azure Active Directory > App registrations**
+3. Click **New registration**
+4. Set the name and select **Accounts in any organizational directory and personal Microsoft accounts**
+5. Add redirect URIs (Web platform):
+   - `http://localhost:8081/email/outlook/callback`
+   - `http://localhost:8081/calendar/outlook/callback`
+   - Production equivalents
+6. Go to **API permissions** and add:
+   - Microsoft Graph > Delegated permissions:
+     - `Mail.Read`
+     - `Calendars.Read`
+     - `User.Read`
+     - `offline_access`
+7. Copy the **Application (client) ID** to `.env` as `EXPO_PUBLIC_MICROSOFT_CLIENT_ID`
+
+**Note:** Microsoft uses the common tenant endpoint (`/common/oauth2/v2.0`) for multi-tenant apps, which allows both personal Microsoft accounts and work/school accounts.
+
+### Supabase Edge Function Secrets
+
+The email-sync and calendar-sync Edge Functions need server-side access to refresh OAuth tokens. Set these secrets in Supabase:
+
+```bash
+# Generate an encryption key for token storage
+openssl rand -base64 32
+
+# Set the secrets
+supabase secrets set ENCRYPTION_KEY="your-generated-key"
+supabase secrets set GOOGLE_CLIENT_ID="your-google-client-id"
+supabase secrets set MICROSOFT_CLIENT_ID="your-microsoft-client-id"
+```

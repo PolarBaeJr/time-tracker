@@ -89,3 +89,96 @@ Before working on auth flows, confirm:
 3. Supabase Google provider is enabled.
 4. Supabase URL configuration includes the web callback URL and `worktracker://auth/callback`.
 5. If you use the Supabase CLI locally, restart it after auth configuration changes.
+
+## 7. Email and Calendar Integration Setup
+
+### Database Migrations
+
+The email and calendar integration requires additional tables. Apply these migrations:
+
+```bash
+# Apply all migrations (includes email and calendar tables)
+supabase db push
+```
+
+Key migrations for email/calendar:
+- `20240101000025_add_email_connections.sql` - Email connections and messages tables
+- `20240101000026_add_calendar_connections.sql` - Calendar connections and events tables
+
+These migrations create:
+- `email_connections` - OAuth tokens for Gmail/Outlook and IMAP credentials
+- `email_messages` - Cached email messages
+- `calendar_connections` - OAuth tokens for Google Calendar/Outlook Calendar
+- `calendar_events` - Cached calendar events
+
+All tables have RLS policies that restrict access to the owning user.
+
+### Edge Function Deployment
+
+Deploy the email-sync and calendar-sync Edge Functions:
+
+```bash
+# Deploy all Edge Functions
+supabase functions deploy
+
+# Or deploy individually
+supabase functions deploy email-sync
+supabase functions deploy calendar-sync
+```
+
+### Edge Function Secrets
+
+The Edge Functions require secrets for token encryption and OAuth refresh:
+
+```bash
+# Generate a secure encryption key
+openssl rand -base64 32
+
+# Set required secrets
+supabase secrets set ENCRYPTION_KEY="your-generated-encryption-key"
+supabase secrets set GOOGLE_CLIENT_ID="your-google-oauth-client-id"
+supabase secrets set MICROSOFT_CLIENT_ID="your-microsoft-oauth-client-id"
+
+# Verify secrets are set
+supabase secrets list
+```
+
+**Important:** The `ENCRYPTION_KEY` is used to encrypt OAuth tokens before storing them in the database. Use the same key across all environments where you want to share token data.
+
+### OAuth Redirect URIs for Email/Calendar
+
+Add these redirect URIs to your OAuth provider configurations:
+
+**Google Cloud Console (for Gmail & Google Calendar):**
+- `http://localhost:8081/email/gmail/callback` (development)
+- `http://localhost:8081/calendar/google/callback` (development)
+- `https://your-app.com/email/gmail/callback` (production)
+- `https://your-app.com/calendar/google/callback` (production)
+
+**Azure Portal (for Outlook Email & Calendar):**
+- `http://localhost:8081/email/outlook/callback` (development)
+- `http://localhost:8081/calendar/outlook/callback` (development)
+- `https://your-app.com/email/outlook/callback` (production)
+- `https://your-app.com/calendar/outlook/callback` (production)
+
+### Testing the Integration
+
+1. Start the app and navigate to Settings
+2. Connect an email account (Gmail or Outlook)
+3. Verify the OAuth flow completes and redirects back to the app
+4. Check the Hub screen for the Email widget
+5. Repeat for Calendar integration
+
+### Troubleshooting
+
+**"Server encryption not configured" error:**
+- Ensure `ENCRYPTION_KEY` is set in Supabase secrets
+- The key must be at least 32 characters (base64 encoded)
+
+**"Token refresh failed" error:**
+- Verify `GOOGLE_CLIENT_ID` or `MICROSOFT_CLIENT_ID` secrets match your OAuth app
+- Check that the OAuth app has the required scopes enabled
+
+**"Sync cooldown" error:**
+- The sync endpoints enforce a 5-minute cooldown between syncs
+- This prevents API rate limiting from Google/Microsoft
