@@ -8,7 +8,7 @@
 
 import * as React from 'react';
 import { View, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
-import { Text, Button, Icon } from '@/components/ui';
+import { Text, Button, Icon, type IconName } from '@/components/ui';
 import {
   useEmailConnections,
   useConnectGmail,
@@ -22,7 +22,7 @@ import { useTheme } from '@/theme';
 import type { EmailProvider, EmailConnection } from '@/schemas';
 
 // Provider display info
-const EMAIL_PROVIDERS: { id: EmailProvider; name: string; color: string; icon: string }[] = [
+const EMAIL_PROVIDERS: { id: EmailProvider; name: string; color: string; icon: IconName }[] = [
   { id: 'gmail', name: 'Gmail', color: '#EA4335', icon: 'mail' },
   { id: 'outlook', name: 'Outlook', color: '#0078D4', icon: 'mail' },
   { id: 'imap', name: 'IMAP', color: '#6B7280', icon: 'server' },
@@ -554,6 +554,7 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
       }
 
       await connectIMAPMutation.mutateAsync({
+        provider: 'imap',
         email_address: imapForm.emailAddress,
         imap_server: imapForm.imapServer,
         imap_port: portNumber,

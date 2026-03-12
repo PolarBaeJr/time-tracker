@@ -67,6 +67,23 @@ export const iconMap = {
   'drag-handle': '\u2630', // hamburger
   eye: '\u{1F441}', // eye
   'eye-off': '\u25CB', // circle
+
+  // Email and communication icons
+  mail: '\u2709', // envelope
+  'mail-outline': '\u2709', // envelope
+  'mail-open-outline': '\u2709', // envelope (open)
+  'checkmark-circle': '\u2714', // heavy check mark
+  sparkles: '\u2728', // sparkles emoji
+  refresh: '\u21BB', // clockwise open circle arrow
+  'refresh-cw': '\u21BB', // refresh clockwise
+
+  // Calendar icons
+  calendar: '\u{1F4C5}', // calendar emoji
+  'calendar-outline': '\u{1F4C5}', // calendar
+  sunny: '\u2600', // sun
+  location: '\u{1F4CD}', // round pushpin
+  x: '\u2715', // multiplication x (same as close)
+  server: '\u{1F5A5}', // desktop computer (used for server)
 } as const;
 
 export type IconName = keyof typeof iconMap;
