@@ -23,6 +23,7 @@ import {
   googleCalendarApiFetch,
   outlookCalendarApiFetch,
 } from '@/lib/calendar/oauth';
+import { encryptApiKey, decryptApiKey } from '@/lib/crypto';
 import type {
   CalendarConnection,
   CalendarEvent,
@@ -37,10 +38,10 @@ import type {
 // TYPES
 // ============================================================================
 
-/** Internal connection type with token fields for token management */
+/** Internal connection type with encrypted token fields for token management */
 interface CalendarConnectionWithTokens extends CalendarConnection {
-  access_token: string;
-  refresh_token: string;
+  access_token_encrypted: string;
+  refresh_token_encrypted: string;
   expires_at: string;
 }
 
@@ -73,6 +74,18 @@ async function autoDisconnect(connectionId: string) {
  * Get a valid access token for a calendar connection, refreshing if needed
  */
 async function getValidAccessToken(connection: CalendarConnectionWithTokens): Promise<string> {
+  // Get current user for decryption
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  // Decrypt tokens
+  const accessToken = await decryptApiKey(connection.access_token_encrypted, user.id);
+  const refreshToken = await decryptApiKey(connection.refresh_token_encrypted, user.id);
+
   const expiresAt = new Date(connection.expires_at).getTime();
   const now = Date.now();
 
@@ -81,16 +94,20 @@ async function getValidAccessToken(connection: CalendarConnectionWithTokens): Pr
     try {
       const tokens =
         connection.provider === 'google'
-          ? await refreshGoogleCalendarToken(connection.refresh_token)
-          : await refreshOutlookCalendarToken(connection.refresh_token);
+          ? await refreshGoogleCalendarToken(refreshToken)
+          : await refreshOutlookCalendarToken(refreshToken);
 
       const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+      // Encrypt new tokens before storing
+      const encryptedAccessToken = await encryptApiKey(tokens.access_token, user.id);
+      const encryptedRefreshToken = await encryptApiKey(tokens.refresh_token, user.id);
 
       await supabase
         .from('calendar_connections')
         .update({
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
+          access_token_encrypted: encryptedAccessToken,
+          refresh_token_encrypted: encryptedRefreshToken,
           expires_at: newExpiresAt,
           updated_at: new Date().toISOString(),
         })
@@ -108,7 +125,7 @@ async function getValidAccessToken(connection: CalendarConnectionWithTokens): Pr
     }
   }
 
-  return connection.access_token;
+  return accessToken;
 }
 
 // ============================================================================
@@ -609,16 +626,25 @@ export function useGoogleCalendarCallback() {
       throw new Error('Not authenticated');
     }
 
-    // Insert into calendar_connections
-    const { error } = await supabase.from('calendar_connections').insert({
-      user_id: user.id,
-      provider: 'google' as CalendarProvider,
-      email_address: emailAddress,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: expiresAt,
-      is_active: true,
-    });
+    // Encrypt tokens before storing
+    const encryptedAccessToken = await encryptApiKey(tokens.access_token, user.id);
+    const encryptedRefreshToken = await encryptApiKey(tokens.refresh_token, user.id);
+
+    // Upsert into calendar_connections (allows reconnecting existing calendars)
+    const { error } = await supabase.from('calendar_connections').upsert(
+      {
+        user_id: user.id,
+        provider: 'google' as CalendarProvider,
+        email_address: emailAddress,
+        access_token_encrypted: encryptedAccessToken,
+        refresh_token_encrypted: encryptedRefreshToken,
+        expires_at: expiresAt,
+        is_active: true,
+        sync_error: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,provider,email_address' }
+    );
 
     if (error) {
       throw new Error(error.message);
@@ -668,16 +694,25 @@ export function useOutlookCalendarCallback() {
       throw new Error('Not authenticated');
     }
 
-    // Insert into calendar_connections
-    const { error } = await supabase.from('calendar_connections').insert({
-      user_id: user.id,
-      provider: 'outlook' as CalendarProvider,
-      email_address: emailAddress,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: expiresAt,
-      is_active: true,
-    });
+    // Encrypt tokens before storing
+    const encryptedAccessToken = await encryptApiKey(tokens.access_token, user.id);
+    const encryptedRefreshToken = await encryptApiKey(tokens.refresh_token, user.id);
+
+    // Upsert into calendar_connections (allows reconnecting existing calendars)
+    const { error } = await supabase.from('calendar_connections').upsert(
+      {
+        user_id: user.id,
+        provider: 'outlook' as CalendarProvider,
+        email_address: emailAddress,
+        access_token_encrypted: encryptedAccessToken,
+        refresh_token_encrypted: encryptedRefreshToken,
+        expires_at: expiresAt,
+        is_active: true,
+        sync_error: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,provider,email_address' }
+    );
 
     if (error) {
       throw new Error(error.message);

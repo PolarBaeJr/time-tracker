@@ -398,18 +398,27 @@ async function handleGoogleCalendarCallback(code: string): Promise<OAuthCallback
       emailAddress = userInfo.email || emailAddress;
     }
 
-    // Insert into calendar_connections
+    // Encrypt tokens before storing
+    const encryptedAccessToken = await encryptApiKey(tokens.access_token, userId);
+    const encryptedRefreshToken = await encryptApiKey(tokens.refresh_token, userId);
+
+    // Upsert into calendar_connections (allows reconnecting existing calendars)
     const { data, error } = await supabase
       .from('calendar_connections')
-      .insert({
-        user_id: userId,
-        provider: 'google',
-        email_address: emailAddress,
-        access_token_encrypted: tokens.access_token, // Note: Calendar uses different storage pattern
-        refresh_token_encrypted: tokens.refresh_token,
-        expires_at: expiresAt,
-        is_active: true,
-      })
+      .upsert(
+        {
+          user_id: userId,
+          provider: 'google',
+          email_address: emailAddress,
+          access_token_encrypted: encryptedAccessToken,
+          refresh_token_encrypted: encryptedRefreshToken,
+          expires_at: expiresAt,
+          is_active: true,
+          sync_error: null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,provider,email_address' }
+      )
       .select('id')
       .single();
 
@@ -490,18 +499,27 @@ async function handleOutlookCalendarCallback(code: string): Promise<OAuthCallbac
       emailAddress = userInfo.mail || userInfo.userPrincipalName || emailAddress;
     }
 
-    // Insert into calendar_connections
+    // Encrypt tokens before storing
+    const encryptedAccessToken = await encryptApiKey(tokens.access_token, userId);
+    const encryptedRefreshToken = await encryptApiKey(tokens.refresh_token, userId);
+
+    // Upsert into calendar_connections (allows reconnecting existing calendars)
     const { data, error } = await supabase
       .from('calendar_connections')
-      .insert({
-        user_id: userId,
-        provider: 'outlook',
-        email_address: emailAddress,
-        access_token_encrypted: tokens.access_token,
-        refresh_token_encrypted: tokens.refresh_token,
-        expires_at: expiresAt,
-        is_active: true,
-      })
+      .upsert(
+        {
+          user_id: userId,
+          provider: 'outlook',
+          email_address: emailAddress,
+          access_token_encrypted: encryptedAccessToken,
+          refresh_token_encrypted: encryptedRefreshToken,
+          expires_at: expiresAt,
+          is_active: true,
+          sync_error: null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,provider,email_address' }
+      )
       .select('id')
       .single();
 

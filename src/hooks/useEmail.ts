@@ -640,7 +640,7 @@ export function useSyncEmails() {
       }
 
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-      const response = await fetch(`${supabaseUrl}/functions/v1/sync-emails`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/email-sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
