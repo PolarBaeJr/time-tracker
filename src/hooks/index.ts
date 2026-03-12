@@ -338,3 +338,19 @@ export { useAIConnection, useConfigureAI, useDisconnectAI, useInitializeAI } fro
 
 // Widget layout hooks
 export { useWidgetLayout, type UseWidgetLayoutResult } from './useWidgetLayout';
+
+// Calendar hooks
+export {
+  useCalendarConnections,
+  useCalendarConnection,
+  useConnectGoogleCalendar,
+  useConnectOutlookCalendar,
+  useGoogleCalendarCallback,
+  useOutlookCalendarCallback,
+  useDisconnectCalendar,
+  useCalendarEvents,
+  useSyncCalendar,
+  useTodayEvents,
+  useUpcomingEvents,
+  useCalendarTokenDeath,
+} from './useCalendar';
