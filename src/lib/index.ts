@@ -8,11 +8,7 @@
  */
 
 // Supabase client and types
-export {
-  supabase,
-  config,
-  validateConfig,
-} from './supabase';
+export { supabase, config, validateConfig } from './supabase';
 export { storage, secureStorage } from './storage';
 export {
   createActiveTimerSubscription,
@@ -63,3 +59,84 @@ export type {
   ActiveTimerSubscriptionHandle,
   CreateActiveTimerSubscriptionOptions,
 } from './realtime';
+
+// Email integration
+export {
+  // Constants
+  GMAIL_CONFIG,
+  OUTLOOK_EMAIL_CONFIG,
+  IMAP_DEFAULTS,
+  EMAIL_SYNC_CONFIG,
+  // OAuth helpers
+  generateCodeVerifier,
+  generateCodeChallenge,
+  buildGmailAuthorizeUrl,
+  buildOutlookEmailAuthorizeUrl,
+  exchangeGmailCodeForTokens,
+  exchangeOutlookCodeForTokens,
+  refreshGmailToken,
+  refreshOutlookToken,
+  gmailApiFetch,
+  outlookApiFetch,
+  // Gmail service
+  GmailService,
+  parseGmailMessage,
+  // Outlook email service
+  OutlookEmailService,
+  parseOutlookMessage,
+} from './email';
+
+export type {
+  GmailConfig,
+  OutlookEmailConfig,
+  ImapDefaults,
+  EmailSyncConfig,
+  OAuthTokens,
+  GmailHeader,
+  GmailMessage,
+  GmailMessageList,
+  GmailProfile,
+  OutlookMessage,
+  OutlookMessageList,
+  ListMessagesOptions,
+} from './email';
+
+// Calendar integration
+export {
+  // Constants
+  GOOGLE_CALENDAR_CONFIG,
+  OUTLOOK_CALENDAR_CONFIG,
+  CALENDAR_SYNC_CONFIG,
+  // OAuth helpers
+  buildGoogleCalendarAuthorizeUrl,
+  buildOutlookCalendarAuthorizeUrl,
+  exchangeGoogleCalendarCodeForTokens,
+  exchangeOutlookCalendarCodeForTokens,
+  refreshGoogleCalendarToken,
+  refreshOutlookCalendarToken,
+  googleCalendarApiFetch,
+  outlookCalendarApiFetch,
+  // Google Calendar service
+  GoogleCalendarService,
+  parseGoogleEvent,
+  getDefaultDateRange,
+  // Outlook Calendar service
+  OutlookCalendarService,
+  parseOutlookEvent,
+} from './calendar';
+
+export type {
+  GoogleCalendarConfig,
+  OutlookCalendarConfig,
+  CalendarSyncConfig,
+  GoogleDateTime,
+  GoogleEvent,
+  GoogleEventList,
+  GoogleCalendar,
+  GoogleCalendarList,
+  OutlookCalendarEvent,
+  OutlookEventList,
+  OutlookCalendar,
+  OutlookCalendarList,
+  ListEventsOptions as CalendarListEventsOptions,
+} from './calendar';
