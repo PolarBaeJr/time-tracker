@@ -336,6 +336,23 @@ export {
 // AI hooks
 export { useAIConnection, useConfigureAI, useDisconnectAI, useInitializeAI } from './useAI';
 
+// Email hooks
+export {
+  useEmailConnections,
+  useEmailConnection,
+  useConnectGmail,
+  useConnectOutlook,
+  useConnectIMAP,
+  useGmailCallback,
+  useOutlookCallback,
+  useDisconnectEmail,
+  useEmailMessages,
+  useSyncEmails,
+  useRecentEmails,
+  useEmailTokenDeath,
+  useToggleEmailConnection,
+} from './useEmail';
+
 // Widget layout hooks
 export { useWidgetLayout, type UseWidgetLayoutResult } from './useWidgetLayout';
 
