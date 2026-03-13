@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
+import { useAuth } from './useAuth';
 import {
   generateCodeVerifier,
   generateCodeChallenge,
@@ -277,11 +278,15 @@ export function useEmailTokenDeath(connectionId?: string) {
 
 /**
  * Query hook for fetching all email connections for the current user.
+ * Automatically disabled when user is not authenticated.
  */
 export function useEmailConnections() {
+  const { isAuthenticated } = useAuth();
+
   const query = useQuery({
     queryKey: queryKeys.emailConnections,
     queryFn: fetchEmailConnections,
+    enabled: isAuthenticated,
   });
 
   return {
@@ -623,11 +628,15 @@ export function useEmailMessages(connectionId: string | undefined) {
 
 /**
  * Query hook for fetching recent emails across all active connections.
+ * Automatically disabled when user is not authenticated.
  */
 export function useRecentEmails() {
+  const { isAuthenticated } = useAuth();
+
   return useQuery({
     queryKey: queryKeys.recentEmails,
     queryFn: fetchRecentEmails,
+    enabled: isAuthenticated,
   });
 }
 
