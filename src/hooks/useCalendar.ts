@@ -58,9 +58,16 @@ function notifyTokenDeath(connectionId: string) {
   tokenDeathListeners.forEach(l => l(connectionId));
 }
 
-async function autoDisconnect(connectionId: string) {
+async function autoDisconnect(connectionId: string, userId: string) {
   try {
-    await supabase.from('calendar_connections').delete().eq('id', connectionId);
+    // Delete the connection scoped by user_id for defense in depth.
+    // The ON DELETE CASCADE will automatically delete all associated calendar_events
+    // at the database level (bypassing RLS), ensuring clean removal.
+    await supabase
+      .from('calendar_connections')
+      .delete()
+      .eq('id', connectionId)
+      .eq('user_id', userId);
     notifyTokenDeath(connectionId);
   } catch (e) {
     console.warn('Calendar auto-disconnect failed:', e);
@@ -127,7 +134,7 @@ async function getValidAccessToken(connection: CalendarConnectionWithTokens): Pr
       // If refresh token is revoked/invalid, auto-disconnect
       if (msg.includes('revoked') || msg.includes('invalid_grant')) {
         console.warn('Calendar token revoked, auto-disconnecting');
-        void autoDisconnect(connection.id);
+        void autoDisconnect(connection.id, user.id);
       }
       throw err;
     }
