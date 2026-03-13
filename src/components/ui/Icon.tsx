@@ -67,6 +67,9 @@ export const iconMap = {
   'drag-handle': '\u2630', // hamburger
   eye: '\u{1F441}', // eye
   'eye-off': '\u25CB', // circle
+  pin: '\u{1F4CC}', // pushpin
+  'pin-off': '\u{1F4CC}', // pushpin (same symbol, different state handled by context)
+  'file-text': '\u{1F4C4}', // page facing up (same as file)
 
   // Email and communication icons
   mail: '\u2709', // envelope
