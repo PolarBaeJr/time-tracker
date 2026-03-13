@@ -428,3 +428,30 @@ export {
   type UsePinNoteResult,
   type UseRestoreNoteResult,
 } from './useNotes';
+
+// Chat hooks
+export {
+  useChatConversations,
+  useChatMessages,
+  useCreateConversation,
+  useSendMessage,
+  useDeleteConversation,
+  useClearConversationHistory,
+  getRemainingMessages,
+  chatQueryKeys,
+  ChatError,
+  RateLimitError,
+  type UseChatConversationsOptions,
+  type UseChatMessagesOptions,
+  type UseCreateConversationOptions,
+  type UseSendMessageOptions,
+  type UseDeleteConversationOptions,
+  type UseClearConversationHistoryOptions,
+  type SendMessageInput,
+  type UseChatConversationsResult,
+  type UseChatMessagesResult,
+  type UseCreateConversationResult,
+  type UseSendMessageResult,
+  type UseDeleteConversationResult,
+  type UseClearConversationHistoryResult,
+} from './useChat';
