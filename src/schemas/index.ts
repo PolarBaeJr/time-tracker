@@ -166,3 +166,49 @@ export {
   type CalendarSyncResult,
   type TodayEventsSummary,
 } from './calendar';
+
+// Chat schemas and types
+export {
+  ChatRoleEnum,
+  ChatMessageSchema,
+  ChatConversationSchema,
+  CreateChatMessageSchema,
+  CreateConversationSchema,
+  UpdateConversationSchema,
+  ChatConversationWithPreviewSchema,
+  type ChatRole,
+  type ChatMessage,
+  type ChatConversation,
+  type CreateChatMessageInput,
+  type CreateConversationInput,
+  type UpdateConversationInput,
+  type ChatConversationWithPreview,
+} from './chat';
+
+// Todo schemas and types
+export {
+  TodoPriorityEnum,
+  TodoSchema,
+  CreateTodoSchema,
+  UpdateTodoSchema,
+  TodosFilterSchema,
+  ReorderTodosSchema,
+  type TodoPriority,
+  type Todo,
+  type CreateTodoInput,
+  type UpdateTodoInput,
+  type TodosFilter,
+  type ReorderTodosInput,
+} from './todo';
+
+// Note schemas and types
+export {
+  NoteSchema,
+  CreateNoteSchema,
+  UpdateNoteSchema,
+  NotesFilterSchema,
+  type Note,
+  type CreateNoteInput,
+  type UpdateNoteInput,
+  type NotesFilter,
+} from './note';
