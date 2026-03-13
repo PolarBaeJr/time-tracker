@@ -64,7 +64,16 @@ function notifyTokenDeath(connectionId: string) {
 
 async function autoDisconnect(connectionId: string) {
   try {
-    await supabase.from('email_connections').delete().eq('id', connectionId);
+    // Get current user to scope the delete (defense-in-depth, RLS also protects)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn('Email auto-disconnect: no authenticated user');
+      return;
+    }
+
+    await supabase.from('email_connections').delete().eq('id', connectionId).eq('user_id', user.id); // Ensure user owns the connection
     notifyTokenDeath(connectionId);
   } catch (e) {
     console.warn('Email auto-disconnect failed:', e);
