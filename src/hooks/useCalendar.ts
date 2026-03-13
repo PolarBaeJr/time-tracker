@@ -102,7 +102,14 @@ async function getValidAccessToken(connection: CalendarConnectionWithTokens): Pr
 
       // Encrypt new tokens before storing
       const encryptedAccessToken = await encryptApiKey(tokens.access_token, user.id);
-      const encryptedRefreshToken = await encryptApiKey(tokens.refresh_token, user.id);
+
+      // Google sometimes doesn't return a new refresh_token on refresh.
+      // Only update refresh_token_encrypted if a new one was returned,
+      // otherwise keep the existing one to avoid invalidating future refreshes.
+      const newRefreshToken = tokens.refresh_token || refreshToken;
+      const encryptedRefreshToken = tokens.refresh_token
+        ? await encryptApiKey(tokens.refresh_token, user.id)
+        : connection.refresh_token_encrypted; // Keep existing encrypted token
 
       await supabase
         .from('calendar_connections')
