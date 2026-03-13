@@ -12,3 +12,4 @@ export { SetupScreen } from './SetupScreen';
 export { TimerScreen } from './TimerScreen';
 export { FocusModeScreen } from './FocusModeScreen';
 export { HubScreen } from './HubScreen';
+export { NotesScreen, type NotesScreenProps } from './NotesScreen';

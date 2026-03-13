@@ -70,6 +70,7 @@ export const iconMap = {
   pin: '\u{1F4CC}', // pushpin
   'pin-off': '\u{1F4CC}', // pushpin (same symbol, different state handled by context)
   'file-text': '\u{1F4C4}', // page facing up (same as file)
+  'check-square': '\u2611', // ballot box with check (todo icon)
 
   // Email and communication icons
   mail: '\u2709', // envelope
@@ -87,6 +88,13 @@ export const iconMap = {
   location: '\u{1F4CD}', // round pushpin
   x: '\u2715', // multiplication x (same as close)
   server: '\u{1F5A5}', // desktop computer (used for server)
+
+  // Chat icons
+  'chat-bubble': '\u{1F4AC}', // speech bubble
+  send: '\u27A4', // right arrow (send)
+  'arrow-back': '\u2190', // left arrow
+  warning: '\u26A0', // warning sign (same as alert)
+  'alert-circle': '\u26A0', // alert with circle (using warning)
 } as const;
 
 export type IconName = keyof typeof iconMap;
