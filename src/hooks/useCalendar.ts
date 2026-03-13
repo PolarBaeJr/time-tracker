@@ -275,66 +275,81 @@ async function syncGoogleCalendarEvents(
   const timeMin = new Date().toISOString();
   const timeMax = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-  const params = new URLSearchParams({
-    timeMin,
-    timeMax,
-    maxResults: '100',
-    singleEvents: 'true',
-    orderBy: 'startTime',
-  });
-
-  const response = await googleCalendarApiFetch(
-    accessToken,
-    `/calendars/${connection.calendar_id || 'primary'}/events?${params.toString()}`
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Google Calendar sync failed: ${errorText}`);
-  }
-
-  const data = await response.json();
   const events: CalendarEvent[] = [];
+  let pageToken: string | undefined;
+  const maxPages = 10; // Safety limit to prevent infinite loops
+  let pageCount = 0;
 
-  for (const item of data.items || []) {
-    // Skip cancelled events
-    if (item.status === 'cancelled') continue;
-
-    // Parse start/end times (handle all-day events)
-    const isAllDay = !!item.start?.date;
-    const startAt = isAllDay ? `${item.start.date}T00:00:00Z` : item.start?.dateTime;
-    const endAt = isAllDay ? `${item.end.date}T23:59:59Z` : item.end?.dateTime;
-
-    if (!startAt || !endAt) continue;
-
-    events.push({
-      id: crypto.randomUUID(),
-      connection_id: connection.id,
-      provider_id: item.id,
-      title: item.summary || null,
-      description: item.description || null,
-      location: item.location || null,
-      start_at: startAt,
-      end_at: endAt,
-      is_all_day: isAllDay,
-      status:
-        item.status === 'confirmed'
-          ? 'confirmed'
-          : item.status === 'tentative'
-            ? 'tentative'
-            : null,
-      organizer: item.organizer?.email || null,
-      attendees:
-        item.attendees?.map(
-          (a: { email: string; displayName?: string; responseStatus?: string }) => ({
-            email: a.email,
-            name: a.displayName,
-            status: a.responseStatus || 'needsAction',
-          })
-        ) || null,
-      ai_summary: null,
+  // Fetch all pages of events
+  do {
+    pageCount++;
+    const params = new URLSearchParams({
+      timeMin,
+      timeMax,
+      maxResults: String(CALENDAR_SYNC_CONFIG.MAX_EVENTS_PER_SYNC),
+      singleEvents: 'true',
+      orderBy: 'startTime',
     });
-  }
+
+    if (pageToken) {
+      params.set('pageToken', pageToken);
+    }
+
+    const response = await googleCalendarApiFetch(
+      accessToken,
+      `/calendars/${connection.calendar_id || 'primary'}/events?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google Calendar sync failed: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    for (const item of data.items || []) {
+      // Skip cancelled events
+      if (item.status === 'cancelled') continue;
+
+      // Parse start/end times (handle all-day events)
+      const isAllDay = !!item.start?.date;
+      const startAt = isAllDay ? `${item.start.date}T00:00:00Z` : item.start?.dateTime;
+      const endAt = isAllDay ? `${item.end.date}T23:59:59Z` : item.end?.dateTime;
+
+      if (!startAt || !endAt) continue;
+
+      events.push({
+        id: crypto.randomUUID(),
+        connection_id: connection.id,
+        provider_id: item.id,
+        title: item.summary || null,
+        description: item.description || null,
+        location: item.location || null,
+        start_at: startAt,
+        end_at: endAt,
+        is_all_day: isAllDay,
+        status:
+          item.status === 'confirmed'
+            ? 'confirmed'
+            : item.status === 'tentative'
+              ? 'tentative'
+              : null,
+        organizer: item.organizer?.email || null,
+        attendees:
+          item.attendees?.map(
+            (a: { email: string; displayName?: string; responseStatus?: string }) => ({
+              email: a.email,
+              name: a.displayName,
+              status: a.responseStatus || 'needsAction',
+            })
+          ) || null,
+        ai_summary: null,
+      });
+    }
+
+    // Get next page token for pagination
+    pageToken = data.nextPageToken;
+  } while (pageToken && pageCount < maxPages);
 
   // Upsert events using provider_id as conflict key (safer than delete-then-insert)
   // This prevents data loss if the upsert partially fails
@@ -382,68 +397,86 @@ async function syncOutlookCalendarEvents(
   const startDateTime = new Date().toISOString();
   const endDateTime = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-  const params = new URLSearchParams({
+  const events: CalendarEvent[] = [];
+  let nextLink: string | undefined;
+  const maxPages = 10; // Safety limit to prevent infinite loops
+  let pageCount = 0;
+
+  // Build initial URL
+  const initialParams = new URLSearchParams({
     startDateTime,
     endDateTime,
-    $top: '100',
+    $top: String(CALENDAR_SYNC_CONFIG.MAX_EVENTS_PER_SYNC),
     $orderby: 'start/dateTime',
     $select:
       'id,subject,bodyPreview,location,start,end,isAllDay,showAs,organizer,attendees,isCancelled',
   });
+  let currentUrl: string | null = `/me/calendarView?${initialParams.toString()}`;
 
-  const response = await outlookCalendarApiFetch(
-    accessToken,
-    `/me/calendarView?${params.toString()}`
-  );
+  // Fetch all pages of events
+  do {
+    pageCount++;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Outlook Calendar sync failed: ${errorText}`);
-  }
+    const response = nextLink
+      ? await fetch(nextLink, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+      : await outlookCalendarApiFetch(accessToken, currentUrl!);
 
-  const data = await response.json();
-  const events: CalendarEvent[] = [];
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Outlook Calendar sync failed: ${errorText}`);
+    }
 
-  for (const item of data.value || []) {
-    // Skip cancelled events
-    if (item.isCancelled) continue;
+    const data = await response.json();
 
-    const startAt = item.start?.dateTime ? new Date(item.start.dateTime + 'Z').toISOString() : null;
-    const endAt = item.end?.dateTime ? new Date(item.end.dateTime + 'Z').toISOString() : null;
+    for (const item of data.value || []) {
+      // Skip cancelled events
+      if (item.isCancelled) continue;
 
-    if (!startAt || !endAt) continue;
+      const startAt = item.start?.dateTime
+        ? new Date(item.start.dateTime + 'Z').toISOString()
+        : null;
+      const endAt = item.end?.dateTime ? new Date(item.end.dateTime + 'Z').toISOString() : null;
 
-    // Map Outlook showAs to our status
-    let status: 'confirmed' | 'tentative' | null = null;
-    if (item.showAs === 'busy' || item.showAs === 'oof') status = 'confirmed';
-    else if (item.showAs === 'tentative') status = 'tentative';
+      if (!startAt || !endAt) continue;
 
-    events.push({
-      id: crypto.randomUUID(),
-      connection_id: connection.id,
-      provider_id: item.id,
-      title: item.subject || null,
-      description: item.bodyPreview || null,
-      location: item.location?.displayName || null,
-      start_at: startAt,
-      end_at: endAt,
-      is_all_day: item.isAllDay ?? false,
-      status,
-      organizer: item.organizer?.emailAddress?.address || null,
-      attendees:
-        item.attendees?.map(
-          (a: {
-            emailAddress?: { address?: string; name?: string };
-            status?: { response?: string };
-          }) => ({
-            email: a.emailAddress?.address || '',
-            name: a.emailAddress?.name,
-            status: a.status?.response || 'none',
-          })
-        ) || null,
-      ai_summary: null,
-    });
-  }
+      // Map Outlook showAs to our status
+      let status: 'confirmed' | 'tentative' | null = null;
+      if (item.showAs === 'busy' || item.showAs === 'oof') status = 'confirmed';
+      else if (item.showAs === 'tentative') status = 'tentative';
+
+      events.push({
+        id: crypto.randomUUID(),
+        connection_id: connection.id,
+        provider_id: item.id,
+        title: item.subject || null,
+        description: item.bodyPreview || null,
+        location: item.location?.displayName || null,
+        start_at: startAt,
+        end_at: endAt,
+        is_all_day: item.isAllDay ?? false,
+        status,
+        organizer: item.organizer?.emailAddress?.address || null,
+        attendees:
+          item.attendees?.map(
+            (a: {
+              emailAddress?: { address?: string; name?: string };
+              status?: { response?: string };
+            }) => ({
+              email: a.emailAddress?.address || '',
+              name: a.emailAddress?.name,
+              status: a.status?.response || 'none',
+            })
+          ) || null,
+        ai_summary: null,
+      });
+    }
+
+    // Get next page link for pagination (Microsoft Graph uses @odata.nextLink)
+    nextLink = data['@odata.nextLink'];
+    currentUrl = null; // Only use nextLink for subsequent pages
+  } while (nextLink && pageCount < maxPages);
 
   // Upsert events using provider_id as conflict key (safer than delete-then-insert)
   // This prevents data loss if the upsert partially fails
