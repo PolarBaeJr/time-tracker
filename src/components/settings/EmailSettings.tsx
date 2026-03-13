@@ -7,7 +7,7 @@
  */
 
 import * as React from 'react';
-import { View, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, TextInput, Platform, Alert } from 'react-native';
 import { Text, Button, Icon, type IconName } from '@/components/ui';
 import {
   useEmailConnections,
@@ -522,24 +522,41 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
   const [selectedProvider, setSelectedProvider] = React.useState<EmailProvider>('gmail');
   const [imapForm, setImapForm] = React.useState<IMAPFormState>(INITIAL_IMAP_STATE);
   const [imapError, setImapError] = React.useState<string | null>(null);
+  const [oauthError, setOauthError] = React.useState<string | null>(null);
 
   // Track which connections are being operated on
   const [syncingIds, setSyncingIds] = React.useState<Set<string>>(new Set());
   const [disconnectingIds, setDisconnectingIds] = React.useState<Set<string>>(new Set());
   const [togglingIds, setTogglingIds] = React.useState<Set<string>>(new Set());
 
-  // Reset form when provider changes
+  // Reset form and errors when provider changes
   React.useEffect(() => {
     setImapForm(INITIAL_IMAP_STATE);
     setImapError(null);
+    setOauthError(null);
   }, [selectedProvider]);
 
   // Handle OAuth provider connection
   const handleConnectOAuth = async (provider: EmailProvider) => {
-    if (provider === 'gmail') {
-      await connectGmailMutation.mutateAsync();
-    } else if (provider === 'outlook') {
-      await connectOutlookMutation.mutateAsync();
+    setOauthError(null);
+    try {
+      if (provider === 'gmail') {
+        await connectGmailMutation.mutateAsync();
+      } else if (provider === 'outlook') {
+        await connectOutlookMutation.mutateAsync();
+      }
+    } catch (err) {
+      // Display user-friendly error message for OAuth connection failures
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      if (message.includes('popup') || message.includes('blocked')) {
+        setOauthError('Popup was blocked. Please allow popups for this site and try again.');
+      } else if (message.includes('sessionStorage')) {
+        setOauthError('Unable to save authentication state. Please check your browser settings.');
+      } else if (message.includes('network') || message.includes('fetch')) {
+        setOauthError('Network error. Please check your connection and try again.');
+      } else {
+        setOauthError(`Failed to connect: ${message}`);
+      }
     }
   };
 
@@ -570,17 +587,46 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
     }
   };
 
-  // Handle disconnect
+  // Handle disconnect with confirmation
   const handleDisconnect = async (connectionId: string) => {
-    setDisconnectingIds(prev => new Set(prev).add(connectionId));
-    try {
-      await disconnectMutation.mutateAsync(connectionId);
-    } finally {
-      setDisconnectingIds(prev => {
-        const next = new Set(prev);
-        next.delete(connectionId);
-        return next;
-      });
+    const connection = connections.find(c => c.id === connectionId);
+    const emailDisplay = connection?.email_address ?? 'this email account';
+
+    const performDisconnect = async () => {
+      setDisconnectingIds(prev => new Set(prev).add(connectionId));
+      try {
+        await disconnectMutation.mutateAsync(connectionId);
+      } finally {
+        setDisconnectingIds(prev => {
+          const next = new Set(prev);
+          next.delete(connectionId);
+          return next;
+        });
+      }
+    };
+
+    // Show confirmation dialog (destructive action deletes all cached emails)
+    if (Platform.OS === 'web') {
+      if (
+        window.confirm(
+          `Disconnect ${emailDisplay}?\n\nThis will permanently delete all cached emails from this account.`
+        )
+      ) {
+        void performDisconnect();
+      }
+    } else {
+      Alert.alert(
+        'Disconnect Email',
+        `Disconnect ${emailDisplay}?\n\nThis will permanently delete all cached emails from this account.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Disconnect',
+            style: 'destructive',
+            onPress: () => void performDisconnect(),
+          },
+        ]
+      );
     }
   };
 
@@ -689,18 +735,31 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
 
           {/* OAuth providers */}
           {(selectedProvider === 'gmail' || selectedProvider === 'outlook') && (
-            <Button
-              onPress={() => handleConnectOAuth(selectedProvider)}
-              disabled={
-                disabled || connectGmailMutation.isPending || connectOutlookMutation.isPending
-              }
-              variant="primary"
-              size="md"
-            >
-              {connectGmailMutation.isPending || connectOutlookMutation.isPending
-                ? 'Connecting...'
-                : `Connect ${selectedProvider === 'gmail' ? 'Gmail' : 'Outlook'}`}
-            </Button>
+            <>
+              <Button
+                onPress={() => handleConnectOAuth(selectedProvider)}
+                disabled={
+                  disabled || connectGmailMutation.isPending || connectOutlookMutation.isPending
+                }
+                variant="primary"
+                size="md"
+              >
+                {connectGmailMutation.isPending || connectOutlookMutation.isPending
+                  ? 'Connecting...'
+                  : `Connect ${selectedProvider === 'gmail' ? 'Gmail' : 'Outlook'}`}
+              </Button>
+              {oauthError && (
+                <Text
+                  style={{
+                    color: colors.error,
+                    fontSize: fontSizes.sm,
+                    marginTop: spacing.xs,
+                  }}
+                >
+                  {oauthError}
+                </Text>
+              )}
+            </>
           )}
 
           {/* IMAP form */}
