@@ -17,6 +17,7 @@ import {
   useSyncCalendar,
 } from '@/hooks/useCalendar';
 import { useTheme } from '@/theme';
+import { getStoredOAuthError } from '@/lib/oauth/callback';
 import type { CalendarConnection, CalendarProvider } from '@/schemas/calendar';
 
 // Provider colors
@@ -287,6 +288,20 @@ function CalendarSettingsWeb({ disabled = false }: CalendarSettingsProps): React
   const [syncingId, setSyncingId] = React.useState<string | null>(null);
   const [disconnectingId, setDisconnectingId] = React.useState<string | null>(null);
 
+  // OAuth error state (displayed when OAuth callback returns an error)
+  const [oauthError, setOauthError] = React.useState<string | null>(null);
+
+  // Check for OAuth errors on mount (e.g., from OAuth callback redirect)
+  React.useEffect(() => {
+    const storedError = getStoredOAuthError();
+    if (
+      storedError &&
+      (storedError.type === 'google_calendar' || storedError.type === 'outlook_calendar')
+    ) {
+      setOauthError(storedError.error);
+    }
+  }, []);
+
   // Handlers
   const handleSync = React.useCallback(
     async (connectionId: string) => {
@@ -375,12 +390,51 @@ function CalendarSettingsWeb({ disabled = false }: CalendarSettingsProps): React
         </Text>
         <CalendarProviderSelector
           disabled={disabled}
-          onSelectGoogle={() => connectGoogleMutation.mutate()}
-          onSelectOutlook={() => connectOutlookMutation.mutate()}
+          onSelectGoogle={() => {
+            setOauthError(null);
+            connectGoogleMutation.mutate();
+          }}
+          onSelectOutlook={() => {
+            setOauthError(null);
+            connectOutlookMutation.mutate();
+          }}
           isConnectingGoogle={connectGoogleMutation.isPending}
           isConnectingOutlook={connectOutlookMutation.isPending}
         />
-        {!hasConnections && (
+        {/* OAuth Error Display */}
+        {oauthError && (
+          <View
+            style={[
+              styles.oauthErrorContainer,
+              {
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: 8,
+                padding: spacing.sm,
+                marginTop: spacing.sm,
+              },
+            ]}
+          >
+            <Icon name="alert" size={14} color={colors.error} />
+            <Text
+              style={{
+                fontSize: fontSizes.xs,
+                color: colors.error,
+                marginLeft: spacing.xs,
+                flex: 1,
+              }}
+            >
+              {oauthError}
+            </Text>
+            <Pressable
+              onPress={() => setOauthError(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss error"
+            >
+              <Icon name="x" size={14} color={colors.error} />
+            </Pressable>
+          </View>
+        )}
+        {!hasConnections && !oauthError && (
           <Text
             style={{
               fontSize: fontSizes.xs,
@@ -481,6 +535,10 @@ const styles = StyleSheet.create({
   providerButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  oauthErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

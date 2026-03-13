@@ -19,6 +19,7 @@ import {
   useToggleEmailConnection,
 } from '@/hooks/useEmail';
 import { useTheme } from '@/theme';
+import { getStoredOAuthError } from '@/lib/oauth/callback';
 import type { EmailProvider, EmailConnection } from '@/schemas';
 
 // Provider display info
@@ -535,6 +536,18 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
     setImapError(null);
     setOauthError(null);
   }, [selectedProvider]);
+
+  // Check for OAuth errors on mount (e.g., from OAuth callback redirect)
+  React.useEffect(() => {
+    const storedError = getStoredOAuthError();
+    if (storedError && (storedError.type === 'gmail' || storedError.type === 'outlook_email')) {
+      setOauthError(storedError.error);
+      // Auto-open the add form to show the error
+      setShowAddForm(true);
+      // Select the provider that had the error
+      setSelectedProvider(storedError.type === 'gmail' ? 'gmail' : 'outlook');
+    }
+  }, []);
 
   // Handle OAuth provider connection
   const handleConnectOAuth = async (provider: EmailProvider) => {

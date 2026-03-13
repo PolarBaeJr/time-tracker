@@ -336,14 +336,28 @@ async function syncGoogleCalendarEvents(
     });
   }
 
-  // Delete old events for this connection and insert new ones
-  await supabase.from('calendar_events').delete().eq('connection_id', connection.id);
-
+  // Upsert events using provider_id as conflict key (safer than delete-then-insert)
+  // This prevents data loss if the upsert partially fails
   if (events.length > 0) {
-    const { error: insertError } = await supabase.from('calendar_events').insert(events);
-    if (insertError) {
-      throw new Error(`Failed to store events: ${insertError.message}`);
+    // Prepare events for upsert - remove 'id' field to let DB generate it on insert
+    const eventsForUpsert = events.map(({ id: _id, ...rest }) => rest);
+    const { error: upsertError } = await supabase
+      .from('calendar_events')
+      .upsert(eventsForUpsert, { onConflict: 'connection_id,provider_id' });
+    if (upsertError) {
+      throw new Error(`Failed to store events: ${upsertError.message}`);
     }
+  }
+
+  // Clean up events that are no longer in the calendar (deleted or outside date range)
+  const providerIds = events.map(e => e.provider_id);
+  if (providerIds.length > 0) {
+    // Delete events for this connection that weren't in the sync response
+    await supabase
+      .from('calendar_events')
+      .delete()
+      .eq('connection_id', connection.id)
+      .not('provider_id', 'in', `(${providerIds.join(',')})`);
   }
 
   // Update last_sync_at
@@ -431,14 +445,28 @@ async function syncOutlookCalendarEvents(
     });
   }
 
-  // Delete old events for this connection and insert new ones
-  await supabase.from('calendar_events').delete().eq('connection_id', connection.id);
-
+  // Upsert events using provider_id as conflict key (safer than delete-then-insert)
+  // This prevents data loss if the upsert partially fails
   if (events.length > 0) {
-    const { error: insertError } = await supabase.from('calendar_events').insert(events);
-    if (insertError) {
-      throw new Error(`Failed to store events: ${insertError.message}`);
+    // Prepare events for upsert - remove 'id' field to let DB generate it on insert
+    const eventsForUpsert = events.map(({ id: _id, ...rest }) => rest);
+    const { error: upsertError } = await supabase
+      .from('calendar_events')
+      .upsert(eventsForUpsert, { onConflict: 'connection_id,provider_id' });
+    if (upsertError) {
+      throw new Error(`Failed to store events: ${upsertError.message}`);
     }
+  }
+
+  // Clean up events that are no longer in the calendar (deleted or outside date range)
+  const providerIds = events.map(e => e.provider_id);
+  if (providerIds.length > 0) {
+    // Delete events for this connection that weren't in the sync response
+    await supabase
+      .from('calendar_events')
+      .delete()
+      .eq('connection_id', connection.id)
+      .not('provider_id', 'in', `(${providerIds.join(',')})`);
   }
 
   // Update last_sync_at

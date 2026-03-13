@@ -75,6 +75,88 @@ function oauthDebug(type: string, step: string, data?: unknown) {
 }
 
 // ============================================================================
+// ERROR STORAGE
+// ============================================================================
+
+/**
+ * SessionStorage key for OAuth errors.
+ * Used to pass error messages from the callback handler to the UI.
+ */
+export const OAUTH_ERROR_STORAGE_KEY = 'oauth_error';
+
+/**
+ * SessionStorage key for OAuth success.
+ * Used to pass success state from the callback handler to the UI.
+ */
+export const OAUTH_SUCCESS_STORAGE_KEY = 'oauth_success';
+
+/**
+ * Structure for OAuth error stored in sessionStorage
+ */
+export interface StoredOAuthError {
+  type: OAuthCallbackType | 'unknown';
+  error: string;
+  description?: string;
+  timestamp: number;
+}
+
+/**
+ * Structure for OAuth success stored in sessionStorage
+ */
+export interface StoredOAuthSuccess {
+  type: OAuthCallbackType;
+  emailAddress: string;
+  timestamp: number;
+}
+
+/**
+ * Store an OAuth error in sessionStorage for the UI to display.
+ * The error will be picked up by the settings components on mount.
+ */
+function storeOAuthError(
+  type: OAuthCallbackType | 'unknown',
+  error: string,
+  description?: string
+): void {
+  try {
+    const storedError: StoredOAuthError = {
+      type,
+      error,
+      description,
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(OAUTH_ERROR_STORAGE_KEY, JSON.stringify(storedError));
+  } catch {
+    // Ignore sessionStorage errors (e.g., private browsing mode)
+  }
+}
+
+/**
+ * Get and clear any stored OAuth error.
+ * Returns null if no error is stored or if the error is stale (> 5 minutes old).
+ */
+export function getStoredOAuthError(): StoredOAuthError | null {
+  try {
+    const stored = sessionStorage.getItem(OAUTH_ERROR_STORAGE_KEY);
+    if (!stored) return null;
+
+    sessionStorage.removeItem(OAUTH_ERROR_STORAGE_KEY);
+
+    const error = JSON.parse(stored) as StoredOAuthError;
+
+    // Ignore stale errors (older than 5 minutes)
+    const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+    if (Date.now() - error.timestamp > STALE_THRESHOLD_MS) {
+      return null;
+    }
+
+    return error;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
 // URL DETECTION
 // ============================================================================
 
@@ -607,10 +689,32 @@ export function handleOAuthCallback(url: string): boolean {
 
   const { code, state, error, errorDescription } = parseCallbackParams(url);
 
-  // Handle OAuth errors
+  // Handle OAuth errors from the provider (e.g., access_denied, temporarily_unavailable)
   if (error) {
     oauthDebug(callbackType, 'oauth_error', { error, errorDescription });
-    // TODO: Show user-friendly error message
+
+    // Build a user-friendly error message
+    let friendlyMessage: string;
+    switch (error) {
+      case 'access_denied':
+        friendlyMessage = 'You cancelled the authorization request.';
+        break;
+      case 'temporarily_unavailable':
+        friendlyMessage =
+          'The authorization server is temporarily unavailable. Please try again later.';
+        break;
+      case 'server_error':
+        friendlyMessage = 'The authorization server encountered an error. Please try again.';
+        break;
+      case 'invalid_request':
+        friendlyMessage = 'Invalid authorization request. Please try connecting again.';
+        break;
+      default:
+        friendlyMessage = errorDescription || `Authorization failed: ${error}`;
+    }
+
+    // Store the error for the UI to display
+    storeOAuthError(callbackType, friendlyMessage, errorDescription ?? undefined);
     console.error(`OAuth error: ${error} - ${errorDescription}`);
     return true;
   }
@@ -675,7 +779,8 @@ export function handleOAuthCallback(url: string): boolean {
 
     if (!result.success) {
       console.error(`OAuth callback failed: ${result.error}`);
-      // TODO: Show user-friendly error notification
+      // Store the error for the UI to display when the settings screen loads
+      storeOAuthError(result.type, result.error || 'Connection failed. Please try again.');
     }
   })();
 
