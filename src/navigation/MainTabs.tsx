@@ -2,14 +2,15 @@
  * Main Tab Navigator
  *
  * Bottom tab navigator with themed tab bar and icons.
- * Provides navigation between the main app screens:
+ * Optimized for mobile UX with 5 primary tabs:
  * - Hub: Dashboard home with widget grid (default landing screen)
  * - Timer: Main timer interface
  * - History: Time entry history
  * - Analytics: Dashboard with charts
- * - Categories: Category management
- * - Goals: Monthly goals
- * - Settings: User preferences
+ * - Settings: User preferences, categories, and goals
+ *
+ * Categories and Goals are now accessible as stack screens from Settings
+ * to reduce bottom bar clutter while maintaining quick access to core features.
  */
 
 import * as React from 'react';
@@ -24,8 +25,6 @@ import {
   TimerScreen as TimerScreenComponent,
   HistoryScreen as HistoryScreenComponent,
   AnalyticsScreen as AnalyticsScreenComponent,
-  CategoriesScreen as CategoriesScreenComponent,
-  GoalsScreen as GoalsScreenComponent,
   SettingsScreen as SettingsScreenComponent,
 } from '@/screens';
 
@@ -46,8 +45,6 @@ function getTabIcon(routeName: keyof MainTabParamList, focused: boolean): IconNa
     Timer: { active: 'time', inactive: 'time-outline' },
     History: { active: 'list', inactive: 'list-outline' },
     Analytics: { active: 'bar-chart', inactive: 'bar-chart-outline' },
-    Categories: { active: 'folder', inactive: 'folder-outline' },
-    Goals: { active: 'flag', inactive: 'flag-outline' },
     Settings: { active: 'settings', inactive: 'settings-outline' },
   };
 
@@ -112,12 +109,6 @@ export function MainTabs(): React.ReactElement {
           component={AnalyticsScreenComponent}
           options={{ title: 'Analytics' }}
         />
-        <Tab.Screen
-          name="Categories"
-          component={CategoriesScreenComponent}
-          options={{ title: 'Categories', headerShown: false }}
-        />
-        <Tab.Screen name="Goals" component={GoalsScreenComponent} options={{ title: 'Goals' }} />
         <Tab.Screen
           name="Settings"
           component={SettingsScreenComponent}

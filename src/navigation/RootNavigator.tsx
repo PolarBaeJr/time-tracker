@@ -15,7 +15,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Text } from '@/components/ui';
 import { EntryEditModal } from '@/components/history';
 import { useAuth, useCategories } from '@/hooks';
-import { LoginScreen, SetupScreen, FocusModeScreen } from '@/screens';
+import {
+  LoginScreen,
+  SetupScreen,
+  FocusModeScreen,
+  CategoriesScreen,
+  GoalsScreen,
+} from '@/screens';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
 import { TimeEntrySchema } from '@/schemas';
@@ -154,6 +160,30 @@ export function RootNavigator(): React.ReactElement {
             name="FocusMode"
             component={FocusModeScreen}
             options={{ presentation: 'fullScreenModal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="Categories"
+            component={CategoriesScreen}
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              headerTitle: 'Categories',
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="Goals"
+            component={GoalsScreen}
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              headerTitle: 'Goals',
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+            }}
           />
         </>
       )}

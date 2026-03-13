@@ -10,22 +10,13 @@ import type { MainTabParamList } from '@/navigation/types';
 
 type TabNav = BottomTabNavigationProp<MainTabParamList>;
 
-const TAB_NAMES: (keyof MainTabParamList)[] = [
-  'Timer',
-  'History',
-  'Analytics',
-  'Categories',
-  'Goals',
-  'Settings',
-];
+const TAB_NAMES: (keyof MainTabParamList)[] = ['Timer', 'History', 'Analytics', 'Settings'];
 
 const ALL_SHORTCUT_DESCRIPTIONS = [
   { key: 'Cmd/Ctrl+1', description: 'Go to Timer' },
   { key: 'Cmd/Ctrl+2', description: 'Go to History' },
   { key: 'Cmd/Ctrl+3', description: 'Go to Analytics' },
-  { key: 'Cmd/Ctrl+4', description: 'Go to Categories' },
-  { key: 'Cmd/Ctrl+5', description: 'Go to Goals' },
-  { key: 'Cmd/Ctrl+6', description: 'Go to Settings' },
+  { key: 'Cmd/Ctrl+4', description: 'Go to Settings' },
   { key: '?', description: 'Show keyboard shortcuts' },
   { key: 'Space', description: 'Start / Stop timer (Timer tab)' },
 ];

@@ -22,6 +22,7 @@ import {
   AISettings,
   EmailSettings,
   CalendarSettings,
+  SettingsNavLink,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -196,6 +197,26 @@ export function SettingsScreen(): React.ReactElement {
           />
         }
       >
+        {/* Data Management - Categories & Goals */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Data Management</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <SettingsNavLink
+              screen="Categories"
+              icon="folder"
+              title="Categories"
+              subtitle="Organize your time entries by project or task"
+            />
+            <View style={styles.navLinkDivider} />
+            <SettingsNavLink
+              screen="Goals"
+              icon="flag"
+              title="Goals"
+              subtitle="Set and track monthly time goals"
+            />
+          </Card>
+        </View>
+
         {/* Appearance Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
@@ -365,6 +386,11 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     borderColor: colors.border,
+  },
+  navLinkDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.xs,
   },
   versionContainer: {
     alignItems: 'center',

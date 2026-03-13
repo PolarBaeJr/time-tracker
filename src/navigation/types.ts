@@ -26,6 +26,8 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
  * - Login: Shown when user is not authenticated
  * - Main: Tab navigator shown when user is authenticated
  * - EntryEdit: Modal for editing time entries (can be accessed from any tab)
+ * - Categories: Category management screen (accessible from Settings)
+ * - Goals: Monthly goal management screen (accessible from Settings)
  */
 export type RootStackParamList = {
   /** Login screen - no parameters needed */
@@ -44,19 +46,28 @@ export type RootStackParamList = {
 
   /** Focus mode - fullscreen distraction-free timer view */
   FocusMode: undefined;
+
+  /** Categories management - accessible from Settings */
+  Categories: undefined;
+
+  /** Goals management - optional month parameter */
+  Goals:
+    | {
+        /** Initial month to display (YYYY-MM-DD) */
+        month?: string;
+      }
+    | undefined;
 };
 
 /**
  * Main Tab Navigator Parameter List
  *
- * The bottom tab navigator with all main app screens:
+ * The bottom tab navigator with core app screens (5 tabs for optimal mobile UX):
  * - Hub: Dashboard home with widget grid
  * - Timer: Main timer interface
  * - History: Time entry history with filters
  * - Analytics: Dashboard with charts and stats
- * - Categories: Category management
- * - Goals: Monthly goal setting
- * - Settings: User preferences
+ * - Settings: User preferences, categories, and goals management
  */
 export type MainTabParamList = {
   /** Hub screen - dashboard home with widgets */
@@ -80,19 +91,13 @@ export type MainTabParamList = {
   /** Analytics dashboard - no parameters needed */
   Analytics: undefined;
 
-  /** Categories management - no parameters needed */
-  Categories: undefined;
-
-  /** Goals management - optional month parameter */
-  Goals:
+  /** Settings screen - optional initial section parameter */
+  Settings:
     | {
-        /** Initial month to display (YYYY-MM-DD) */
-        month?: string;
+        /** Initial section to scroll to or open */
+        section?: 'categories' | 'goals';
       }
     | undefined;
-
-  /** Settings screen - no parameters needed */
-  Settings: undefined;
 };
 
 /**
