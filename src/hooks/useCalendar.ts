@@ -23,6 +23,7 @@ import {
   googleCalendarApiFetch,
   outlookCalendarApiFetch,
 } from '@/lib/calendar/oauth';
+import { CALENDAR_SYNC_CONFIG } from '@/lib/calendar/constants';
 import { encryptApiKey, decryptApiKey } from '@/lib/crypto';
 import type {
   CalendarConnection,
@@ -774,6 +775,7 @@ export function useCalendarEvents(connectionId: string | undefined, dateRange?: 
 
 /**
  * Sync calendar events from provider
+ * Enforces a 5-minute cooldown between syncs to prevent API rate limiting.
  */
 export function useSyncCalendar() {
   const queryClient = useQueryClient();
@@ -783,6 +785,19 @@ export function useSyncCalendar() {
       const connection = await fetchCalendarConnectionWithTokens(connectionId);
       if (!connection) {
         throw new Error('Calendar connection not found');
+      }
+
+      // Enforce sync cooldown (5 minutes between syncs)
+      if (connection.last_sync_at) {
+        const lastSyncTime = new Date(connection.last_sync_at).getTime();
+        const now = Date.now();
+        const elapsedMs = now - lastSyncTime;
+        const remainingMs = CALENDAR_SYNC_CONFIG.SYNC_COOLDOWN_MS - elapsedMs;
+
+        if (remainingMs > 0) {
+          const remainingSeconds = Math.ceil(remainingMs / 1000);
+          throw new Error(`Please wait ${remainingSeconds} seconds before syncing again.`);
+        }
       }
 
       if (connection.provider === 'google') {
