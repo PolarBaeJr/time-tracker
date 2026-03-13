@@ -10,6 +10,10 @@ export {
   isOAuthCallback,
   setupElectronOAuthListeners,
   processWebCallback,
+  getStoredOAuthError,
+  getStoredOAuthSuccess,
   type OAuthCallbackType,
   type OAuthCallbackResult,
+  type StoredOAuthError,
+  type StoredOAuthSuccess,
 } from './callback';

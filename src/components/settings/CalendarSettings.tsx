@@ -17,7 +17,7 @@ import {
   useSyncCalendar,
 } from '@/hooks/useCalendar';
 import { useTheme } from '@/theme';
-import { getStoredOAuthError } from '@/lib/oauth/callback';
+import { getStoredOAuthError, getStoredOAuthSuccess } from '@/lib/oauth/callback';
 import type { CalendarConnection, CalendarProvider } from '@/schemas/calendar';
 
 // Provider colors
@@ -288,17 +288,32 @@ function CalendarSettingsWeb({ disabled = false }: CalendarSettingsProps): React
   const [syncingId, setSyncingId] = React.useState<string | null>(null);
   const [disconnectingId, setDisconnectingId] = React.useState<string | null>(null);
 
-  // OAuth error state (displayed when OAuth callback returns an error)
+  // OAuth error and success states (displayed when OAuth callback returns)
   const [oauthError, setOauthError] = React.useState<string | null>(null);
+  const [oauthSuccess, setOauthSuccess] = React.useState<string | null>(null);
 
-  // Check for OAuth errors on mount (e.g., from OAuth callback redirect)
+  // Check for OAuth errors or success on mount (e.g., from OAuth callback redirect)
   React.useEffect(() => {
+    // Check for stored error from callback
     const storedError = getStoredOAuthError();
     if (
       storedError &&
       (storedError.type === 'google_calendar' || storedError.type === 'outlook_calendar')
     ) {
       setOauthError(storedError.error);
+      return;
+    }
+
+    // Check for stored success from callback
+    const storedSuccess = getStoredOAuthSuccess();
+    if (
+      storedSuccess &&
+      (storedSuccess.type === 'google_calendar' || storedSuccess.type === 'outlook_calendar')
+    ) {
+      setOauthSuccess(`Successfully connected ${storedSuccess.emailAddress}`);
+      // Auto-dismiss success message after 5 seconds
+      const timeout = setTimeout(() => setOauthSuccess(null), 5000);
+      return () => clearTimeout(timeout);
     }
   }, []);
 
@@ -347,6 +362,42 @@ function CalendarSettingsWeb({ disabled = false }: CalendarSettingsProps): React
 
   return (
     <View style={styles.container}>
+      {/* Success message from OAuth callback */}
+      {oauthSuccess && (
+        <View
+          style={[
+            styles.successBanner,
+            {
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              borderRadius: 8,
+              padding: spacing.sm,
+              marginBottom: spacing.sm,
+              flexDirection: 'row',
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <Icon name="checkmark-circle" size={16} color="#22C55E" />
+          <Text
+            style={{
+              fontSize: fontSizes.sm,
+              color: '#22C55E',
+              marginLeft: spacing.xs,
+              flex: 1,
+            }}
+          >
+            {oauthSuccess}
+          </Text>
+          <Pressable
+            onPress={() => setOauthSuccess(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+          >
+            <Icon name="x" size={16} color="#22C55E" />
+          </Pressable>
+        </View>
+      )}
+
       {/* Connected Calendars */}
       {hasConnections && (
         <View style={styles.section}>
@@ -462,6 +513,9 @@ export function CalendarSettings(props: CalendarSettingsProps): React.ReactEleme
 const styles = StyleSheet.create({
   container: {
     gap: 16,
+  },
+  successBanner: {
+    // Additional styles applied inline
   },
   section: {
     gap: 4,

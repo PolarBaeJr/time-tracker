@@ -156,6 +156,48 @@ export function getStoredOAuthError(): StoredOAuthError | null {
   }
 }
 
+/**
+ * Store an OAuth success in sessionStorage for the UI to display.
+ * The success message will be picked up by the settings components on mount.
+ */
+function storeOAuthSuccess(type: OAuthCallbackType, emailAddress: string): void {
+  try {
+    const storedSuccess: StoredOAuthSuccess = {
+      type,
+      emailAddress,
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(OAUTH_SUCCESS_STORAGE_KEY, JSON.stringify(storedSuccess));
+  } catch {
+    // Ignore sessionStorage errors (e.g., private browsing mode)
+  }
+}
+
+/**
+ * Get and clear any stored OAuth success.
+ * Returns null if no success is stored or if the success is stale (> 5 minutes old).
+ */
+export function getStoredOAuthSuccess(): StoredOAuthSuccess | null {
+  try {
+    const stored = sessionStorage.getItem(OAUTH_SUCCESS_STORAGE_KEY);
+    if (!stored) return null;
+
+    sessionStorage.removeItem(OAUTH_SUCCESS_STORAGE_KEY);
+
+    const success = JSON.parse(stored) as StoredOAuthSuccess;
+
+    // Ignore stale success (older than 5 minutes)
+    const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+    if (Date.now() - success.timestamp > STALE_THRESHOLD_MS) {
+      return null;
+    }
+
+    return success;
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================================
 // URL DETECTION
 // ============================================================================
@@ -756,28 +798,41 @@ export function handleOAuthCallback(url: string): boolean {
     }
   }
 
-  // Fire and forget - async handler
+  // Process the OAuth callback asynchronously
+  // Store both success and error states for the UI to pick up
   void (async () => {
     let result: OAuthCallbackResult;
 
-    switch (callbackType) {
-      case 'gmail':
-        result = await handleGmailCallback(code);
-        break;
-      case 'outlook_email':
-        result = await handleOutlookEmailCallback(code);
-        break;
-      case 'google_calendar':
-        result = await handleGoogleCalendarCallback(code);
-        break;
-      case 'outlook_calendar':
-        result = await handleOutlookCalendarCallback(code);
-        break;
-      default:
-        return;
+    try {
+      switch (callbackType) {
+        case 'gmail':
+          result = await handleGmailCallback(code);
+          break;
+        case 'outlook_email':
+          result = await handleOutlookEmailCallback(code);
+          break;
+        case 'google_calendar':
+          result = await handleGoogleCalendarCallback(code);
+          break;
+        case 'outlook_calendar':
+          result = await handleOutlookCalendarCallback(code);
+          break;
+        default:
+          return;
+      }
+    } catch (err) {
+      // Handle unexpected errors (network timeout, encryption failure, etc.)
+      const errorMessage = err instanceof Error ? err.message : 'Connection failed';
+      console.error(`OAuth callback failed with exception: ${errorMessage}`);
+      storeOAuthError(callbackType, `Connection failed: ${errorMessage}`);
+      return;
     }
 
-    if (!result.success) {
+    if (result.success) {
+      // Store success for the UI to display a confirmation message
+      storeOAuthSuccess(result.type, result.emailAddress || 'unknown');
+      oauthDebug(callbackType, 'callback_complete_success', { emailAddress: result.emailAddress });
+    } else {
       console.error(`OAuth callback failed: ${result.error}`);
       // Store the error for the UI to display when the settings screen loads
       storeOAuthError(result.type, result.error || 'Connection failed. Please try again.');

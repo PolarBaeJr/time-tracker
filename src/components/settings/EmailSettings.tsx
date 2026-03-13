@@ -19,7 +19,7 @@ import {
   useToggleEmailConnection,
 } from '@/hooks/useEmail';
 import { useTheme } from '@/theme';
-import { getStoredOAuthError } from '@/lib/oauth/callback';
+import { getStoredOAuthError, getStoredOAuthSuccess } from '@/lib/oauth/callback';
 import type { EmailProvider, EmailConnection } from '@/schemas';
 
 // Provider display info
@@ -524,6 +524,7 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
   const [imapForm, setImapForm] = React.useState<IMAPFormState>(INITIAL_IMAP_STATE);
   const [imapError, setImapError] = React.useState<string | null>(null);
   const [oauthError, setOauthError] = React.useState<string | null>(null);
+  const [oauthSuccess, setOauthSuccess] = React.useState<string | null>(null);
 
   // Track which connections are being operated on
   const [syncingIds, setSyncingIds] = React.useState<Set<string>>(new Set());
@@ -535,10 +536,12 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
     setImapForm(INITIAL_IMAP_STATE);
     setImapError(null);
     setOauthError(null);
+    setOauthSuccess(null);
   }, [selectedProvider]);
 
-  // Check for OAuth errors on mount (e.g., from OAuth callback redirect)
+  // Check for OAuth errors or success on mount (e.g., from OAuth callback redirect)
   React.useEffect(() => {
+    // Check for stored error from callback
     const storedError = getStoredOAuthError();
     if (storedError && (storedError.type === 'gmail' || storedError.type === 'outlook_email')) {
       setOauthError(storedError.error);
@@ -546,6 +549,19 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
       setShowAddForm(true);
       // Select the provider that had the error
       setSelectedProvider(storedError.type === 'gmail' ? 'gmail' : 'outlook');
+      return;
+    }
+
+    // Check for stored success from callback
+    const storedSuccess = getStoredOAuthSuccess();
+    if (
+      storedSuccess &&
+      (storedSuccess.type === 'gmail' || storedSuccess.type === 'outlook_email')
+    ) {
+      setOauthSuccess(`Successfully connected ${storedSuccess.emailAddress}`);
+      // Auto-dismiss success message after 5 seconds
+      const timeout = setTimeout(() => setOauthSuccess(null), 5000);
+      return () => clearTimeout(timeout);
     }
   }, []);
 
@@ -682,6 +698,42 @@ function EmailSettingsContent({ disabled = false }: EmailSettingsProps): React.R
 
   return (
     <View style={styles.container}>
+      {/* Success message from OAuth callback */}
+      {oauthSuccess && (
+        <View
+          style={[
+            styles.successBanner,
+            {
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              borderRadius: borderRadius.md,
+              padding: spacing.sm,
+              marginBottom: spacing.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <Icon name="checkmark-circle" size={16} color="#22C55E" />
+          <Text
+            style={{
+              fontSize: fontSizes.sm,
+              color: '#22C55E',
+              marginLeft: spacing.xs,
+              flex: 1,
+            }}
+          >
+            {oauthSuccess}
+          </Text>
+          <Pressable
+            onPress={() => setOauthSuccess(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+          >
+            <Icon name="x" size={16} color="#22C55E" />
+          </Pressable>
+        </View>
+      )}
+
       {/* Connected accounts list */}
       {hasConnections && (
         <View style={styles.connectionsList}>
@@ -815,6 +867,9 @@ export function EmailSettings(props: EmailSettingsProps): React.ReactElement | n
 const styles = StyleSheet.create({
   container: {
     gap: 16,
+  },
+  successBanner: {
+    // Additional styles applied inline
   },
   connectionsList: {
     gap: 12,
