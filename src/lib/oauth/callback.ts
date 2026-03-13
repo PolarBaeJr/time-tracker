@@ -621,19 +621,31 @@ export function handleOAuthCallback(url: string): boolean {
   }
 
   // Verify state matches (CSRF protection)
-  // If the URL has a state parameter, we MUST verify it against stored state
+  // State validation is REQUIRED - reject if either state is missing or they don't match
   const stateKey = getStateKeyForType(callbackType);
-  if (stateKey && state) {
+  if (stateKey) {
     const storedState = sessionStorage.getItem(stateKey);
-    if (!storedState) {
-      // State in URL but not in sessionStorage - likely opened in wrong tab or storage cleared
+
+    // Case 1: State expected (storedState exists) but not provided in URL - possible CSRF attack
+    if (storedState && !state) {
+      oauthDebug(callbackType, 'missing_url_state');
+      console.error(
+        'OAuth state verification failed: state parameter missing from URL. Possible CSRF attack.'
+      );
+      return true;
+    }
+
+    // Case 2: State in URL but not in sessionStorage - likely opened in wrong tab or storage cleared
+    if (state && !storedState) {
       oauthDebug(callbackType, 'missing_stored_state');
       console.error(
         'OAuth state verification failed: no stored state found. Please try connecting again.'
       );
       return true;
     }
-    if (state !== storedState) {
+
+    // Case 3: Both present but don't match - CSRF attack
+    if (state && storedState && state !== storedState) {
       oauthDebug(callbackType, 'state_mismatch');
       console.error('OAuth state mismatch - possible CSRF attack');
       return true;
