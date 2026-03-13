@@ -514,12 +514,19 @@ async function updateConnectionTokens(
 
 /**
  * Update connection sync status
+ * Silently handles the case where connection was deleted during sync
  */
 async function updateSyncStatus(
   supabase: SupabaseClient,
   connectionId: string,
   error: string | null
-): Promise<void> {
+): Promise<boolean> {
+  // First check if connection still exists to avoid confusing errors
+  if (!(await connectionExists(supabase, connectionId))) {
+    console.log(`Connection ${connectionId} was deleted, skipping status update`);
+    return false;
+  }
+
   const { error: updateError } = await supabase
     .from('email_connections')
     .update({
@@ -529,18 +536,44 @@ async function updateSyncStatus(
     .eq('id', connectionId);
 
   if (updateError) {
-    console.error('Failed to update sync status:', updateError);
+    // Connection may have been deleted between check and update
+    console.warn('Failed to update sync status:', updateError.message);
+    return false;
   }
+
+  return true;
+}
+
+/**
+ * Check if connection still exists (race condition protection)
+ */
+async function connectionExists(supabase: SupabaseClient, connectionId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('email_connections')
+    .select('id')
+    .eq('id', connectionId)
+    .maybeSingle();
+
+  return data !== null;
 }
 
 /**
  * Upsert email messages to database
+ * Returns null if connection was deleted during sync (race condition)
  */
 async function upsertMessages(
   supabase: SupabaseClient,
+  connectionId: string,
   messages: EmailMessageRow[]
-): Promise<number> {
+): Promise<number | null> {
   if (messages.length === 0) return 0;
+
+  // Check if connection still exists before upserting
+  // This handles the race condition where user disconnects during sync
+  if (!(await connectionExists(supabase, connectionId))) {
+    console.log(`Connection ${connectionId} was deleted during sync, skipping upsert`);
+    return null;
+  }
 
   const { error, data } = await supabase
     .from('email_messages')
@@ -551,6 +584,11 @@ async function upsertMessages(
     .select('id');
 
   if (error) {
+    // Handle FK violation - connection was deleted between check and upsert
+    if (error.code === '23503' || error.message.includes('foreign key')) {
+      console.log(`Connection ${connectionId} was deleted during sync (FK violation)`);
+      return null;
+    }
     throw new Error(`Failed to upsert messages: ${error.message}`);
   }
 
@@ -757,14 +795,23 @@ Deno.serve(async (req: Request) => {
     }
 
     // Upsert messages to database
-    let messageCount: number;
+    let messageCount: number | null;
 
     try {
-      messageCount = await upsertMessages(supabase, messages);
+      messageCount = await upsertMessages(supabase, connectionId, messages);
     } catch (upsertError) {
       const errorMessage = upsertError instanceof Error ? upsertError.message : 'Database error';
       await updateSyncStatus(supabase, connectionId, errorMessage);
       return errorResponse(`Failed to save messages: ${errorMessage}`, 500);
+    }
+
+    // Handle race condition: connection was deleted during sync
+    if (messageCount === null) {
+      return jsonResponse({
+        success: false,
+        error: 'Email connection was disconnected during sync',
+        disconnected: true,
+      });
     }
 
     // Update sync status (success)
