@@ -805,10 +805,9 @@ export function useDisconnectCalendar() {
 
   return useMutation({
     mutationFn: async (connectionId: string) => {
-      // Delete events first (foreign key constraint)
-      await supabase.from('calendar_events').delete().eq('connection_id', connectionId);
-
-      // Delete the connection
+      // Delete the connection - events are automatically deleted via ON DELETE CASCADE
+      // We rely on the database cascade rather than manual deletion to avoid race conditions
+      // where a sync operation might insert new events between our delete and the connection delete.
       const { error } = await supabase.from('calendar_connections').delete().eq('id', connectionId);
 
       if (error) {
