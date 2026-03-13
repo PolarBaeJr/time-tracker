@@ -89,8 +89,12 @@ export function detectOAuthCallbackType(url: string): OAuthCallbackType | null {
     const provider = sessionStorage.getItem('calendar_provider');
     if (provider === 'google') return 'google_calendar';
     if (provider === 'outlook') return 'outlook_calendar';
-    // Fallback: try to detect from state or default to google
-    return 'google_calendar';
+    // Provider not stored - this shouldn't happen in normal flow.
+    // Return null to signal an error state rather than guessing wrong.
+    console.error(
+      'Calendar OAuth callback received but provider not found in sessionStorage. OAuth flow may be corrupted.'
+    );
+    return null;
   }
   if (url.includes('/calendar/google/callback')) return 'google_calendar';
   if (url.includes('/calendar/outlook/callback')) return 'outlook_calendar';
@@ -616,11 +620,20 @@ export function handleOAuthCallback(url: string): boolean {
     return true;
   }
 
-  // Verify state matches (if state was used)
-  const savedState = getStateKeyForType(callbackType);
-  if (savedState) {
-    const storedState = sessionStorage.getItem(savedState);
-    if (state && storedState && state !== storedState) {
+  // Verify state matches (CSRF protection)
+  // If the URL has a state parameter, we MUST verify it against stored state
+  const stateKey = getStateKeyForType(callbackType);
+  if (stateKey && state) {
+    const storedState = sessionStorage.getItem(stateKey);
+    if (!storedState) {
+      // State in URL but not in sessionStorage - likely opened in wrong tab or storage cleared
+      oauthDebug(callbackType, 'missing_stored_state');
+      console.error(
+        'OAuth state verification failed: no stored state found. Please try connecting again.'
+      );
+      return true;
+    }
+    if (state !== storedState) {
       oauthDebug(callbackType, 'state_mismatch');
       console.error('OAuth state mismatch - possible CSRF attack');
       return true;
