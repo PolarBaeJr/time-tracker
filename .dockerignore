@@ -8,7 +8,11 @@ node_modules
 dist
 build
 coverage
+electron
+electron-dist
 *.log
+*.dmg
+*.apk
 .DS_Store
 .env
 .env.*

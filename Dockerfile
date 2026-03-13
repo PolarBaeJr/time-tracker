@@ -5,7 +5,10 @@ FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm pkg delete devDependencies.electron devDependencies.electron-builder && \
+    npm pkg delete scripts.prepare && \
+    npm install --package-lock-only --legacy-peer-deps && \
+    npm ci --legacy-peer-deps
 
 COPY . .
 

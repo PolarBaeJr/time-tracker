@@ -86,10 +86,16 @@ export function HubScreen(): React.ReactElement {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      // Invalidate analytics and time entries queries
+      // Invalidate all widget-related queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
         queryClient.invalidateQueries({ queryKey: ['timeEntries'] }),
+        // Calendar widget queries
+        queryClient.invalidateQueries({ queryKey: queryKeys.calendarConnections }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.todayEvents }),
+        // Email widget queries
+        queryClient.invalidateQueries({ queryKey: queryKeys.emailConnections }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.recentEmails }),
       ]);
     } finally {
       setIsRefreshing(false);

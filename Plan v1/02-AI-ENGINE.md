@@ -1,6 +1,6 @@
 # 02 - AI Engine (Multi-Provider Abstraction)
 
-## Phase: 1 (Foundation)
+## Phase: 3 (Personal Productivity + AI) — First task in sprint
 
 ## Summary
 
@@ -75,19 +75,90 @@ interface ChatMessage {
 }
 ```
 
+## Authentication Modes
+
+Each provider supports **two auth modes**: API Key (direct) or Account OAuth (managed).
+
+```typescript
+interface ProviderConfig {
+  authMode: 'api_key' | 'oauth';
+
+  // API Key mode
+  apiKey?: string;              // User's own API key
+
+  // OAuth/Account mode
+  accessToken?: string;         // OAuth access token
+  refreshToken?: string;        // OAuth refresh token
+  tokenExpiresAt?: string;      // Token expiry timestamp
+
+  // Common
+  model?: string;               // Optional model override
+  baseUrl?: string;             // For Ollama: http://localhost:11434
+  maxTokensPerRequest?: number;
+}
+```
+
+### API Key Mode (existing)
+- User enters their own API key from the provider's dashboard
+- Key stored encrypted in `ai_connections` table
+- Full control over model selection and usage
+- User pays provider directly
+
+### OAuth / Account Mode (new)
+- User clicks "Sign in with [Provider]" — standard OAuth2 flow
+- We register as an OAuth app with Anthropic/OpenAI
+- Tokens stored encrypted (same pattern as email/calendar OAuth)
+- Token auto-refresh via the existing token refresh system (see `17-TOKEN-AUTO-REFRESH.md`)
+- Provider may have usage limits tied to the user's account/plan
+- Simpler UX — no copy-pasting API keys
+
+### OAuth Flows
+
+**Anthropic (Claude):**
+- OAuth2 Authorization Code flow via `https://console.anthropic.com/oauth/authorize`
+- Scopes: `messages:write` (send messages), `models:read` (list available models)
+- Register app at console.anthropic.com → OAuth Apps
+- Callback: same pattern as email/calendar (`/auth/callback?provider=claude`)
+
+**OpenAI:**
+- OAuth2 via `https://platform.openai.com/oauth/authorize`
+- Scopes: `chat.completions:write`, `models:read`
+- Register at platform.openai.com → OAuth
+- Callback: `/auth/callback?provider=openai`
+
+**Google Gemini (new provider):**
+- Uses existing Google OAuth (user may already be signed in via Google Auth)
+- Additional scope: `https://www.googleapis.com/auth/generative-language`
+- No separate sign-in needed if user authenticated with Google — just request additional scope
+- API: `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+- Models: gemini-2.5-pro (default), gemini-2.5-flash (fast)
+- Supports streaming, vision
+- SDK: `@google/generative-ai` or plain fetch
+
+**Ollama** — no OAuth, local only (no account needed)
+
 ## Provider Implementations
 
 ### Claude (Anthropic)
 - API: `https://api.anthropic.com/v1/messages`
 - Models: claude-sonnet-4-20250514 (default), claude-opus-4-20250514 (for complex tasks)
 - Supports streaming, vision
+- Auth: API key or OAuth
 - SDK: `@anthropic-ai/sdk`
 
 ### OpenAI
 - API: `https://api.openai.com/v1/chat/completions`
 - Models: gpt-4o (default), gpt-4o-mini (for fast tasks)
 - Supports streaming, vision
+- Auth: API key or OAuth
 - SDK: `openai`
+
+### Google Gemini (NEW)
+- API: `https://generativelanguage.googleapis.com/v1beta/`
+- Models: gemini-2.5-pro (default), gemini-2.5-flash (fast)
+- Supports streaming, vision
+- Auth: API key or Google OAuth (reuses existing Google sign-in)
+- SDK: `@google/generative-ai`
 
 ### Ollama (Local — runs on USER'S device, not the server)
 - API: `http://localhost:11434/api/chat` (user's machine)
@@ -96,20 +167,26 @@ interface ChatMessage {
 - Models: user-configured (llama3, mistral, etc.)
 - Supports streaming, no vision (model-dependent)
 - No SDK needed, plain fetch
+- Auth: none (local)
 - **Important**: On web (non-Electron), localhost refers to user's machine — this works. On mobile, user must enter their machine's LAN IP (e.g., `http://192.168.1.x:11434`)
 
 ## API Key Storage
 
-Keys stored in Supabase `ai_connections` table (new):
+Credentials stored in Supabase `ai_connections` table:
 
 ```sql
 CREATE TABLE ai_connections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users NOT NULL DEFAULT auth.uid(),
-  provider TEXT NOT NULL,           -- 'claude' | 'openai' | 'ollama'
-  api_key_encrypted TEXT,           -- Encrypted API key (null for Ollama)
-  model TEXT,                       -- Preferred model
-  base_url TEXT,                    -- Custom URL (Ollama)
+  provider TEXT NOT NULL,               -- 'claude' | 'openai' | 'gemini' | 'ollama'
+  auth_mode TEXT NOT NULL DEFAULT 'api_key', -- 'api_key' | 'oauth'
+  api_key_encrypted TEXT,               -- Encrypted API key (api_key mode)
+  access_token_encrypted TEXT,          -- Encrypted OAuth access token (oauth mode)
+  refresh_token_encrypted TEXT,         -- Encrypted OAuth refresh token (oauth mode)
+  token_expires_at TIMESTAMPTZ,         -- OAuth token expiry
+  account_email TEXT,                   -- User's provider account email (oauth mode)
+  model TEXT,                           -- Preferred model
+  base_url TEXT,                        -- Custom URL (Ollama)
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(user_id, provider)
