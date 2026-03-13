@@ -190,6 +190,20 @@ export const queryKeys = {
 
   /** Upcoming events across all calendars */
   upcomingEvents: (days: number) => ['upcomingEvents', days] as const,
+
+  /** All notes for the current user (with optional filters) */
+  notes: (filters?: Record<string, unknown>) =>
+    filters ? (['notes', filters] as const) : (['notes'] as const),
+
+  /** Single note by ID */
+  note: (id: string) => ['notes', id] as const,
+
+  /** All todos for the current user (with optional filters) */
+  todos: (filters?: Record<string, unknown>) =>
+    filters ? (['todos', filters] as const) : (['todos'] as const),
+
+  /** Single todo by ID */
+  todo: (id: string) => ['todos', id] as const,
 } as const;
 
 export type QueryKeys = typeof queryKeys;
