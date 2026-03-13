@@ -7,7 +7,7 @@
  * Authentication: Requires valid Supabase JWT
  * Method: POST
  * Body: { connectionId: string }
- * Returns: { success: boolean, messageCount: number } or { error: string }
+ * Returns: { success: boolean, message_count: number, synced_at: string } or { error: string }
  *
  * Error Handling:
  * - Invalid token: Sets sync_error, returns error
@@ -772,8 +772,8 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({
       success: true,
-      messageCount,
-      syncedAt: new Date().toISOString(),
+      message_count: messageCount,
+      synced_at: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Email sync error:', error);
