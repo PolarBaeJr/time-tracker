@@ -17,3 +17,6 @@ export {
   summarizeEvent,
   sanitizeForAI,
 } from './summarization';
+
+// AI Context Builder for chat assistant
+export { buildTimeTrackingContext, getSystemPrompt, formatDuration } from './contextBuilder';
