@@ -59,3 +59,9 @@ export {
   type ConfettiProps,
   type ConfettiConfig,
 } from './Confetti';
+
+// SuccessState component
+export { SuccessState, type SuccessStateProps } from './SuccessState';
+
+// ErrorState component
+export { ErrorState, type ErrorStateProps } from './ErrorState';

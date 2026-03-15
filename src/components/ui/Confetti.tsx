@@ -16,7 +16,7 @@ import * as React from 'react';
 import { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Animated, Dimensions, Platform, StyleSheet, View } from 'react-native';
 
-import { getReducedMotionPreference, ANIMATION_DURATION } from '@/lib/animations';
+import { getReducedMotionPreference } from '@/lib/animations';
 import { useTheme } from '@/theme';
 
 // ============================================================================
@@ -363,7 +363,7 @@ function NativeConfetti(
       const duration = config?.duration ?? DEFAULT_DURATION;
       const originX = (config?.originX ?? 0.5) * width;
       const originY = (config?.originY ?? 0.5) * height;
-      const spread = config?.spread ?? DEFAULT_SPREAD;
+      const _spread = config?.spread ?? DEFAULT_SPREAD;
 
       // Create emoji particles
       const newParticles: EmojiParticle[] = Array.from({ length: particleCount }, () => {
@@ -388,7 +388,7 @@ function NativeConfetti(
       setIsActive(true);
 
       // Animate each particle
-      const animations = newParticles.map((particle, index) => {
+      const animations = newParticles.map((particle, _index) => {
         const delay = Math.random() * 100;
 
         return Animated.parallel([
@@ -588,6 +588,17 @@ export function useConfetti(): ConfettiContextValue {
     throw new Error('useConfetti must be used within a ConfettiProvider');
   }
   return context;
+}
+
+/**
+ * Safe version of useConfetti that returns null if not within a ConfettiProvider
+ *
+ * Use this when confetti is optional and you don't want to require ConfettiProvider.
+ *
+ * @returns Object with fire() method to trigger confetti, or null if not available
+ */
+export function useConfettiSafe(): ConfettiContextValue | null {
+  return React.useContext(ConfettiContext);
 }
 
 // ============================================================================

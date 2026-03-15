@@ -8,7 +8,7 @@
 
 import * as React from 'react';
 import { useRef, useEffect, useCallback, useMemo } from 'react';
-import { Animated, StyleSheet, type ViewStyle, type ViewProps } from 'react-native';
+import { Animated, StyleSheet, type ViewStyle, type ViewProps, type StyleProp } from 'react-native';
 import {
   ANIMATION_DURATION,
   getReducedMotionPreference,
@@ -43,7 +43,7 @@ export interface AnimatedViewProps extends Omit<ViewProps, 'style'> {
   /** Whether to respect reduced motion preference (default: true) */
   respectReducedMotion?: boolean;
   /** Custom style for the view */
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   /** Children to render */
   children?: React.ReactNode;
   /** Callback when animation completes */

@@ -12,9 +12,11 @@ interface RenderResult {
   getByTestId: (testId: string) => Element;
   getByLabelText: (label: string) => Element;
   getByPlaceholderText: (placeholder: string) => Element;
+  getByRole: (role: string) => Element;
   getAllByTestId: (testId: string) => Element[];
   queryByText: (text: string | RegExp) => Element | null;
   queryByTestId: (testId: string) => Element | null;
+  queryByRole: (role: string) => Element | null;
   rerender: (ui: React.ReactElement) => void;
   toJSON: () => object | null;
   container: Element;
@@ -53,7 +55,7 @@ function getTextContent(node: Element): string {
   if (typeof node === 'string') return node;
   if (node.children) {
     return node.children
-      .map((child) => {
+      .map(child => {
         if (typeof child === 'string') return child;
         if (typeof child === 'object') return getTextContent(child as Element);
         return '';
@@ -106,25 +108,25 @@ export function render(ui: React.ReactElement): RenderResult {
   };
 
   const getByTestId = (testId: string): Element => {
-    const found = allNodes.find((node) => node.props.testID === testId);
+    const found = allNodes.find(node => node.props.testID === testId);
     if (!found) throw new Error(`Unable to find element with testID: ${testId}`);
     return found;
   };
 
   const getByLabelText = (label: string): Element => {
-    const found = allNodes.find((node) => node.props.accessibilityLabel === label);
+    const found = allNodes.find(node => node.props.accessibilityLabel === label);
     if (!found) throw new Error(`Unable to find element with accessibilityLabel: ${label}`);
     return found;
   };
 
   const getByPlaceholderText = (placeholder: string): Element => {
-    const found = allNodes.find((node) => node.props.placeholder === placeholder);
+    const found = allNodes.find(node => node.props.placeholder === placeholder);
     if (!found) throw new Error(`Unable to find element with placeholder: ${placeholder}`);
     return found;
   };
 
   const getAllByTestId = (testId: string): Element[] => {
-    return allNodes.filter((node) => node.props.testID === testId);
+    return allNodes.filter(node => node.props.testID === testId);
   };
 
   const queryByText = (text: string | RegExp): Element | null => {
@@ -136,7 +138,17 @@ export function render(ui: React.ReactElement): RenderResult {
   };
 
   const queryByTestId = (testId: string): Element | null => {
-    return allNodes.find((node) => node.props.testID === testId) || null;
+    return allNodes.find(node => node.props.testID === testId) || null;
+  };
+
+  const getByRole = (role: string): Element => {
+    const found = allNodes.find(node => node.props.accessibilityRole === role);
+    if (!found) throw new Error(`Unable to find element with accessibilityRole: ${role}`);
+    return found;
+  };
+
+  const queryByRole = (role: string): Element | null => {
+    return allNodes.find(node => node.props.accessibilityRole === role) || null;
   };
 
   let currentUi = ui;
@@ -146,9 +158,11 @@ export function render(ui: React.ReactElement): RenderResult {
     getByTestId,
     getByLabelText,
     getByPlaceholderText,
+    getByRole,
     getAllByTestId,
     queryByText,
     queryByTestId,
+    queryByRole,
     rerender: (newUi: React.ReactElement) => {
       currentUi = newUi;
       // In a real implementation, this would update the tree

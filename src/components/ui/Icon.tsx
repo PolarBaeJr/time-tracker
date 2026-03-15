@@ -70,6 +70,7 @@ export const iconMap = {
   pin: '\u{1F4CC}', // pushpin
   'pin-off': '\u{1F4CC}', // pushpin (same symbol, different state handled by context)
   'file-text': '\u{1F4C4}', // page facing up (same as file)
+  'file-text-outline': '\u{1F4C3}', // page with curl (document outline)
   'check-square': '\u2611', // ballot box with check (todo icon)
 
   // Email and communication icons
@@ -95,6 +96,14 @@ export const iconMap = {
   'arrow-back': '\u2190', // left arrow
   warning: '\u26A0', // warning sign (same as alert)
   'alert-circle': '\u26A0', // alert with circle (using warning)
+  'more-vertical': '\u22EE', // vertical ellipsis (options menu)
+
+  // Onboarding icons
+  rocket: '\u{1F680}', // rocket emoji
+  celebration: '\u{1F389}', // party popper
+  'waving-hand': '\u{1F44B}', // waving hand
+  star: '\u2B50', // star
+  sparkle: '\u2728', // sparkles
 } as const;
 
 export type IconName = keyof typeof iconMap;
