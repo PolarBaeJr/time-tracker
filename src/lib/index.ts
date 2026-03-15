@@ -17,6 +17,14 @@ export {
   normalizeActiveTimerRealtimePayload,
 } from './realtime';
 
+// Activity feed realtime
+export {
+  createActivityFeedSubscription,
+  normalizeActivityFeedPayload,
+  getReconnectDelayMs as getActivityFeedReconnectDelayMs,
+  ActivityFeedSubscriptionConfigSchema,
+} from './activityFeedRealtime';
+
 // React Query client
 export { queryClient, queryKeys, type QueryKeys } from './queryClient';
 
@@ -59,6 +67,14 @@ export type {
   ActiveTimerSubscriptionHandle,
   CreateActiveTimerSubscriptionOptions,
 } from './realtime';
+
+export type {
+  ActivityFeedRealtimeClient,
+  ActivityEventRealtimePayload,
+  ConnectionStatus,
+  CreateActivityFeedSubscriptionOptions,
+  ActivityFeedSubscriptionHandle,
+} from './activityFeedRealtime';
 
 // Email integration
 export {
