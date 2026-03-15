@@ -482,3 +482,11 @@ export {
   type UseCountUpAnimationOptions,
   type UseCountUpAnimationResult,
 } from './useCountUpAnimation';
+
+// Reduced motion hook
+export {
+  useReducedMotion,
+  getSystemReducedMotionPreference,
+  initializeReducedMotion,
+  type UseReducedMotionResult,
+} from './useReducedMotion';
