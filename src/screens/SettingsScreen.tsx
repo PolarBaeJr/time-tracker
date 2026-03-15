@@ -16,13 +16,13 @@ import {
   AccountSection,
   PomodoroSettings,
   ThemeSelector,
-  TimerSoundSettings,
   IdleDetectionSettings,
   SpotifySettings,
   AISettings,
   EmailSettings,
   CalendarSettings,
   SettingsNavLink,
+  UXSettings,
 } from '@/components/settings';
 import { colors, spacing } from '@/theme';
 import { useAuth } from '@/hooks';
@@ -225,6 +225,14 @@ export function SettingsScreen(): React.ReactElement {
           </Card>
         </View>
 
+        {/* UX Settings - Animations & Haptics */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>User Experience</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <UXSettings disabled={isUpdating} />
+          </Card>
+        </View>
+
         {/* Regional Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Regional</Text>
@@ -250,14 +258,6 @@ export function SettingsScreen(): React.ReactElement {
           <Text style={styles.sectionTitle}>Pomodoro</Text>
           <Card padding="md" elevation="none" style={styles.sectionCard}>
             <PomodoroSettings disabled={isUpdating} />
-          </Card>
-        </View>
-
-        {/* Timer Sounds */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Timer Sounds</Text>
-          <Card padding="md" elevation="none" style={styles.sectionCard}>
-            <TimerSoundSettings disabled={isUpdating} />
           </Card>
         </View>
 

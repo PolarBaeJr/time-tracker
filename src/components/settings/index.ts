@@ -15,3 +15,4 @@ export { AISettings, type AISettingsProps } from './AISettings';
 export { CalendarSettings, type CalendarSettingsProps } from './CalendarSettings';
 export { EmailSettings, type EmailSettingsProps } from './EmailSettings';
 export { SettingsNavLink, type SettingsNavLinkProps } from './SettingsNavLink';
+export { UXSettings, type UXSettingsProps } from './UXSettings';
