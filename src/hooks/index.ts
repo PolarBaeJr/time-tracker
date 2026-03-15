@@ -506,3 +506,44 @@ export {
   type UseUpdatePublicProfileSettingsOptions,
   type UseUpdatePublicProfileSettingsResult,
 } from './usePublicProfile';
+
+// Workspace hooks
+export {
+  useWorkspacesQuery,
+  useWorkspace,
+  fetchWorkspaces,
+  fetchWorkspace,
+  WorkspaceFetchError,
+  type UseWorkspacesQueryOptions,
+  type UseWorkspaceOptions,
+  type UseWorkspacesQueryResult,
+  type UseWorkspaceResult,
+} from './useWorkspaces';
+
+export {
+  useCreateWorkspace,
+  useUpdateWorkspace,
+  useDeleteWorkspace,
+  type UseCreateWorkspaceOptions,
+  type UseUpdateWorkspaceOptions,
+  type UseDeleteWorkspaceOptions,
+  type UpdateWorkspaceParams,
+  type UseCreateWorkspaceResult,
+  type UseUpdateWorkspaceResult,
+  type UseDeleteWorkspaceResult,
+} from './useWorkspaceMutations';
+
+export {
+  useWorkspaceMembers,
+  useUpdateMemberRole,
+  useRemoveMember,
+  fetchWorkspaceMembers,
+  type UseWorkspaceMembersOptions,
+  type UseUpdateMemberRoleOptions,
+  type UseRemoveMemberOptions,
+  type UpdateMemberRoleParams,
+  type RemoveMemberParams,
+  type UseWorkspaceMembersResult,
+  type UseUpdateMemberRoleResult,
+  type UseRemoveMemberResult,
+} from './useWorkspaceMembers';
