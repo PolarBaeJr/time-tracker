@@ -9,5 +9,6 @@ export * from './categories';
 export * from './charts';
 export * from './goals';
 export * from './history';
+export * from './onboarding';
 export * from './settings';
 export * from './ui';
