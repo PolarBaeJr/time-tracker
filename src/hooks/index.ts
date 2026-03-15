@@ -628,6 +628,46 @@ export {
   type UseRemoveProjectMemberResult,
 } from './useProjectMembers';
 
+// Approval hooks
+export {
+  usePendingApprovals,
+  useMySubmissions,
+  useApprovalAssignments,
+  fetchPendingApprovals,
+  fetchMySubmissions,
+  fetchApprovalAssignments,
+  ApprovalFetchError,
+  type UsePendingApprovalsOptions,
+  type UseMySubmissionsOptions,
+  type UseApprovalAssignmentsOptions,
+  type UsePendingApprovalsResult,
+  type UseMySubmissionsResult,
+  type UseApprovalAssignmentsResult,
+} from './useApprovals';
+
+export {
+  useSubmitEntries,
+  useApproveEntries,
+  useRejectEntries,
+  useSetApprovalAssignment,
+  useDeleteApprovalAssignment,
+  type SubmitEntriesParams,
+  type ApproveEntriesParams,
+  type RejectEntriesParams,
+  type SetApprovalAssignmentParams,
+  type DeleteApprovalAssignmentParams,
+  type UseSubmitEntriesOptions,
+  type UseApproveEntriesOptions,
+  type UseRejectEntriesOptions,
+  type UseSetApprovalAssignmentOptions,
+  type UseDeleteApprovalAssignmentOptions,
+  type UseSubmitEntriesResult,
+  type UseApproveEntriesResult,
+  type UseRejectEntriesResult,
+  type UseSetApprovalAssignmentResult,
+  type UseDeleteApprovalAssignmentResult,
+} from './useApprovalWorkflow';
+
 // Shared Dashboard hooks
 export {
   useSharedDashboards,
@@ -681,3 +721,19 @@ export {
   type UseActivityFeedResult,
   type UseLatestActivityEventsResult,
 } from './useActivityFeed';
+
+// Leaderboard hooks
+export {
+  useLeaderboard,
+  fetchLeaderboard,
+  getWeekRange,
+  getMonthRange,
+  getDateRangeForPeriod,
+  formatLeaderboardDuration,
+  getRankBadge,
+  getProgressPercentage,
+  LeaderboardFetchError,
+  type DateRange,
+  type FetchLeaderboardOptions,
+  type UseLeaderboardOptions,
+} from './useLeaderboard';
