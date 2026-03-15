@@ -241,3 +241,19 @@ export {
   type Achievement,
   type AchievementState,
 } from './achievement';
+
+// Onboarding schemas and types
+export {
+  OnboardingStepEnum,
+  OnboardingStepDefinitionSchema,
+  OnboardingStateSchema,
+  ONBOARDING_STEP_DEFINITIONS,
+  ALL_ONBOARDING_STEPS,
+  DEFAULT_ONBOARDING_STATE,
+  getNextOnboardingStep,
+  getPreviousOnboardingStep,
+  calculateOnboardingProgress,
+  type OnboardingStep,
+  type OnboardingStepDefinition,
+  type OnboardingState,
+} from './onboarding';

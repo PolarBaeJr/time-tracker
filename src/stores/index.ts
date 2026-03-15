@@ -106,3 +106,29 @@ export {
   useAchievementStoreHydrated,
 } from './achievementStore';
 export type { AchievementState, Achievement, AchievementId } from './achievementStore';
+
+export {
+  getOnboardingStoreState,
+  isOnboardingStoreHydrated,
+  subscribeOnboardingStore,
+  hasCompletedOnboarding,
+  getCompletedSteps,
+  getSkippedAt,
+  getCompletedAt,
+  getCurrentStep,
+  isStepCompleted,
+  getOnboardingProgress,
+  completeStep,
+  skipOnboarding,
+  setOnboardingComplete,
+  startOnboarding,
+  goToStep,
+  resetOnboarding,
+  rehydrateOnboardingStore,
+  useOnboardingStore,
+  useOnboarding,
+  useHasCompletedOnboarding,
+  useCurrentOnboardingStep,
+  useOnboardingStoreHydrated,
+} from './onboardingStore';
+export type { OnboardingState, OnboardingStep } from './onboardingStore';
