@@ -474,3 +474,11 @@ export {
   type UseToastResult,
   type ShowToastOptions,
 } from './useToast';
+
+// Count-up animation hook
+export {
+  useCountUpAnimation,
+  formatHoursCountUp,
+  type UseCountUpAnimationOptions,
+  type UseCountUpAnimationResult,
+} from './useCountUpAnimation';

@@ -1,13 +1,20 @@
 /**
  * SimpleBarChart — cross-platform bar chart built with View components.
  * Works on web and native without any native modules.
+ *
+ * Features:
+ * - Bar grow animation on mount (height from 0 to final)
+ * - Stagger animation for multiple bars (50ms delay per bar)
+ * - Respects reduced motion settings
  */
 
-import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 
 import { Text } from '@/components/ui';
 import { colors, spacing, borderRadius } from '@/theme';
+import { useUXSettingsSelector } from '@/stores/uxSettingsStore';
+import { ANIMATION_DURATION, ANIMATION_EASING } from '@/lib/animations';
 
 export interface BarDatum {
   label: string;
@@ -21,6 +28,12 @@ export interface SimpleBarChartProps {
   barColor?: string;
   /** How many x-axis labels to show (evenly spaced) */
   maxLabels?: number;
+  /** Enable bar grow animation on mount (default: true) */
+  animateOnMount?: boolean;
+  /** Stagger delay between bars in ms (default: 50) */
+  staggerDelay?: number;
+  /** Animation duration per bar in ms (default: 300) */
+  animationDuration?: number;
 }
 
 function formatHours(hours: number): string {
@@ -29,12 +42,100 @@ function formatHours(hours: number): string {
   return `${hours.toFixed(1)}h`;
 }
 
+/**
+ * Animated bar component that grows from bottom to top
+ */
+interface AnimatedBarProps {
+  heightPct: number;
+  color: string;
+  index: number;
+  shouldAnimate: boolean;
+  staggerDelay: number;
+  animationDuration: number;
+}
+
+function AnimatedBar({
+  heightPct,
+  color,
+  index,
+  shouldAnimate,
+  staggerDelay,
+  animationDuration,
+}: AnimatedBarProps): React.ReactElement {
+  // Use useState with lazy initializer for React Compiler compatibility
+  const [heightAnim] = useState(() => new Animated.Value(shouldAnimate ? 0 : heightPct));
+  const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    if (shouldAnimate && !hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      const delay = index * staggerDelay;
+
+      Animated.timing(heightAnim, {
+        toValue: heightPct,
+        duration: animationDuration,
+        delay,
+        easing: ANIMATION_EASING.easeOut,
+        useNativeDriver: false, // height animation requires JS driver
+      }).start();
+    } else if (!shouldAnimate) {
+      // If animations disabled, set immediately
+      heightAnim.setValue(heightPct);
+    }
+  }, [shouldAnimate, heightPct, index, staggerDelay, animationDuration, heightAnim]);
+
+  // Update height when data changes (for re-renders with new data)
+  useEffect(() => {
+    if (hasAnimatedRef.current && shouldAnimate) {
+      // Animate to new height if already animated once
+      Animated.timing(heightAnim, {
+        toValue: heightPct,
+        duration: animationDuration / 2, // Faster for updates
+        easing: ANIMATION_EASING.easeOut,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [heightPct, shouldAnimate, animationDuration, heightAnim]);
+
+  const animatedHeightStyle = shouldAnimate
+    ? {
+        height: heightAnim.interpolate({
+          inputRange: [0, 100],
+          outputRange: ['0%', '100%'],
+          extrapolate: 'clamp',
+        }),
+      }
+    : {
+        height: `${Math.max(heightPct, heightPct > 0 ? 2 : 0)}%` as unknown as number,
+      };
+
+  return (
+    <Animated.View
+      style={[
+        styles.bar,
+        {
+          ...animatedHeightStyle,
+          backgroundColor: color,
+        },
+      ]}
+    />
+  );
+}
+
 export function SimpleBarChart({
   data,
   height = 200,
   barColor = colors.primary,
   maxLabels = 7,
+  animateOnMount = true,
+  staggerDelay = 50,
+  animationDuration = 300,
 }: SimpleBarChartProps): React.ReactElement {
+  // Get animation preferences from UX settings
+  const animationsEnabled = useUXSettingsSelector(s => s.animationsEnabled);
+  const reducedMotion = useUXSettingsSelector(s => s.reducedMotion);
+  const shouldAnimate = animateOnMount && animationsEnabled && !reducedMotion;
+
   const maxValue = useMemo(() => Math.max(...data.map(d => d.value), 0.1), [data]);
 
   // Pick which indices get an x-axis label
@@ -86,15 +187,13 @@ export function SimpleBarChart({
               return (
                 <View key={i} style={styles.barColumn}>
                   <View style={styles.barTrack}>
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          height:
-                            `${Math.max(heightPct, d.value > 0 ? 2 : 0)}%` as unknown as number,
-                          backgroundColor: color,
-                        },
-                      ]}
+                    <AnimatedBar
+                      heightPct={Math.max(heightPct, d.value > 0 ? 2 : 0)}
+                      color={color}
+                      index={i}
+                      shouldAnimate={shouldAnimate}
+                      staggerDelay={staggerDelay}
+                      animationDuration={animationDuration}
                     />
                   </View>
                 </View>
