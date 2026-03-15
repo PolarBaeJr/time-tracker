@@ -2,6 +2,7 @@
  * Components barrel export
  */
 
+export * from './achievements';
 export * from './analytics';
 export * from './auth';
 export * from './categories';
