@@ -40,3 +40,22 @@ export {
 // Toast components
 export { Toast, type ToastProps } from './Toast';
 export { ToastContainer, type ToastContainerProps, type ToastPosition } from './ToastContainer';
+
+// Skeleton components
+export {
+  Skeleton,
+  SkeletonGroup,
+  type SkeletonProps,
+  type SkeletonGroupProps,
+  type SkeletonVariant,
+} from './Skeleton';
+
+// Confetti component
+export {
+  Confetti,
+  ConfettiProvider,
+  useConfetti,
+  type ConfettiRef,
+  type ConfettiProps,
+  type ConfettiConfig,
+} from './Confetti';
