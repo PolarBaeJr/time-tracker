@@ -548,6 +548,34 @@ export {
   type UseRemoveMemberResult,
 } from './useWorkspaceMembers';
 
+// Workspace invite hooks
+export {
+  useWorkspaceInvites,
+  usePendingInvitesForEmail,
+  useSendInvite,
+  useAcceptInvite,
+  useRevokeInvite,
+  useDeclineInvite,
+  fetchWorkspaceInvites,
+  fetchPendingInvitesForEmail,
+  type UseWorkspaceInvitesOptions,
+  type UsePendingInvitesForEmailOptions,
+  type UseSendInviteOptions,
+  type UseAcceptInviteOptions,
+  type UseRevokeInviteOptions,
+  type UseDeclineInviteOptions,
+  type SendInviteParams,
+  type AcceptInviteParams,
+  type RevokeInviteParams,
+  type DeclineInviteParams,
+  type UseWorkspaceInvitesResult,
+  type UsePendingInvitesForEmailResult,
+  type UseSendInviteResult,
+  type UseAcceptInviteResult,
+  type UseRevokeInviteResult,
+  type UseDeclineInviteResult,
+} from './useWorkspaceInvites';
+
 // Project hooks
 export {
   useProjects,
