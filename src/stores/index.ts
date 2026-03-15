@@ -82,3 +82,27 @@ export {
   useUXSettingsSelector,
 } from './uxSettingsStore';
 export type { UXSettings, UpdateUXSettingsInput, SoundPreset } from './uxSettingsStore';
+
+export {
+  getAchievementStoreState,
+  isAchievementStoreHydrated,
+  subscribeAchievementStore,
+  getUserAchievement,
+  getAllAchievements,
+  getUnlockedAchievements,
+  getLockedAchievements,
+  getPendingNotifications,
+  updateAchievementProgress,
+  updateMultipleAchievements,
+  acknowledgeAchievement,
+  acknowledgeAllAchievements,
+  clearAchievements,
+  rehydrateAchievementStore,
+  useAchievementStore,
+  useAllAchievements,
+  useUnlockedAchievements,
+  useLockedAchievements,
+  usePendingAchievementNotifications,
+  useAchievementStoreHydrated,
+} from './achievementStore';
+export type { AchievementState, Achievement, AchievementId } from './achievementStore';

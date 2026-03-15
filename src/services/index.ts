@@ -33,3 +33,15 @@ export {
   type QueuedActionPayload,
   type ValidationResult,
 } from './offlineQueue';
+
+// Achievement service
+export {
+  calculateStreak,
+  calculateTotalHours,
+  calculateAchievements,
+  calculateAndUpdateAchievements,
+  wouldUnlock,
+  getProgressText,
+  AchievementServiceError,
+  type AchievementCalculationResult,
+} from './achievementService';
