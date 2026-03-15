@@ -547,3 +547,55 @@ export {
   type UseUpdateMemberRoleResult,
   type UseRemoveMemberResult,
 } from './useWorkspaceMembers';
+
+// Project hooks
+export {
+  useProjects,
+  useProject,
+  fetchProjects,
+  fetchProject,
+  ProjectFetchError,
+  type FetchProjectsOptions,
+  type UseProjectsOptions,
+  type UseProjectOptions,
+  type UseProjectsResult,
+  type UseProjectResult,
+} from './useProjects';
+
+export {
+  useCreateProject,
+  useUpdateProject,
+  useArchiveProject,
+  useDeleteProject,
+  type CreateProjectParams,
+  type UpdateProjectParams,
+  type ArchiveProjectParams,
+  type DeleteProjectParams,
+  type UseCreateProjectOptions,
+  type UseUpdateProjectOptions,
+  type UseArchiveProjectOptions,
+  type UseDeleteProjectOptions,
+  type UseCreateProjectResult,
+  type UseUpdateProjectResult,
+  type UseArchiveProjectResult,
+  type UseDeleteProjectResult,
+} from './useProjectMutations';
+
+export {
+  useProjectMembers,
+  useAddProjectMember,
+  useUpdateProjectMemberRole,
+  useRemoveProjectMember,
+  fetchProjectMembers,
+  type AddProjectMemberParams,
+  type UpdateProjectMemberRoleParams,
+  type RemoveProjectMemberParams,
+  type UseProjectMembersOptions,
+  type UseAddProjectMemberOptions,
+  type UseUpdateProjectMemberRoleOptions,
+  type UseRemoveProjectMemberOptions,
+  type UseProjectMembersResult,
+  type UseAddProjectMemberResult,
+  type UseUpdateProjectMemberRoleResult,
+  type UseRemoveProjectMemberResult,
+} from './useProjectMembers';
