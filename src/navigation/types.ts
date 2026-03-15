@@ -78,17 +78,31 @@ export type RootStackParamList = {
   TodoEdit: {
     todoId: string;
   };
+
+  /** Workspaces management - accessible from Settings */
+  Workspaces: undefined;
+
+  /** Workspace settings - requires workspaceId */
+  WorkspaceSettings: {
+    workspaceId: string;
+  };
+
+  /** Project detail modal - requires projectId */
+  ProjectDetail: {
+    projectId: string;
+  };
 };
 
 /**
  * Main Tab Navigator Parameter List
  *
- * The bottom tab navigator with core app screens (6 tabs for optimal mobile UX):
+ * The bottom tab navigator with core app screens:
  * - Hub: Dashboard home with widget grid
  * - Timer: Main timer interface
  * - History: Time entry history with filters
  * - Notes: Notes and todos management
  * - Analytics: Dashboard with charts and stats
+ * - Projects: Project management (shown when workspace active)
  * - Settings: User preferences, categories, and goals management
  */
 export type MainTabParamList = {
@@ -120,6 +134,9 @@ export type MainTabParamList = {
 
   /** Analytics dashboard - no parameters needed */
   Analytics: undefined;
+
+  /** Projects screen - workspace project management (conditional tab) */
+  Projects: undefined;
 
   /** Settings screen - optional initial section parameter */
   Settings:

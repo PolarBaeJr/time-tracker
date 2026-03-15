@@ -15,3 +15,9 @@ export { HubScreen } from './HubScreen';
 export { NotesScreen, type NotesScreenProps } from './NotesScreen';
 export { ChatScreen, type ChatScreenProps } from './ChatScreen';
 export { OnboardingScreen, type OnboardingScreenProps } from './OnboardingScreen';
+export { ProjectsScreen, type ProjectsScreenProps } from './ProjectsScreen';
+export { WorkspacesScreen, type WorkspacesScreenProps } from './WorkspacesScreen';
+export {
+  WorkspaceSettingsScreen,
+  type WorkspaceSettingsScreenProps,
+} from './WorkspaceSettingsScreen';

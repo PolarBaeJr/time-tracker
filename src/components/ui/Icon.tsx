@@ -104,6 +104,10 @@ export const iconMap = {
   'waving-hand': '\u{1F44B}', // waving hand
   star: '\u2B50', // star
   sparkle: '\u2728', // sparkles
+
+  // Collaboration icons
+  briefcase: '\u{1F4BC}', // briefcase emoji
+  'briefcase-outline': '\u{1F4BC}', // briefcase (outline same)
 } as const;
 
 export type IconName = keyof typeof iconMap;

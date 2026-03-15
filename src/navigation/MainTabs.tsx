@@ -37,8 +37,10 @@ import {
   HistoryScreen as HistoryScreenComponent,
   NotesScreen as NotesScreenComponent,
   AnalyticsScreen as AnalyticsScreenComponent,
+  ProjectsScreen as ProjectsScreenComponent,
   SettingsScreen as SettingsScreenComponent,
 } from '@/screens';
+import { useWorkspaceContext } from '@/contexts/WorkspaceContext';
 
 import type { MainTabParamList } from './types';
 
@@ -58,6 +60,7 @@ function getTabIcon(routeName: keyof MainTabParamList, focused: boolean): IconNa
     History: { active: 'list', inactive: 'list-outline' },
     Notes: { active: 'file-text', inactive: 'file-text-outline' },
     Analytics: { active: 'bar-chart', inactive: 'bar-chart-outline' },
+    Projects: { active: 'briefcase', inactive: 'briefcase-outline' },
     Settings: { active: 'settings', inactive: 'settings-outline' },
   };
 
@@ -228,6 +231,7 @@ const TimerTabIcon = createTabIconComponent('Timer');
 const HistoryTabIcon = createTabIconComponent('History');
 const NotesTabIcon = createTabIconComponent('Notes');
 const AnalyticsTabIcon = createTabIconComponent('Analytics');
+const ProjectsTabIcon = createTabIconComponent('Projects');
 const SettingsTabIcon = createTabIconComponent('Settings');
 
 // Map route names to tab icon render functions
@@ -240,6 +244,7 @@ const tabIconComponents: Record<
   History: props => <HistoryTabIcon {...props} />,
   Notes: props => <NotesTabIcon {...props} />,
   Analytics: props => <AnalyticsTabIcon {...props} />,
+  Projects: props => <ProjectsTabIcon {...props} />,
   Settings: props => <SettingsTabIcon {...props} />,
 };
 
@@ -249,9 +254,15 @@ const tabIconComponents: Record<
  * Renders a bottom tab navigator with all main app screens.
  * Uses themed colors and custom Icon component for tab icons.
  * Includes animated tab icons with scale bounce and active indicator.
+ *
+ * The Projects tab is conditionally shown when a workspace is active.
  */
 export function MainTabs(): React.ReactElement {
   const { colors } = useTheme();
+  const { activeWorkspace } = useWorkspaceContext();
+
+  // Determine if workspace collaboration tabs should be shown
+  const showWorkspaceTabs = activeWorkspace !== null;
 
   // Get tab bar icon for a specific route
   const getTabBarIcon = useCallback((routeName: keyof MainTabParamList) => {
@@ -303,6 +314,13 @@ export function MainTabs(): React.ReactElement {
           component={AnalyticsScreenComponent}
           options={{ title: 'Analytics' }}
         />
+        {showWorkspaceTabs && (
+          <Tab.Screen
+            name="Projects"
+            component={ProjectsScreenComponent}
+            options={{ title: 'Projects' }}
+          />
+        )}
         <Tab.Screen
           name="Settings"
           component={SettingsScreenComponent}
