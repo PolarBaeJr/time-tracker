@@ -466,3 +466,11 @@ export {
 
 // Haptic feedback hook
 export { useHaptics, haptics, type HapticType, type UseHapticsResult } from './useHaptics';
+
+// Toast hook
+export {
+  useToast,
+  DEFAULT_TOAST_DURATION,
+  type UseToastResult,
+  type ShowToastOptions,
+} from './useToast';
