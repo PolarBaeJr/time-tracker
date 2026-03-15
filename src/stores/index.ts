@@ -67,3 +67,18 @@ export {
   setEditMode as setHubEditMode,
 } from './hubStore';
 export type { HubWidgetType, HubWidgetConfig } from './hubStore';
+
+export {
+  updateUXSettings,
+  setAnimationsEnabled,
+  setHapticFeedbackEnabled,
+  setSoundEnabled,
+  setSoundVolume,
+  setSoundPreset,
+  syncReducedMotion,
+  getUXSettingsState,
+  subscribeUXSettings,
+  useUXSettings,
+  useUXSettingsSelector,
+} from './uxSettingsStore';
+export type { UXSettings, UpdateUXSettingsInput, SoundPreset } from './uxSettingsStore';

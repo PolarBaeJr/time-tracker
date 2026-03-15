@@ -212,3 +212,32 @@ export {
   type UpdateNoteInput,
   type NotesFilter,
 } from './note';
+
+// UX settings schemas and types
+export {
+  SoundPresetEnum,
+  UXSettingsSchema,
+  UpdateUXSettingsSchema,
+  type SoundPreset,
+  type UXSettings,
+  type UpdateUXSettingsInput,
+} from './uxSettings';
+
+// Achievement schemas and types
+export {
+  AchievementIdEnum,
+  AchievementCategoryEnum,
+  AchievementDefinitionSchema,
+  UserAchievementSchema,
+  AchievementSchema,
+  AchievementStateSchema,
+  ACHIEVEMENT_DEFINITIONS,
+  ALL_ACHIEVEMENT_IDS,
+  DEFAULT_ACHIEVEMENT_STATE,
+  type AchievementId,
+  type AchievementCategory,
+  type AchievementDefinition,
+  type UserAchievement,
+  type Achievement,
+  type AchievementState,
+} from './achievement';
