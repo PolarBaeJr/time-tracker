@@ -187,3 +187,23 @@ export type {
   EasingFunction,
   SlideDirection,
 } from './animations';
+
+// Sound system
+export {
+  // Sound definitions and presets
+  SOUND_PRESETS,
+  getSoundDefinition,
+  ALL_SOUND_EVENTS,
+  SOUND_EVENT_NAMES,
+  SOUND_PRESET_NAMES,
+  SOUND_PRESET_DESCRIPTIONS,
+} from './sounds';
+
+export type {
+  SoundEventType,
+  WaveType,
+  ToneDefinition,
+  FrequencySweep,
+  SoundDefinition,
+  SoundPresetDefinitions,
+} from './sounds';
