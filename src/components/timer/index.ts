@@ -16,3 +16,8 @@ export {
 } from './TimerModeDropdown';
 export { QuickTimerPresets, type QuickTimerPresetsProps } from './QuickTimerPresets';
 export { SpotifyMiniPlayer, type SpotifyMiniPlayerProps } from './SpotifyMiniPlayer';
+export {
+  ConnectionIndicator,
+  type ConnectionIndicatorProps,
+  type ConnectionStatus,
+} from './ConnectionIndicator';

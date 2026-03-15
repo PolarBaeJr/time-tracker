@@ -38,6 +38,7 @@ import {
   TimerModeDropdown,
   QuickTimerPresets,
   SpotifyMiniPlayer,
+  ConnectionIndicator,
   type SessionSettings,
 } from '@/components/timer';
 import { Button, Card, Text, Icon } from '@/components/ui';
@@ -71,36 +72,6 @@ const PHASE_LABELS = {
   break: 'Short Break',
   long_break: 'Long Break',
 } as const;
-
-/**
- * Connection status indicator component
- */
-function ConnectionIndicator({
-  status,
-}: {
-  status: 'connected' | 'reconnecting' | 'disconnected';
-}): React.ReactElement {
-  const statusColors = {
-    connected: colors.success,
-    reconnecting: colors.warning,
-    disconnected: colors.error,
-  };
-
-  const statusLabels = {
-    connected: 'Connected',
-    reconnecting: 'Reconnecting...',
-    disconnected: 'Offline',
-  };
-
-  return (
-    <View style={styles.connectionIndicator}>
-      <View style={[styles.connectionDot, { backgroundColor: statusColors[status] }]} />
-      <Text variant="caption" color="muted">
-        {statusLabels[status]}
-      </Text>
-    </View>
-  );
-}
 
 /**
  * Selected category display component
@@ -935,16 +906,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.lg,
     paddingHorizontal: spacing.xs,
-  },
-  connectionIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  connectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   timerCard: {
     alignItems: 'center',
