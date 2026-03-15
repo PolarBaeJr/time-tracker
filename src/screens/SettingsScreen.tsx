@@ -197,6 +197,19 @@ export function SettingsScreen(): React.ReactElement {
           />
         }
       >
+        {/* Collaboration - Workspaces */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Collaboration</Text>
+          <Card padding="md" elevation="none" style={styles.sectionCard}>
+            <SettingsNavLink
+              screen="Workspaces"
+              icon="briefcase"
+              title="Workspaces"
+              subtitle="Manage team workspaces and invitations"
+            />
+          </Card>
+        </View>
+
         {/* Data Management - Categories & Goals */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>

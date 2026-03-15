@@ -25,6 +25,8 @@ import {
   GoalsScreen,
   ChatScreen,
   OnboardingScreen,
+  WorkspacesScreen,
+  WorkspaceSettingsScreen,
 } from '@/screens';
 import { useHasCompletedOnboarding, useOnboardingStoreHydrated } from '@/stores/onboardingStore';
 import { supabase } from '@/lib/supabase';
@@ -384,6 +386,30 @@ export function RootNavigator(): React.ReactElement {
               presentation: 'modal',
               headerShown: true,
               headerTitle: 'Edit Todo',
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="Workspaces"
+            component={WorkspacesScreen}
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              headerTitle: 'Workspaces',
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="WorkspaceSettings"
+            component={WorkspaceSettingsScreen}
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              headerTitle: 'Workspace Settings',
               headerStyle: { backgroundColor: colors.surface },
               headerTintColor: colors.text,
               headerShadowVisible: false,
