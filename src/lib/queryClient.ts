@@ -204,6 +204,56 @@ export const queryKeys = {
 
   /** Single todo by ID */
   todo: (id: string) => ['todos', id] as const,
+
+  // ===========================================================================
+  // COLLABORATION FEATURE QUERY KEYS (Phase 5)
+  // ===========================================================================
+
+  /** All workspaces for the current user */
+  workspaces: ['workspaces'] as const,
+
+  /** Single workspace by ID */
+  workspace: (id: string) => ['workspaces', id] as const,
+
+  /** Members of a specific workspace */
+  workspaceMembers: (workspaceId: string) => ['workspaceMembers', workspaceId] as const,
+
+  /** Pending invites for a specific workspace */
+  workspaceInvites: (workspaceId: string) => ['workspaceInvites', workspaceId] as const,
+
+  /** Projects within a workspace */
+  projects: (workspaceId: string) => ['projects', workspaceId] as const,
+
+  /** Single project by ID */
+  project: (id: string) => ['projects', 'single', id] as const,
+
+  /** Members of a specific project */
+  projectMembers: (projectId: string) => ['projectMembers', projectId] as const,
+
+  /** Time entries pending approval in a workspace */
+  pendingApprovals: (workspaceId: string) => ['approvals', 'pending', workspaceId] as const,
+
+  /** Current user's submitted time entries awaiting approval */
+  mySubmissions: (workspaceId: string) => ['approvals', 'submissions', workspaceId] as const,
+
+  /** Approval assignments (who can approve what) for a workspace */
+  approvalAssignments: (workspaceId: string) => ['approvalAssignments', workspaceId] as const,
+
+  /** Activity feed for a workspace */
+  activityFeed: (workspaceId: string) => ['activityFeed', workspaceId] as const,
+
+  /** Leaderboard for a workspace by period and metric */
+  leaderboard: (workspaceId: string, period: 'week' | 'month', metric: 'total' | 'billable') =>
+    ['leaderboard', workspaceId, period, metric] as const,
+
+  /** All shared dashboards for the current user */
+  sharedDashboards: ['sharedDashboards'] as const,
+
+  /** Single shared dashboard by access token */
+  sharedDashboard: (token: string) => ['sharedDashboards', token] as const,
+
+  /** Public profile by slug (for public access) */
+  publicProfile: (slug: string) => ['publicProfile', slug] as const,
 } as const;
 
 export type QueryKeys = typeof queryKeys;
