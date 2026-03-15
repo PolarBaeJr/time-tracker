@@ -57,15 +57,34 @@ export type RootStackParamList = {
         month?: string;
       }
     | undefined;
+
+  /** Chat screen - AI assistant conversations */
+  Chat:
+    | {
+        /** Optional conversation ID to open directly */
+        conversationId?: string;
+      }
+    | undefined;
+
+  /** Note edit modal - requires noteId */
+  NoteEdit: {
+    noteId: string;
+  };
+
+  /** Todo edit modal - requires todoId */
+  TodoEdit: {
+    todoId: string;
+  };
 };
 
 /**
  * Main Tab Navigator Parameter List
  *
- * The bottom tab navigator with core app screens (5 tabs for optimal mobile UX):
+ * The bottom tab navigator with core app screens (6 tabs for optimal mobile UX):
  * - Hub: Dashboard home with widget grid
  * - Timer: Main timer interface
  * - History: Time entry history with filters
+ * - Notes: Notes and todos management
  * - Analytics: Dashboard with charts and stats
  * - Settings: User preferences, categories, and goals management
  */
@@ -85,6 +104,14 @@ export type MainTabParamList = {
         dateStart?: string;
         /** Initial date range end (ISO 8601) */
         dateEnd?: string;
+      }
+    | undefined;
+
+  /** Notes screen - optional tab parameter to select Notes or Todos tab */
+  Notes:
+    | {
+        /** Initial tab to display ('notes' or 'todos') */
+        tab?: 'notes' | 'todos';
       }
     | undefined;
 

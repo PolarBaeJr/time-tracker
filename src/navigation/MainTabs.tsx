@@ -2,10 +2,11 @@
  * Main Tab Navigator
  *
  * Bottom tab navigator with themed tab bar and icons.
- * Optimized for mobile UX with 5 primary tabs:
+ * Optimized for mobile UX with 6 primary tabs:
  * - Hub: Dashboard home with widget grid (default landing screen)
  * - Timer: Main timer interface
  * - History: Time entry history
+ * - Notes: Notes and todos management
  * - Analytics: Dashboard with charts
  * - Settings: User preferences, categories, and goals
  *
@@ -24,6 +25,7 @@ import {
   HubScreen as HubScreenComponent,
   TimerScreen as TimerScreenComponent,
   HistoryScreen as HistoryScreenComponent,
+  NotesScreen as NotesScreenComponent,
   AnalyticsScreen as AnalyticsScreenComponent,
   SettingsScreen as SettingsScreenComponent,
 } from '@/screens';
@@ -44,6 +46,7 @@ function getTabIcon(routeName: keyof MainTabParamList, focused: boolean): IconNa
     Hub: { active: 'home', inactive: 'home-outline' },
     Timer: { active: 'time', inactive: 'time-outline' },
     History: { active: 'list', inactive: 'list-outline' },
+    Notes: { active: 'file-text', inactive: 'file-text-outline' },
     Analytics: { active: 'bar-chart', inactive: 'bar-chart-outline' },
     Settings: { active: 'settings', inactive: 'settings-outline' },
   };
@@ -104,6 +107,7 @@ export function MainTabs(): React.ReactElement {
           component={HistoryScreenComponent}
           options={{ title: 'History' }}
         />
+        <Tab.Screen name="Notes" component={NotesScreenComponent} options={{ title: 'Notes' }} />
         <Tab.Screen
           name="Analytics"
           component={AnalyticsScreenComponent}
