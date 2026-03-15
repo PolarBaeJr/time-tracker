@@ -490,3 +490,19 @@ export {
   initializeReducedMotion,
   type UseReducedMotionResult,
 } from './useReducedMotion';
+
+// Public profile hooks
+export {
+  usePublicProfile,
+  useUpdatePublicProfileSettings,
+  fetchPublicProfile,
+  checkSlugAvailability,
+  isValidSlug,
+  PublicProfileFetchError,
+  type PublicProfile,
+  type PublicProfileStats,
+  type UpdatePublicProfileInput,
+  type UsePublicProfileOptions,
+  type UseUpdatePublicProfileSettingsOptions,
+  type UseUpdatePublicProfileSettingsResult,
+} from './usePublicProfile';
