@@ -15,7 +15,7 @@ import type { IconName } from '@/components/ui';
  * Available widget types in the Hub
  * Add new widget types here as they are implemented
  */
-export type WidgetType = 'timer' | 'email' | 'calendar' | 'chat';
+export type WidgetType = 'timer' | 'email' | 'calendar' | 'chat' | 'leaderboard';
 
 /**
  * Widget size variants
@@ -91,6 +91,15 @@ export const WIDGET_CONFIGS: Record<WidgetType, WidgetConfigWithoutId> = {
     minSize: 'small',
     resizable: true,
     requiresAuth: null, // Chat works without external auth
+  },
+  leaderboard: {
+    type: 'leaderboard',
+    title: 'Leaderboard',
+    icon: 'bar-chart',
+    defaultSize: 'medium',
+    minSize: 'small',
+    resizable: true,
+    requiresAuth: null, // Requires workspace membership (RLS enforced)
   },
 };
 
