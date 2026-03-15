@@ -28,3 +28,11 @@ export { Icon, type IconProps, type IconName, iconMap } from './Icon';
 
 // OfflineBanner component
 export { OfflineBanner, type OfflineBannerProps } from './OfflineBanner';
+
+// AnimatedView component
+export {
+  AnimatedView,
+  type AnimatedViewProps,
+  type AnimationPreset,
+  type AnimatedViewImperativeHandle,
+} from './AnimatedView';

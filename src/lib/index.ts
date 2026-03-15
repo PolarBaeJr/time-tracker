@@ -151,3 +151,39 @@ export {
 } from './oauth';
 
 export type { OAuthCallbackType, OAuthCallbackResult } from './oauth';
+
+// Animation utilities
+export {
+  // Constants
+  ANIMATION_DURATION,
+  ANIMATION_EASING,
+  ANIMATION_PRESETS,
+  // Reduced motion
+  getReducedMotionPreference,
+  setReducedMotionPreference,
+  // Animation functions
+  fade,
+  fadeIn,
+  fadeOut,
+  scale,
+  scaleIn,
+  scaleOut,
+  slide,
+  slideIn,
+  slideOut,
+  pulse,
+  spring,
+  shake,
+  parallel,
+  sequence,
+  stagger,
+  interpolateColor,
+} from './animations';
+
+export type {
+  AnimationConfig,
+  AnimationDuration,
+  AnimationEasingName,
+  EasingFunction,
+  SlideDirection,
+} from './animations';

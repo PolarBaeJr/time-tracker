@@ -455,3 +455,14 @@ export {
   type UseDeleteConversationResult,
   type UseClearConversationHistoryResult,
 } from './useChat';
+
+// Animated value hook
+export {
+  useAnimatedValue,
+  useAnimatedValues,
+  type UseAnimatedValueOptions,
+  type UseAnimatedValueResult,
+} from './useAnimatedValue';
+
+// Haptic feedback hook
+export { useHaptics, haptics, type HapticType, type UseHapticsResult } from './useHaptics';
