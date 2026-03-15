@@ -412,6 +412,9 @@ export function TodoList({
         refreshing={isRefetching}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        // Accessibility
+        accessibilityRole="list"
+        accessibilityLabel="Todo list"
       />
     </View>
   );

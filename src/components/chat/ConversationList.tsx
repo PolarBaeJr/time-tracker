@@ -277,6 +277,9 @@ export function ConversationList({
         refreshing={isRefreshing}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        // Accessibility
+        accessibilityRole="list"
+        accessibilityLabel="Conversations list"
       />
     </View>
   );

@@ -227,6 +227,9 @@ export function ChatWindow({
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
+        // Accessibility
+        accessibilityRole="list"
+        accessibilityLabel="Chat messages"
         ListFooterComponent={
           pendingMessage ? (
             <View>

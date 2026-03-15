@@ -272,6 +272,8 @@ export function NoteEditor({
                   multiline
                   textAlignVertical="top"
                   maxLength={10000}
+                  accessibilityLabel="Note content"
+                  accessibilityHint="Enter the content of your note"
                 />
                 {errors.content && <Text style={styles.errorText}>{errors.content}</Text>}
                 <Text style={styles.charCount}>{form.content.length} / 10000</Text>
