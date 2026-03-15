@@ -36,6 +36,9 @@ export type RootStackParamList = {
   /** Setup screen - forced settings configuration for new users */
   Setup: undefined;
 
+  /** Onboarding screen - multi-step wizard for new users */
+  Onboarding: undefined;
+
   /** Main tab navigator - nested navigator params */
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
 

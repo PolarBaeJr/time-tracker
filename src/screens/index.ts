@@ -13,3 +13,5 @@ export { TimerScreen } from './TimerScreen';
 export { FocusModeScreen } from './FocusModeScreen';
 export { HubScreen } from './HubScreen';
 export { NotesScreen, type NotesScreenProps } from './NotesScreen';
+export { ChatScreen, type ChatScreenProps } from './ChatScreen';
+export { OnboardingScreen, type OnboardingScreenProps } from './OnboardingScreen';

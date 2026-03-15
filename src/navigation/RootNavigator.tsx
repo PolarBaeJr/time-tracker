@@ -24,7 +24,9 @@ import {
   CategoriesScreen,
   GoalsScreen,
   ChatScreen,
+  OnboardingScreen,
 } from '@/screens';
+import { useHasCompletedOnboarding, useOnboardingStoreHydrated } from '@/stores/onboardingStore';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from '@/lib/queryClient';
 import { TimeEntrySchema } from '@/schemas';
@@ -274,6 +276,19 @@ export function RootNavigator(): React.ReactElement {
   const { isAuthenticated, user } = useAuth();
   const { colors } = useTheme();
 
+  // Local onboarding state (for the UI onboarding wizard)
+  const hasCompletedLocalOnboarding = useHasCompletedOnboarding();
+  const isOnboardingHydrated = useOnboardingStoreHydrated();
+
+  // Show onboarding for authenticated users who:
+  // 1. Have completed server-side setup (onboarding_complete = true)
+  // 2. But haven't completed local onboarding wizard
+  const showOnboarding =
+    isAuthenticated &&
+    user?.onboarding_complete &&
+    isOnboardingHydrated &&
+    !hasCompletedLocalOnboarding;
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -292,6 +307,12 @@ export function RootNavigator(): React.ReactElement {
         />
       ) : !user?.onboarding_complete ? (
         <Stack.Screen name="Setup" component={SetupScreen} />
+      ) : showOnboarding ? (
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ animation: 'fade' }}
+        />
       ) : (
         <>
           <Stack.Screen name="Main" component={MainTabs} />
