@@ -10,5 +10,6 @@ export * from './charts';
 export * from './goals';
 export * from './history';
 export * from './onboarding';
+export * from './projects';
 export * from './settings';
 export * from './ui';
