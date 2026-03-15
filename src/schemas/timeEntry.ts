@@ -1,10 +1,18 @@
 import { z } from 'zod';
+import { ApprovalStatusEnum } from './approval';
 
 /**
  * Time Entry Schema - Entity schema for query responses
  *
  * Represents a completed time tracking entry with start/end times and duration.
  * Time entries are created when the timer is stopped or via manual entry.
+ *
+ * Collaboration fields (added in Phase 5):
+ * - project_id: Links entry to a shared workspace project
+ * - approval_status: Tracks approval workflow state
+ * - approver_id: Designated reviewer for this entry
+ * - approval_note: Feedback from approver
+ * - approved_at/submitted_at: Timestamps for approval workflow
  */
 export const EntryTypeEnum = z.enum(['work', 'break', 'long_break']);
 
@@ -53,6 +61,48 @@ export const TimeEntrySchema = z.object({
 
   /** Timestamp when entry was last updated */
   updated_at: z.string().datetime({ offset: true }),
+
+  // ==========================================================================
+  // Collaboration fields (Phase 5)
+  // ==========================================================================
+
+  /**
+   * UUID of the associated project (nullable)
+   * Links entry to a shared workspace project
+   * Set to NULL if project is deleted (ON DELETE SET NULL)
+   */
+  project_id: z.string().uuid().nullable().optional(),
+
+  /**
+   * Current approval workflow status
+   * - draft: Not yet submitted
+   * - submitted: Awaiting approval
+   * - approved: Approved by approver
+   * - rejected: Rejected by approver
+   */
+  approval_status: ApprovalStatusEnum.default('draft').optional(),
+
+  /**
+   * UUID of the designated approver (nullable)
+   * Set when entry is submitted for approval
+   */
+  approver_id: z.string().uuid().nullable().optional(),
+
+  /**
+   * Note from the approver (nullable)
+   * Required when rejecting, optional when approving
+   */
+  approval_note: z.string().max(500).nullable().optional(),
+
+  /**
+   * Timestamp when entry was approved or rejected (nullable)
+   */
+  approved_at: z.string().datetime({ offset: true }).nullable().optional(),
+
+  /**
+   * Timestamp when entry was submitted for approval (nullable)
+   */
+  submitted_at: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 /**
@@ -83,6 +133,10 @@ export const CreateTimeEntrySchema = z
 
     /** Per-entry billing rate override */
     billing_rate: z.number().nonnegative().nullable().optional(),
+
+    // Collaboration fields
+    /** UUID of the associated project (optional) */
+    project_id: z.string().uuid().nullable().optional(),
   })
   .refine(
     data => {
@@ -146,6 +200,10 @@ export const UpdateTimeEntrySchema = z
 
     /** Per-entry billing rate override */
     billing_rate: z.number().nonnegative().nullable().optional(),
+
+    // Collaboration fields
+    /** UUID of the associated project (optional) */
+    project_id: z.string().uuid().nullable().optional(),
   })
   .refine(
     data => {
@@ -197,6 +255,13 @@ export const TimeEntryFiltersSchema = z.object({
 
   /** Sort order */
   sortOrder: z.enum(['asc', 'desc']).optional(),
+
+  // Collaboration filters
+  /** Filter by project ID */
+  projectId: z.string().uuid().nullable().optional(),
+
+  /** Filter by approval status */
+  approvalStatus: ApprovalStatusEnum.optional(),
 });
 
 export type TimeEntryFilters = z.infer<typeof TimeEntryFiltersSchema>;
