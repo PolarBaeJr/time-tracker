@@ -2,8 +2,15 @@
  * React contexts barrel export
  */
 
+export { AuthContext, AuthProvider, type AuthContextValue } from './AuthContext';
+
 export {
-  AuthContext,
-  AuthProvider,
-  type AuthContextValue,
-} from './AuthContext';
+  ToastContext,
+  ToastProvider,
+  useToastContext,
+  DEFAULT_TOAST_DURATION,
+  type ToastContextValue,
+  type Toast,
+  type ToastVariant,
+  type ToastOptions,
+} from './ToastContext';
