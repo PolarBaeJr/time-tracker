@@ -1,10 +1,18 @@
 /**
- * Button component with variants, sizes, loading state, and accessibility support
+ * Button component with variants, sizes, loading state, animations, and accessibility support
+ *
+ * Enhanced with:
+ * - Scale animation on press (scale to 0.98)
+ * - Haptic feedback on press (light impact)
+ * - Respects reduced motion settings from UX store
+ * - Optional 'animated' prop to control animations
  */
 
 import * as React from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   StyleSheet,
   Text,
@@ -16,6 +24,8 @@ import {
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { spacing, fontSizes, fontWeights, borderRadius, type Colors } from '@/theme';
+import { ANIMATION_DURATION, ANIMATION_EASING, getReducedMotionPreference } from '@/lib/animations';
+import { useHaptics } from '@/hooks';
 
 /**
  * Button variants for different use cases
@@ -45,6 +55,8 @@ export interface ButtonProps extends Omit<PressableProps, 'style'>, Accessibilit
   style?: ViewStyle;
   /** Additional styles to apply to the button text */
   textStyle?: TextStyle;
+  /** Whether to enable press animations and haptic feedback (default: true) */
+  animated?: boolean;
 }
 
 function getBackgroundColor(
@@ -136,59 +148,114 @@ export function Button({
   textStyle,
   accessibilityLabel,
   accessibilityHint,
+  animated = true,
+  onPressIn,
+  onPressOut,
   ...pressableProps
 }: ButtonProps): React.ReactElement {
   const { colors } = useTheme();
   const sizeStyles = sizeConfig[size];
   const isDisabled = disabled || loading;
+  const { triggerLight } = useHaptics();
+
+  // Use useState with lazy initializer for React Compiler compatibility
+  const [scaleValue] = useState(() => new Animated.Value(1));
+
+  // Check if animations should be disabled
+  const shouldAnimate = animated && !getReducedMotionPreference();
+
+  // Handle press in - scale down and trigger haptics
+  const handlePressIn = useCallback(
+    (event: Parameters<NonNullable<PressableProps['onPressIn']>>[0]) => {
+      if (shouldAnimate && !isDisabled) {
+        Animated.timing(scaleValue, {
+          toValue: 0.98,
+          duration: ANIMATION_DURATION.fast,
+          easing: ANIMATION_EASING.easeOut,
+          useNativeDriver: true,
+        }).start();
+      }
+
+      // Trigger haptic feedback
+      if (animated && !isDisabled) {
+        triggerLight();
+      }
+
+      // Call original onPressIn if provided
+      onPressIn?.(event);
+    },
+    [shouldAnimate, isDisabled, scaleValue, animated, triggerLight, onPressIn]
+  );
+
+  // Handle press out - scale back up
+  const handlePressOut = useCallback(
+    (event: Parameters<NonNullable<PressableProps['onPressOut']>>[0]) => {
+      if (shouldAnimate) {
+        Animated.timing(scaleValue, {
+          toValue: 1,
+          duration: ANIMATION_DURATION.fast,
+          easing: ANIMATION_EASING.easeOut,
+          useNativeDriver: true,
+        }).start();
+      }
+
+      // Call original onPressOut if provided
+      onPressOut?.(event);
+    },
+    [shouldAnimate, scaleValue, onPressOut]
+  );
 
   return (
-    <Pressable
-      {...pressableProps}
-      disabled={isDisabled}
-      accessibilityRole="button"
-      accessibilityState={{
-        disabled: isDisabled,
-        busy: loading,
-      }}
-      accessibilityLabel={
-        accessibilityLabel ?? (typeof children === 'string' ? children : undefined)
-      }
-      accessibilityHint={accessibilityHint}
-      style={({ pressed }) => [
-        styles.base,
-        {
-          height: sizeStyles.height,
-          paddingHorizontal: sizeStyles.paddingHorizontal,
-          backgroundColor: getBackgroundColor(variant, pressed, isDisabled, colors),
-          ...getBorderStyle(variant, isDisabled, colors),
-        },
-        style,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={getTextColor(variant, false, colors)}
-          accessibilityLabel="Loading"
-        />
-      ) : typeof children === 'string' || typeof children === 'number' ? (
-        <Text
-          style={[
-            styles.text,
-            {
-              fontSize: sizeStyles.fontSize,
-              color: getTextColor(variant, isDisabled, colors),
-            },
-            textStyle,
-          ]}
-        >
-          {children}
-        </Text>
-      ) : (
-        <View style={styles.content}>{children}</View>
-      )}
-    </Pressable>
+    <Animated.View style={shouldAnimate ? { transform: [{ scale: scaleValue }] } : undefined}>
+      <Pressable
+        {...pressableProps}
+        disabled={isDisabled}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityState={{
+          disabled: isDisabled,
+          busy: loading,
+        }}
+        accessibilityLabel={
+          accessibilityLabel ?? (typeof children === 'string' ? children : undefined)
+        }
+        accessibilityHint={accessibilityHint}
+        style={({ pressed }) => [
+          styles.base,
+          {
+            height: sizeStyles.height,
+            paddingHorizontal: sizeStyles.paddingHorizontal,
+            backgroundColor: getBackgroundColor(variant, pressed, isDisabled, colors),
+            ...getBorderStyle(variant, isDisabled, colors),
+          },
+          style,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={getTextColor(variant, false, colors)}
+            accessibilityLabel="Loading"
+          />
+        ) : typeof children === 'string' || typeof children === 'number' ? (
+          <Text
+            style={[
+              styles.text,
+              {
+                fontSize: sizeStyles.fontSize,
+                color: getTextColor(variant, isDisabled, colors),
+              },
+              textStyle,
+            ]}
+          >
+            {children}
+          </Text>
+        ) : (
+          <View style={styles.content}>{children}</View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
