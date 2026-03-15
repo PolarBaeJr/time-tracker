@@ -664,3 +664,20 @@ export {
   type UseSharedDashboardViewOptions,
   type UseSharedDashboardViewResult,
 } from './useSharedDashboardView';
+
+// Activity Feed hooks
+export {
+  useActivityFeed,
+  useActivityFeedRealtime,
+  useLatestActivityEvents,
+  fetchActivityFeed,
+  fetchLatestActivityEvents,
+  ActivityFeedFetchError,
+  type FetchActivityFeedOptions,
+  type UseActivityFeedOptions,
+  type UseActivityFeedRealtimeOptions,
+  type UseActivityFeedRealtimeResult,
+  type UseLatestActivityEventsOptions,
+  type UseActivityFeedResult,
+  type UseLatestActivityEventsResult,
+} from './useActivityFeed';
