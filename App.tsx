@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/ui';
-import { AuthProvider } from '@/contexts';
+import { AuthProvider, WorkspaceProvider } from '@/contexts';
 import { useAuth, useSplashScreen } from '@/hooks';
 import { NavigationProvider } from '@/navigation';
 import { ThemeProvider, useTheme } from '@/theme';
@@ -67,7 +67,8 @@ const styles = StyleSheet.create({
  * Sets up the provider hierarchy:
  * 1. ThemeProvider - Provides theme context
  * 2. AuthProvider - Manages authentication state
- * 3. AppContent - Navigation and main app UI
+ * 3. WorkspaceProvider - Manages active workspace state (for collaboration features)
+ * 4. AppContent - Navigation and main app UI
  */
 export default function App(): React.ReactElement {
   return (
@@ -75,7 +76,9 @@ export default function App(): React.ReactElement {
       <ThemeProvider>
         <ErrorBoundary>
           <AuthProvider>
-            <AppContent />
+            <WorkspaceProvider>
+              <AppContent />
+            </WorkspaceProvider>
           </AuthProvider>
         </ErrorBoundary>
       </ThemeProvider>

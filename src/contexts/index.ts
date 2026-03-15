@@ -14,3 +14,12 @@ export {
   type ToastVariant,
   type ToastOptions,
 } from './ToastContext';
+
+export {
+  WorkspaceContext,
+  WorkspaceProvider,
+  useWorkspaceContext,
+  useActiveWorkspace,
+  useWorkspaces,
+  type WorkspaceContextValue,
+} from './WorkspaceContext';
