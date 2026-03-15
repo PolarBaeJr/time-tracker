@@ -15,7 +15,7 @@ import type { IconName } from '@/components/ui';
  * Available widget types in the Hub
  * Add new widget types here as they are implemented
  */
-export type WidgetType = 'timer' | 'email' | 'calendar';
+export type WidgetType = 'timer' | 'email' | 'calendar' | 'chat';
 
 /**
  * Widget size variants
@@ -82,6 +82,15 @@ export const WIDGET_CONFIGS: Record<WidgetType, WidgetConfigWithoutId> = {
     minSize: 'small',
     resizable: true,
     requiresAuth: 'google_calendar',
+  },
+  chat: {
+    type: 'chat',
+    title: 'AI Assistant',
+    icon: 'chat-bubble',
+    defaultSize: 'medium',
+    minSize: 'small',
+    resizable: true,
+    requiresAuth: null, // Chat works without external auth
   },
 };
 

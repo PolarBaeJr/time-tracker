@@ -5,7 +5,7 @@ import { storage } from '@/lib';
 const STORAGE_KEY = 'worktracker.hub-layout.v1';
 
 // Widget types - extensible for future phases
-export type HubWidgetType = 'timer' | 'email' | 'calendar';
+export type HubWidgetType = 'timer' | 'email' | 'calendar' | 'chat';
 
 export interface HubWidgetConfig {
   id: string;
@@ -23,7 +23,7 @@ interface HubStoreState {
 type Listener = () => void;
 
 // All valid widget types for validation
-const ALL_WIDGET_TYPES: HubWidgetType[] = ['timer', 'email', 'calendar'];
+const ALL_WIDGET_TYPES: HubWidgetType[] = ['timer', 'email', 'calendar', 'chat'];
 
 // Default layout: single TimerWidget at position 0, size 'medium', visible true
 const DEFAULT_WIDGETS: HubWidgetConfig[] = [

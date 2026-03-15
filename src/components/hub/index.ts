@@ -27,3 +27,4 @@ export {
 export { TimerWidget, type TimerWidgetProps } from './widgets/TimerWidget';
 export { EmailWidget, type EmailWidgetProps } from './widgets/EmailWidget';
 export { CalendarWidget, type CalendarWidgetProps } from './widgets/CalendarWidget';
+export { ChatWidget, type ChatWidgetProps } from './widgets/ChatWidget';
