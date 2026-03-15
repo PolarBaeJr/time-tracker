@@ -599,3 +599,40 @@ export {
   type UseUpdateProjectMemberRoleResult,
   type UseRemoveProjectMemberResult,
 } from './useProjectMembers';
+
+// Shared Dashboard hooks
+export {
+  useSharedDashboards,
+  useCreateSharedDashboard,
+  useRevokeSharedDashboard,
+  useUpdateSharedDashboard,
+  useDeleteSharedDashboard,
+  fetchSharedDashboards,
+  fetchSharedDashboard,
+  getShareUrl,
+  isSharedDashboardValid,
+  SharedDashboardError,
+  type CreatedSharedDashboard,
+  type UpdateSharedDashboardParams,
+  type UseSharedDashboardsOptions,
+  type UseCreateSharedDashboardOptions,
+  type UseRevokeSharedDashboardOptions,
+  type UseUpdateSharedDashboardOptions,
+  type UseDeleteSharedDashboardOptions,
+  type UseSharedDashboardsResult,
+  type UseCreateSharedDashboardResult,
+  type UseRevokeSharedDashboardResult,
+  type UseUpdateSharedDashboardResult,
+  type UseDeleteSharedDashboardResult,
+} from './useSharedDashboards';
+
+export {
+  useSharedDashboardView,
+  fetchSharedDashboardData,
+  formatDuration,
+  secondsToHours,
+  isLinkInvalid,
+  SharedDashboardViewError,
+  type UseSharedDashboardViewOptions,
+  type UseSharedDashboardViewResult,
+} from './useSharedDashboardView';
