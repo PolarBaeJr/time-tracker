@@ -33,8 +33,8 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { EntryCard } from './EntryCard';
-import { Text, Spinner, Card, Icon } from '@/components/ui';
+import { EntryCard, EntryCardSkeleton } from './EntryCard';
+import { Text, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import type { TimeEntry, Category } from '@/schemas';
 
@@ -174,23 +174,15 @@ function flattenSections(sections: EntrySection[]): ListItem[] {
 
 /**
  * Loading skeleton component
+ *
+ * Shows 5 EntryCardSkeleton components with shimmer animation
+ * during initial load.
  */
 function LoadingSkeleton(): React.ReactElement {
   return (
     <View style={styles.skeletonContainer}>
       {[1, 2, 3, 4, 5].map(i => (
-        <Card key={i} padding="md" style={styles.skeletonCard}>
-          <View style={styles.skeletonHeader}>
-            <View style={styles.skeletonChip} />
-            <View style={styles.skeletonText} />
-            <View style={styles.skeletonBadge} />
-          </View>
-          <View style={styles.skeletonRow}>
-            <View style={styles.skeletonDate} />
-            <View style={styles.skeletonTime} />
-            <View style={styles.skeletonDuration} />
-          </View>
-        </Card>
+        <EntryCardSkeleton key={i} />
       ))}
     </View>
   );

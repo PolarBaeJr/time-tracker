@@ -20,7 +20,7 @@
 
 import * as React from 'react';
 import { View, StyleSheet, Pressable, type TextStyle } from 'react-native';
-import { Card, Text, Icon } from '@/components/ui';
+import { Card, Text, Icon, Skeleton } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import type { TimeEntry } from '@/schemas';
 
@@ -407,6 +407,102 @@ export function EntryCard({
     </Card>
   );
 }
+
+/**
+ * EntryCardSkeleton Component
+ *
+ * A skeleton loading placeholder that mimics the EntryCard structure.
+ * Uses the Skeleton component for shimmer animation effect.
+ */
+export function EntryCardSkeleton(): React.ReactElement {
+  return (
+    <Card padding="md" elevation="sm" style={skeletonStyles.card}>
+      {/* Row 1: Category chip + name + type badge skeleton */}
+      <View style={skeletonStyles.header}>
+        <View style={skeletonStyles.categoryContainer}>
+          <Skeleton variant="circle" width={12} height={12} style={skeletonStyles.colorChip} />
+          <Skeleton variant="text" width={100} height={16} />
+          <Skeleton
+            variant="rectangle"
+            width={50}
+            height={18}
+            borderRadius={borderRadius.sm}
+            style={skeletonStyles.typeBadge}
+          />
+        </View>
+        <Skeleton variant="circle" width={20} height={20} />
+      </View>
+
+      {/* Row 2: Notes preview skeleton */}
+      <Skeleton variant="text" width="90%" height={14} style={skeletonStyles.notesLine} />
+      <Skeleton variant="text" width="70%" height={14} style={skeletonStyles.notesLine} />
+
+      {/* Row 3: Date + time range skeleton */}
+      <View style={skeletonStyles.timeRow}>
+        <Skeleton variant="text" width={60} height={14} style={skeletonStyles.date} />
+        <View style={skeletonStyles.timeRange}>
+          <Skeleton variant="text" width={45} height={14} />
+          <View style={skeletonStyles.timeSeparator} />
+          <Skeleton variant="text" width={45} height={14} />
+        </View>
+      </View>
+
+      {/* Row 4: Duration badge skeleton */}
+      <View style={skeletonStyles.metaRow}>
+        <Skeleton variant="rectangle" width={60} height={24} borderRadius={borderRadius.md} />
+      </View>
+    </Card>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  card: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.xs,
+  },
+  colorChip: {
+    marginRight: spacing.xs,
+  },
+  typeBadge: {
+    marginLeft: spacing.xs,
+  },
+  notesLine: {
+    marginBottom: spacing.xs,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  date: {
+    marginRight: spacing.md,
+  },
+  timeRange: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  timeSeparator: {
+    width: 8,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
 
 const styles = StyleSheet.create({
   card: {
