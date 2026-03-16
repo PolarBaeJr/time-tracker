@@ -12,7 +12,16 @@ import { View, StyleSheet, RefreshControl, ScrollView, Pressable } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { WidgetGrid, TimerWidget, EmailWidget, CalendarWidget, ChatWidget } from '@/components/hub';
+import {
+  WidgetGrid,
+  TimerWidget,
+  EmailWidget,
+  CalendarWidget,
+  ChatWidget,
+  ActivityFeedWidget,
+  LeaderboardWidget,
+  ApprovalWidget,
+} from '@/components/hub';
 import { Text, Icon, Button } from '@/components/ui';
 import { useWidgetLayout, useAuth, useUserSettings } from '@/hooks';
 import { useTheme, spacing } from '@/theme';
@@ -118,6 +127,12 @@ export function HubScreen(): React.ReactElement {
         return <CalendarWidget key={widget.id} size={widget.size} />;
       case 'chat':
         return <ChatWidget key={widget.id} size={widget.size} />;
+      case 'leaderboard':
+        return <LeaderboardWidget key={widget.id} size={widget.size} />;
+      case 'activityFeed':
+        return <ActivityFeedWidget key={widget.id} size={widget.size} />;
+      case 'approval':
+        return <ApprovalWidget key={widget.id} size={widget.size} />;
       default:
         // Future widget types will be added here
         return (

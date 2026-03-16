@@ -28,3 +28,6 @@ export { TimerWidget, type TimerWidgetProps } from './widgets/TimerWidget';
 export { EmailWidget, type EmailWidgetProps } from './widgets/EmailWidget';
 export { CalendarWidget, type CalendarWidgetProps } from './widgets/CalendarWidget';
 export { ChatWidget, type ChatWidgetProps } from './widgets/ChatWidget';
+export { ActivityFeedWidget, type ActivityFeedWidgetProps } from './widgets/ActivityFeedWidget';
+export { LeaderboardWidget, type LeaderboardWidgetProps } from './widgets/LeaderboardWidget';
+export { ApprovalWidget, type ApprovalWidgetProps } from './widgets/ApprovalWidget';
