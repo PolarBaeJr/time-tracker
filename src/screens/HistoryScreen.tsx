@@ -33,14 +33,20 @@ import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import {
   useTimeEntries,
   useCategories,
+  useProjects,
   useBulkUpdateEntries,
   useBulkDeleteEntries,
   useMergeTimeEntries,
   useDeleteTimeEntry,
   useRestoreTimeEntry,
   useDuplicateTimeEntry,
+  useSubmitEntries,
+  useToast,
 } from '@/hooks';
+import { SubmitEntriesModal } from '@/components/approvals';
+import { useWorkspaceContext } from '@/contexts';
 import type { TimeEntry, TimeEntryFilters, Category } from '@/schemas';
+import type { ProjectLookup } from '@/components/history/EntryList';
 
 /**
  * HistoryScreen props (from navigation)
@@ -81,6 +87,9 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
   // Category picker modal for bulk edit
   const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
 
+  // Submit for approval modal
+  const [submitModalVisible, setSubmitModalVisible] = useState(false);
+
   // Initialize filters from route params
   const [filters, setFilters] = useState<TimeEntryFilters>(() => ({
     categoryId: route?.params?.categoryId,
@@ -88,8 +97,47 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
     dateEnd: route?.params?.dateEnd,
   }));
 
+  // Workspace context for project fetching
+  const { activeWorkspace, isPersonalMode } = useWorkspaceContext();
+  const { showToast } = useToast();
+
+  // Submit entries mutation
+  const submitEntries = useSubmitEntries({
+    onSuccess: () => {
+      showToast({
+        message: 'Entries submitted for approval',
+        variant: 'success',
+      });
+      setSubmitModalVisible(false);
+    },
+    onError: error => {
+      showToast({
+        message: error.message || 'Failed to submit entries',
+        variant: 'error',
+      });
+    },
+  });
+
   // Fetch categories for filter dropdown and entry display
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+
+  // Fetch projects for the active workspace
+  const { data: projectsData = [] } = useProjects(activeWorkspace?.id ?? '', {
+    enabled: !isPersonalMode && !!activeWorkspace,
+  });
+
+  // Build projects lookup map for EntryList
+  const projectsLookup: ProjectLookup = useMemo(() => {
+    const map = new Map();
+    projectsData.forEach(project => {
+      map.set(project.id, {
+        id: project.id,
+        name: project.name,
+        color: project.color,
+      });
+    });
+    return map;
+  }, [projectsData]);
 
   // Fetch time entries with filters and pagination
   const {
@@ -170,6 +218,26 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
     if (!data?.pages) return [];
     return data.pages.flatMap(page => page.data);
   }, [data]);
+
+  // Filter entries to get only draft entries for submission (workspace mode only)
+  const draftEntries = useMemo(() => {
+    if (isPersonalMode || !activeWorkspace) return [];
+    return entries.filter(
+      entry => entry.approval_status === 'draft' && entry.project_id // Only entries with a project can be submitted
+    );
+  }, [entries, isPersonalMode, activeWorkspace]);
+
+  // Handle submit for approval
+  const handleSubmitForApproval = useCallback(
+    (entryIds: string[]) => {
+      if (!activeWorkspace?.id) return;
+      submitEntries.mutate({
+        workspaceId: activeWorkspace.id,
+        entry_ids: entryIds,
+      });
+    },
+    [activeWorkspace?.id, submitEntries]
+  );
 
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: TimeEntryFilters) => {
@@ -400,6 +468,7 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
       <EntryList
         entries={entries}
         categories={categories}
+        projects={projectsLookup}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         onFetchNextPage={handleFetchNextPage}

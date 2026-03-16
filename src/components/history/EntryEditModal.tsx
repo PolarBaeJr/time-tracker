@@ -37,10 +37,12 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { Button, Text, Input, Card, Icon } from '@/components/ui';
+import { ProjectPicker } from '@/components/projects';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import { useUpdateTimeEntry, useDeleteTimeEntry } from '@/hooks/useTimeEntryMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { useEntryTags, useSetEntryTags } from '@/hooks/useTags';
+import { useWorkspaceContext } from '@/contexts';
 import { UpdateTimeEntrySchema } from '@/schemas';
 import type { TimeEntry, Category, UpdateTimeEntryInput } from '@/schemas';
 import { TagSelector } from './TagSelector';
@@ -76,6 +78,7 @@ export interface EntryEditModalProps {
  */
 interface FormState {
   categoryId: string | null;
+  projectId: string | null;
   startDate: string;
   startTime: string;
   endDate: string;
@@ -239,6 +242,7 @@ export function EntryEditModal({
   // Form state
   const [form, setForm] = useState<FormState>({
     categoryId: null,
+    projectId: null,
     startDate: '',
     startTime: '',
     endDate: '',
@@ -246,6 +250,9 @@ export function EntryEditModal({
     notes: '',
     billingRate: '',
   });
+
+  // Workspace context for project picker
+  const { activeWorkspace, isPersonalMode } = useWorkspaceContext();
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -260,6 +267,7 @@ export function EntryEditModal({
     if (entry) {
       setForm({
         categoryId: entry.category_id,
+        projectId: entry.project_id ?? null,
         startDate: extractDate(entry.start_at),
         startTime: extractTime(entry.start_at),
         endDate: entry.end_at ? extractDate(entry.end_at) : '',
@@ -347,6 +355,7 @@ export function EntryEditModal({
 
       const updateData: UpdateTimeEntryInput = {
         category_id: form.categoryId,
+        project_id: form.projectId,
         start_at: startIso,
         end_at: endIso,
         duration_seconds: duration,
@@ -419,6 +428,7 @@ export function EntryEditModal({
 
     return (
       form.categoryId !== entry.category_id ||
+      form.projectId !== (entry.project_id ?? null) ||
       form.startDate !== extractDate(entry.start_at) ||
       form.startTime !== extractTime(entry.start_at) ||
       form.endDate !== (entry.end_at ? extractDate(entry.end_at) : '') ||
@@ -469,6 +479,19 @@ export function EntryEditModal({
             <Icon name="chevron-down" size={16} color={colors.textSecondary} />
           </Pressable>
         </View>
+
+        {/* Project picker (when workspace active) */}
+        {!isPersonalMode && activeWorkspace && (
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Project</Text>
+            <ProjectPicker
+              workspaceId={activeWorkspace.id}
+              value={form.projectId}
+              onChange={projectId => setForm(prev => ({ ...prev, projectId }))}
+              disabled={isSubmitting || !isOwnEntry}
+            />
+          </View>
+        )}
 
         {/* Start date/time */}
         <Text style={styles.sectionLabel}>Start</Text>

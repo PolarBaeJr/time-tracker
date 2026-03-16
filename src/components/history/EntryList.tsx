@@ -33,10 +33,15 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { EntryCard, EntryCardSkeleton } from './EntryCard';
+import { EntryCard, EntryCardSkeleton, type EntryProjectInfo } from './EntryCard';
 import { Text, Icon } from '@/components/ui';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
 import type { TimeEntry, Category } from '@/schemas';
+
+/**
+ * Project lookup map type
+ */
+export type ProjectLookup = Map<string, EntryProjectInfo>;
 
 /**
  * Section data for grouped entries
@@ -62,6 +67,8 @@ export interface EntryListProps {
   entries: TimeEntry[];
   /** Categories for looking up category info */
   categories: Category[];
+  /** Projects lookup map for displaying project info on entries */
+  projects?: ProjectLookup;
   /** Whether there are more entries to fetch */
   hasNextPage?: boolean;
   /** Whether currently fetching next page */
@@ -207,6 +214,7 @@ function EmptyState({ message }: { message: string }): React.ReactElement {
 export function EntryList({
   entries,
   categories,
+  projects,
   hasNextPage = false,
   isFetchingNextPage = false,
   onFetchNextPage,
@@ -254,6 +262,7 @@ export function EntryList({
       }
 
       const category = item.entry.category_id ? categoryMap.get(item.entry.category_id) : null;
+      const project = item.entry.project_id ? (projects?.get(item.entry.project_id) ?? null) : null;
 
       return (
         <EntryCard
@@ -262,6 +271,7 @@ export function EntryList({
           categoryColor={category?.color || null}
           categoryType={category?.type || null}
           categoryHourlyRate={category?.hourly_rate ?? null}
+          project={project}
           onPress={onEntryPress}
           onEdit={onEntryEdit}
           onSplit={onEntrySplit}
@@ -274,6 +284,7 @@ export function EntryList({
     },
     [
       categoryMap,
+      projects,
       onEntryPress,
       onEntryEdit,
       onEntrySplit,

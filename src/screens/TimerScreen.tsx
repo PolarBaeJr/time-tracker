@@ -41,7 +41,9 @@ import {
   ConnectionIndicator,
   type SessionSettings,
 } from '@/components/timer';
+import { ProjectPicker } from '@/components/projects';
 import { Button, Card, Text, Icon } from '@/components/ui';
+import { useWorkspaceContext } from '@/contexts';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useRealtimeTimer,
@@ -129,6 +131,12 @@ export function TimerScreen(): React.ReactElement {
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [sessionLabel, setSessionLabel] = useState('');
+
+  // Workspace & project state
+  const { activeWorkspace, isPersonalMode } = useWorkspaceContext();
+  const projectId = useTimerStore(state => state.projectId);
+  const setProjectId = useTimerStore(state => state.setProjectId);
+  const clearProject = useTimerStore(state => state.clearProject);
 
   // Timer sounds
   const { playSound } = useTimerSounds();
@@ -258,6 +266,7 @@ export function TimerScreen(): React.ReactElement {
     try {
       const options: Parameters<typeof startTimer>[0] = {
         categoryId: selectedCategoryId,
+        projectId: projectId ?? undefined,
       };
 
       if (timerMode === 'pomodoro') {
@@ -309,6 +318,7 @@ export function TimerScreen(): React.ReactElement {
     try {
       const result = await stopTimer({
         notes: sessionLabel.trim() || null,
+        projectId: projectId ?? undefined,
       });
 
       if (result.error) {
@@ -321,6 +331,7 @@ export function TimerScreen(): React.ReactElement {
       } else {
         playSound('stop');
         setSessionLabel('');
+        clearProject(); // Clear project after stopping
         void queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
         void queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
       }
@@ -334,7 +345,7 @@ export function TimerScreen(): React.ReactElement {
     } finally {
       setIsStopping(false);
     }
-  }, [sessionLabel, queryClient, playSound]);
+  }, [sessionLabel, queryClient, playSound, projectId, clearProject]);
 
   // Handle transitioning to next pomodoro phase
   const handleNextPhase = useCallback(async () => {
@@ -729,6 +740,18 @@ export function TimerScreen(): React.ReactElement {
               )}
             </View>
 
+            {/* Project picker (when workspace active) */}
+            {!isPersonalMode && activeWorkspace && (
+              <View style={styles.projectSection}>
+                <ProjectPicker
+                  workspaceId={activeWorkspace.id}
+                  value={projectId}
+                  onChange={setProjectId}
+                  disabled={hasActiveTimer}
+                />
+              </View>
+            )}
+
             {/* Session label input (visible when timer is running) */}
             {hasActiveTimer && (
               <View style={styles.sessionLabelSection}>
@@ -921,7 +944,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   categorySection: {
+    marginBottom: spacing.md,
+  },
+  projectSection: {
     marginBottom: spacing.lg,
+    width: '100%',
   },
   categoryButton: {
     backgroundColor: colors.surfaceVariant,
