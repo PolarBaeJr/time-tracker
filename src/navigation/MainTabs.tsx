@@ -257,6 +257,7 @@ const tabIconComponents: Record<
   Projects: props => <ProjectsTabIcon {...props} />,
   ActivityFeed: props => <ActivityFeedTabIcon {...props} />,
   Leaderboard: props => <LeaderboardTabIcon {...props} />,
+  Approval: props => <ApprovalTabIcon {...props} />,
   Settings: props => <SettingsTabIcon {...props} />,
 };
 
@@ -275,6 +276,12 @@ export function MainTabs(): React.ReactElement {
 
   // Determine if workspace collaboration tabs should be shown
   const showWorkspaceTabs = activeWorkspace !== null;
+
+  // Fetch pending approvals count for badge
+  const { data: pendingApprovals } = usePendingApprovals(activeWorkspace?.id ?? '', {
+    enabled: showWorkspaceTabs,
+  });
+  const pendingApprovalsCount = pendingApprovals?.length ?? 0;
 
   // Get tab bar icon for a specific route
   const getTabBarIcon = useCallback((routeName: keyof MainTabParamList) => {
@@ -345,6 +352,23 @@ export function MainTabs(): React.ReactElement {
             name="Leaderboard"
             component={LeaderboardScreenComponent}
             options={{ title: 'Leaderboard' }}
+          />
+        )}
+        {showWorkspaceTabs && (
+          <Tab.Screen
+            name="Approval"
+            component={ApprovalScreenComponent}
+            options={{
+              title: 'Approval',
+              tabBarBadge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: colors.primary,
+                fontSize: 10,
+                minWidth: 18,
+                height: 18,
+                borderRadius: 9,
+              },
+            }}
           />
         )}
         <Tab.Screen

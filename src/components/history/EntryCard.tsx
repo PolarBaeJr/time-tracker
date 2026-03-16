@@ -21,13 +21,23 @@
 import * as React from 'react';
 import { View, StyleSheet, Pressable, type TextStyle } from 'react-native';
 import { Card, Text, Icon, Skeleton } from '@/components/ui';
+import { ApprovalStatusBadge } from '@/components/approvals';
 import { colors, spacing, fontSizes, borderRadius } from '@/theme';
-import type { TimeEntry } from '@/schemas';
+import type { TimeEntry, ApprovalStatus } from '@/schemas';
 
 /**
  * Tag info for display on entry cards
  */
 export interface EntryTagInfo {
+  id: string;
+  name: string;
+  color: string;
+}
+
+/**
+ * Project info for display on entry cards
+ */
+export interface EntryProjectInfo {
   id: string;
   name: string;
   color: string;
@@ -47,6 +57,8 @@ export interface EntryCardProps {
   categoryType: string | null;
   /** Tags assigned to this entry */
   tags?: EntryTagInfo[];
+  /** Project info (null if no project assigned) */
+  project?: EntryProjectInfo | null;
   /** Callback when edit button is pressed */
   onEdit?: (entry: TimeEntry) => void;
   /** Callback when card is pressed */
@@ -63,6 +75,8 @@ export interface EntryCardProps {
   isSelected?: boolean;
   /** Callback when selection checkbox is toggled */
   onToggleSelect?: (entry: TimeEntry) => void;
+  /** Whether to show approval status badge (workspace mode) */
+  showApprovalStatus?: boolean;
 }
 
 /**
@@ -218,6 +232,7 @@ export function EntryCard({
   categoryColor,
   categoryType,
   tags,
+  project,
   categoryHourlyRate,
   onEdit,
   onPress,
@@ -226,6 +241,7 @@ export function EntryCard({
   isSelectable = false,
   isSelected = false,
   onToggleSelect,
+  showApprovalStatus = false,
 }: EntryCardProps): React.ReactElement {
   const handlePress = React.useCallback(() => {
     if (isSelectable && onToggleSelect) {
@@ -374,7 +390,7 @@ export function EntryCard({
         </View>
       </View>
 
-      {/* Row 4: Type + Duration + Earned */}
+      {/* Row 4: Type + Duration + Project + Earned */}
       <View style={styles.metaRow}>
         {isBreak && (
           <View
@@ -398,10 +414,20 @@ export function EntryCard({
         <View style={styles.durationBadge}>
           <Text style={styles.durationText}>{formatDuration(entry.duration_seconds)}</Text>
         </View>
+        {project && (
+          <View style={[styles.projectBadge, { backgroundColor: project.color + '20' }]}>
+            <View style={[styles.projectDot, { backgroundColor: project.color }]} />
+            <Text style={[styles.projectText, { color: project.color }]}>{project.name}</Text>
+          </View>
+        )}
         {earnings !== null && (
           <View style={styles.earningsBadge}>
             <Text style={styles.earningsText}>Earned: ${earnings.toFixed(2)}</Text>
           </View>
+        )}
+        {/* Approval status badge (workspace mode) */}
+        {showApprovalStatus && entry.approval_status && entry.approval_status !== 'draft' && (
+          <ApprovalStatusBadge status={entry.approval_status as ApprovalStatus} size="small" />
         )}
       </View>
     </Card>
@@ -675,6 +701,23 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.primary,
     fontWeight: '600',
+  },
+  projectBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.md,
+  },
+  projectDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
+  },
+  projectText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '500',
   },
   billableBadge: {
     backgroundColor: colors.success + '20',

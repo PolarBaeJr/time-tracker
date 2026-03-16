@@ -97,6 +97,8 @@ export interface EntryListProps {
   selectedIds?: Set<string>;
   /** Callback when entry selection is toggled */
   onToggleSelect?: (entry: TimeEntry) => void;
+  /** Whether to show approval status badges (workspace mode) */
+  showApprovalStatus?: boolean;
 }
 
 /**
@@ -229,6 +231,7 @@ export function EntryList({
   isSelectable = false,
   selectedIds,
   onToggleSelect,
+  showApprovalStatus = false,
 }: EntryListProps): React.ReactElement {
   // Build category lookup map
   const categoryMap = useMemo(() => {
@@ -279,6 +282,7 @@ export function EntryList({
           isSelectable={isSelectable}
           isSelected={selectedIds?.has(item.entry.id) ?? false}
           onToggleSelect={onToggleSelect}
+          showApprovalStatus={showApprovalStatus}
         />
       );
     },
@@ -292,11 +296,12 @@ export function EntryList({
       isSelectable,
       selectedIds,
       onToggleSelect,
+      showApprovalStatus,
     ]
   );
 
   // Key extractor
-  const keyExtractor = useCallback((item: ListItem, index: number) => {
+  const keyExtractor = useCallback((item: ListItem, _index: number) => {
     if (item.type === 'header') {
       return `header-${item.date}`;
     }

@@ -72,6 +72,7 @@ export const iconMap = {
   'file-text': '\u{1F4C4}', // page facing up (same as file)
   'file-text-outline': '\u{1F4C3}', // page with curl (document outline)
   'check-square': '\u2611', // ballot box with check (todo icon)
+  'check-square-outline': '\u2610', // ballot box (approval tab inactive)
 
   // Email and communication icons
   mail: '\u2709', // envelope
@@ -112,6 +113,15 @@ export const iconMap = {
   'activity-outline': '\u{1F4CA}', // chart (outline same)
   trophy: '\u{1F3C6}', // trophy emoji
   'trophy-outline': '\u{1F3C6}', // trophy (outline same)
+
+  // Shared dashboards icons
+  'share-2': '\u{1F517}', // link/share emoji
+  share: '\u{1F517}', // link/share emoji
+  users: '\u{1F465}', // busts in silhouette (team)
+  user: '\u{1F464}', // bust in silhouette (person)
+  'check-circle': '\u2714', // heavy check mark (success)
+  'x-circle': '\u2718', // heavy ballot x (error/cancel)
+  'trending-up': '\u{1F4C8}', // chart with upwards trend
 } as const;
 
 export type IconName = keyof typeof iconMap;

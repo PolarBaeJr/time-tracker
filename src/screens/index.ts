@@ -24,3 +24,5 @@ export {
 export { SharedDashboardsScreen } from './SharedDashboardsScreen';
 export { ActivityFeedScreen, type ActivityFeedScreenProps } from './ActivityFeedScreen';
 export { LeaderboardScreen, type LeaderboardScreenProps } from './LeaderboardScreen';
+export { ApprovalScreen, type ApprovalScreenProps } from './ApprovalScreen';
+export { PublicProfileScreen, type PublicProfileScreenProps } from './PublicProfileScreen';

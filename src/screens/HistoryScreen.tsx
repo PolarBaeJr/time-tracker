@@ -99,22 +99,16 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
 
   // Workspace context for project fetching
   const { activeWorkspace, isPersonalMode } = useWorkspaceContext();
-  const { showToast } = useToast();
+  const { success: showSuccessToast, error: showErrorToast } = useToast();
 
   // Submit entries mutation
   const submitEntries = useSubmitEntries({
     onSuccess: () => {
-      showToast({
-        message: 'Entries submitted for approval',
-        variant: 'success',
-      });
+      showSuccessToast('Entries submitted for approval');
       setSubmitModalVisible(false);
     },
     onError: error => {
-      showToast({
-        message: error.message || 'Failed to submit entries',
-        variant: 'error',
-      });
+      showErrorToast(error.message || 'Failed to submit entries');
     },
   });
 
@@ -236,7 +230,7 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
         entry_ids: entryIds,
       });
     },
-    [activeWorkspace?.id, submitEntries]
+    [activeWorkspace, submitEntries]
   );
 
   // Handle filter changes
@@ -369,6 +363,13 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
   const isLoading = entriesLoading || categoriesLoading;
 
   const selectedCount = selectedIds.size;
+
+  // Count selected draft entries (for submit button)
+  const selectedDraftCount = useMemo(() => {
+    if (isPersonalMode || !activeWorkspace) return 0;
+    return Array.from(selectedIds).filter(id => draftEntries.some(entry => entry.id === id)).length;
+  }, [selectedIds, draftEntries, isPersonalMode, activeWorkspace]);
+
   const isBulkActionPending =
     bulkUpdate.isPending || bulkDelete.isPending || mergeEntries.isPending;
 
@@ -483,6 +484,7 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
         isSelectable={isSelectMode}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
+        showApprovalStatus={!isPersonalMode && !!activeWorkspace}
       />
 
       {/* Floating action bar for select mode */}
@@ -509,6 +511,29 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
             >
               <Icon name="merge" size={16} color={colors.primary} />
               <Text style={styles.actionBarButtonText}>Merge</Text>
+            </Pressable>
+          )}
+
+          {/* Submit for Approval button (workspace mode only) */}
+          {!isPersonalMode && activeWorkspace && selectedDraftCount > 0 && (
+            <Pressable
+              style={[styles.actionBarButton, styles.actionBarSubmitButton]}
+              onPress={() => setSubmitModalVisible(true)}
+              disabled={isBulkActionPending || submitEntries.isPending}
+              accessibilityRole="button"
+              accessibilityLabel={`Submit ${selectedDraftCount} entries for approval`}
+            >
+              <Icon name="send" size={16} color={colors.success} />
+              <Text
+                style={
+                  StyleSheet.flatten([
+                    styles.actionBarButtonText,
+                    styles.actionBarSubmitText,
+                  ]) as TextStyle
+                }
+              >
+                Submit ({selectedDraftCount})
+              </Text>
             </Pressable>
           )}
 
@@ -614,6 +639,18 @@ export function HistoryScreen({ route, navigation }: HistoryScreenProps): React.
           </View>
         </View>
       </Modal>
+
+      {/* Submit for Approval modal */}
+      {!isPersonalMode && activeWorkspace && (
+        <SubmitEntriesModal
+          visible={submitModalVisible}
+          workspaceId={activeWorkspace.id}
+          entries={draftEntries.filter(entry => selectedIds.has(entry.id))}
+          onSubmit={handleSubmitForApproval}
+          onClose={() => setSubmitModalVisible(false)}
+          isSubmitting={submitEntries.isPending}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -752,6 +789,12 @@ const styles = StyleSheet.create({
   },
   actionBarDeleteText: {
     color: colors.error,
+  },
+  actionBarSubmitButton: {
+    backgroundColor: colors.success + '15',
+  },
+  actionBarSubmitText: {
+    color: colors.success,
   },
   // Category picker modal
   categoryModalOverlay: {
