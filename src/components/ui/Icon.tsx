@@ -108,6 +108,10 @@ export const iconMap = {
   // Collaboration icons
   briefcase: '\u{1F4BC}', // briefcase emoji
   'briefcase-outline': '\u{1F4BC}', // briefcase (outline same)
+  activity: '\u{1F4CA}', // chart with upwards trend (activity)
+  'activity-outline': '\u{1F4CA}', // chart (outline same)
+  trophy: '\u{1F3C6}', // trophy emoji
+  'trophy-outline': '\u{1F3C6}', // trophy (outline same)
 } as const;
 
 export type IconName = keyof typeof iconMap;

@@ -21,3 +21,6 @@ export {
   WorkspaceSettingsScreen,
   type WorkspaceSettingsScreenProps,
 } from './WorkspaceSettingsScreen';
+export { SharedDashboardsScreen } from './SharedDashboardsScreen';
+export { ActivityFeedScreen, type ActivityFeedScreenProps } from './ActivityFeedScreen';
+export { LeaderboardScreen, type LeaderboardScreenProps } from './LeaderboardScreen';

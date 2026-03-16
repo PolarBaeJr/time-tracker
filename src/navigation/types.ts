@@ -91,6 +91,9 @@ export type RootStackParamList = {
   ProjectDetail: {
     projectId: string;
   };
+
+  /** Shared dashboards management - accessible from Settings */
+  SharedDashboards: undefined;
 };
 
 /**
@@ -103,6 +106,9 @@ export type RootStackParamList = {
  * - Notes: Notes and todos management
  * - Analytics: Dashboard with charts and stats
  * - Projects: Project management (shown when workspace active)
+ * - ActivityFeed: Workspace activity feed (shown when workspace active)
+ * - Leaderboard: Workspace leaderboard (shown when workspace active)
+ * - Approval: Approval workflow (shown when workspace active)
  * - Settings: User preferences, categories, and goals management
  */
 export type MainTabParamList = {
@@ -137,6 +143,15 @@ export type MainTabParamList = {
 
   /** Projects screen - workspace project management (conditional tab) */
   Projects: undefined;
+
+  /** Activity feed screen - workspace activity (conditional tab) */
+  ActivityFeed: undefined;
+
+  /** Leaderboard screen - workspace leaderboard (conditional tab) */
+  Leaderboard: undefined;
+
+  /** Approval screen - workspace approval workflow (conditional tab) */
+  Approval: undefined;
 
   /** Settings screen - optional initial section parameter */
   Settings:

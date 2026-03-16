@@ -38,9 +38,13 @@ import {
   NotesScreen as NotesScreenComponent,
   AnalyticsScreen as AnalyticsScreenComponent,
   ProjectsScreen as ProjectsScreenComponent,
+  ActivityFeedScreen as ActivityFeedScreenComponent,
+  LeaderboardScreen as LeaderboardScreenComponent,
+  ApprovalScreen as ApprovalScreenComponent,
   SettingsScreen as SettingsScreenComponent,
 } from '@/screens';
 import { useWorkspaceContext } from '@/contexts/WorkspaceContext';
+import { usePendingApprovals } from '@/hooks';
 
 import type { MainTabParamList } from './types';
 
@@ -61,6 +65,9 @@ function getTabIcon(routeName: keyof MainTabParamList, focused: boolean): IconNa
     Notes: { active: 'file-text', inactive: 'file-text-outline' },
     Analytics: { active: 'bar-chart', inactive: 'bar-chart-outline' },
     Projects: { active: 'briefcase', inactive: 'briefcase-outline' },
+    ActivityFeed: { active: 'activity', inactive: 'activity-outline' },
+    Leaderboard: { active: 'trophy', inactive: 'trophy-outline' },
+    Approval: { active: 'check-square', inactive: 'check-square-outline' },
     Settings: { active: 'settings', inactive: 'settings-outline' },
   };
 
@@ -232,6 +239,9 @@ const HistoryTabIcon = createTabIconComponent('History');
 const NotesTabIcon = createTabIconComponent('Notes');
 const AnalyticsTabIcon = createTabIconComponent('Analytics');
 const ProjectsTabIcon = createTabIconComponent('Projects');
+const ActivityFeedTabIcon = createTabIconComponent('ActivityFeed');
+const LeaderboardTabIcon = createTabIconComponent('Leaderboard');
+const ApprovalTabIcon = createTabIconComponent('Approval');
 const SettingsTabIcon = createTabIconComponent('Settings');
 
 // Map route names to tab icon render functions
@@ -245,6 +255,8 @@ const tabIconComponents: Record<
   Notes: props => <NotesTabIcon {...props} />,
   Analytics: props => <AnalyticsTabIcon {...props} />,
   Projects: props => <ProjectsTabIcon {...props} />,
+  ActivityFeed: props => <ActivityFeedTabIcon {...props} />,
+  Leaderboard: props => <LeaderboardTabIcon {...props} />,
   Settings: props => <SettingsTabIcon {...props} />,
 };
 
@@ -319,6 +331,20 @@ export function MainTabs(): React.ReactElement {
             name="Projects"
             component={ProjectsScreenComponent}
             options={{ title: 'Projects' }}
+          />
+        )}
+        {showWorkspaceTabs && (
+          <Tab.Screen
+            name="ActivityFeed"
+            component={ActivityFeedScreenComponent}
+            options={{ title: 'Activity' }}
+          />
+        )}
+        {showWorkspaceTabs && (
+          <Tab.Screen
+            name="Leaderboard"
+            component={LeaderboardScreenComponent}
+            options={{ title: 'Leaderboard' }}
           />
         )}
         <Tab.Screen
