@@ -28,6 +28,7 @@ import {
   WorkspacesScreen,
   WorkspaceSettingsScreen,
   SharedDashboardsScreen,
+  SharedDashboardScreen,
   PublicProfileScreen,
   PublicProfileSettingsScreen,
 } from '@/screens';
@@ -305,19 +306,70 @@ export function RootNavigator(): React.ReactElement {
       }}
     >
       {!isAuthenticated ? (
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ animationTypeForReplace: 'pop' }}
-        />
+        <>
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ animationTypeForReplace: 'pop' }}
+          />
+          {/* Public routes accessible without authentication */}
+          <Stack.Screen
+            name="SharedDashboard"
+            component={SharedDashboardScreen}
+            options={{
+              headerShown: false, // Standalone page, no header/navigation
+            }}
+          />
+          <Stack.Screen
+            name="PublicProfile"
+            component={PublicProfileScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+        </>
       ) : !user?.onboarding_complete ? (
-        <Stack.Screen name="Setup" component={SetupScreen} />
+        <>
+          <Stack.Screen name="Setup" component={SetupScreen} />
+          {/* Public routes accessible during setup */}
+          <Stack.Screen
+            name="SharedDashboard"
+            component={SharedDashboardScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="PublicProfile"
+            component={PublicProfileScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+        </>
       ) : showOnboarding ? (
-        <Stack.Screen
-          name="Onboarding"
-          component={OnboardingScreen}
-          options={{ animation: 'fade' }}
-        />
+        <>
+          <Stack.Screen
+            name="Onboarding"
+            component={OnboardingScreen}
+            options={{ animation: 'fade' }}
+          />
+          {/* Public routes accessible during onboarding */}
+          <Stack.Screen
+            name="SharedDashboard"
+            component={SharedDashboardScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="PublicProfile"
+            component={PublicProfileScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+        </>
       ) : (
         <>
           <Stack.Screen name="Main" component={MainTabs} />
@@ -447,6 +499,14 @@ export function RootNavigator(): React.ReactElement {
               headerStyle: { backgroundColor: colors.surface },
               headerTintColor: colors.text,
               headerShadowVisible: false,
+            }}
+          />
+          {/* Public route - accessible to everyone, renders standalone page */}
+          <Stack.Screen
+            name="SharedDashboard"
+            component={SharedDashboardScreen}
+            options={{
+              headerShown: false, // Standalone page, no header/navigation
             }}
           />
         </>

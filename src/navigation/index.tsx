@@ -286,6 +286,8 @@ const linking = {
       PublicProfile: 'u/:slug',
       // Public profile settings (auth required)
       PublicProfileSettings: 'settings/public-profile',
+      // Shared dashboard route - no auth required
+      SharedDashboard: 'shared/:token',
     },
   },
   async getInitialURL() {

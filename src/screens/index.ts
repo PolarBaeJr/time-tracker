@@ -27,3 +27,8 @@ export { LeaderboardScreen, type LeaderboardScreenProps } from './LeaderboardScr
 export { ApprovalScreen, type ApprovalScreenProps } from './ApprovalScreen';
 export { PublicProfileScreen, type PublicProfileScreenProps } from './PublicProfileScreen';
 export { PublicProfileSettingsScreen } from './PublicProfileSettingsScreen';
+export {
+  SharedDashboardScreen,
+  type SharedDashboardScreenProps,
+  type SharedDashboardScreenParams,
+} from './SharedDashboardScreen';

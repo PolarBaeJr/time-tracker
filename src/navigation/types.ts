@@ -103,6 +103,12 @@ export type RootStackParamList = {
 
   /** Public profile settings - accessible from Settings */
   PublicProfileSettings: undefined;
+
+  /** Shared dashboard view - public route, no auth required */
+  SharedDashboard: {
+    /** The share token (UUID) */
+    token: string;
+  };
 };
 
 /**
