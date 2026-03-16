@@ -282,6 +282,10 @@ const linking = {
         },
       },
       EntryEdit: 'entry/:entryId',
+      // Public profile route - no auth required
+      PublicProfile: 'u/:slug',
+      // Public profile settings (auth required)
+      PublicProfileSettings: 'settings/public-profile',
     },
   },
   async getInitialURL() {

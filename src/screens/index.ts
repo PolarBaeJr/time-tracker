@@ -26,3 +26,4 @@ export { ActivityFeedScreen, type ActivityFeedScreenProps } from './ActivityFeed
 export { LeaderboardScreen, type LeaderboardScreenProps } from './LeaderboardScreen';
 export { ApprovalScreen, type ApprovalScreenProps } from './ApprovalScreen';
 export { PublicProfileScreen, type PublicProfileScreenProps } from './PublicProfileScreen';
+export { PublicProfileSettingsScreen } from './PublicProfileSettingsScreen';

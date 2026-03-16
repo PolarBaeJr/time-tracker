@@ -27,6 +27,9 @@ import {
   OnboardingScreen,
   WorkspacesScreen,
   WorkspaceSettingsScreen,
+  SharedDashboardsScreen,
+  PublicProfileScreen,
+  PublicProfileSettingsScreen,
 } from '@/screens';
 import { useHasCompletedOnboarding, useOnboardingStoreHydrated } from '@/stores/onboardingStore';
 import { supabase } from '@/lib/supabase';
@@ -410,6 +413,37 @@ export function RootNavigator(): React.ReactElement {
               presentation: 'modal',
               headerShown: true,
               headerTitle: 'Workspace Settings',
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="SharedDashboards"
+            component={SharedDashboardsScreen}
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              headerTitle: 'Shared Dashboards',
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name="PublicProfile"
+            component={PublicProfileScreen}
+            options={{
+              headerShown: false, // PublicProfileScreen has its own header
+            }}
+          />
+          <Stack.Screen
+            name="PublicProfileSettings"
+            component={PublicProfileSettingsScreen}
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              headerTitle: 'Public Profile',
               headerStyle: { backgroundColor: colors.surface },
               headerTintColor: colors.text,
               headerShadowVisible: false,

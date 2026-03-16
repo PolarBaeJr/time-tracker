@@ -207,6 +207,20 @@ export function SettingsScreen(): React.ReactElement {
               title="Workspaces"
               subtitle="Manage team workspaces and invitations"
             />
+            <View style={styles.navLinkDivider} />
+            <SettingsNavLink
+              screen="SharedDashboards"
+              icon="share-2"
+              title="Shared Dashboards"
+              subtitle="Share analytics with others via link"
+            />
+            <View style={styles.navLinkDivider} />
+            <SettingsNavLink
+              screen="PublicProfileSettings"
+              icon="user"
+              title="Public Profile"
+              subtitle="Share your stats with a public link"
+            />
           </Card>
         </View>
 

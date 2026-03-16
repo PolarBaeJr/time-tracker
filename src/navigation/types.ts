@@ -94,6 +94,15 @@ export type RootStackParamList = {
 
   /** Shared dashboards management - accessible from Settings */
   SharedDashboards: undefined;
+
+  /** Public profile - viewable by anyone with the link (no auth required) */
+  PublicProfile: {
+    /** The profile slug to display */
+    slug: string;
+  };
+
+  /** Public profile settings - accessible from Settings */
+  PublicProfileSettings: undefined;
 };
 
 /**
