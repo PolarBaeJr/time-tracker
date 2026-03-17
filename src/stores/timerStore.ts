@@ -11,17 +11,24 @@ interface TimerStoreState {
   localElapsed: number;
   isRunning: boolean;
   offlineQueue: QueuedAction[];
+  /** Project ID for the current timer session (collaboration feature) */
+  projectId: string | null;
   setActiveTimer: (timer: ActiveTimer | null) => void;
   startLocalTick: () => void;
   stopLocalTick: () => void;
   queueAction: (action: QueuedAction) => void;
   clearQueue: () => void;
   syncFromServer: (timer: ActiveTimer | null) => void;
+  /** Set the project for the current timer session */
+  setProjectId: (projectId: string | null) => void;
+  /** Clear project when timer stops */
+  clearProject: () => void;
 }
 
 interface PersistedTimerState {
   activeTimer: ActiveTimer | null;
   offlineQueue: QueuedAction[];
+  projectId: string | null;
 }
 
 type Listener = () => void;
@@ -43,13 +50,14 @@ const calculateElapsedSeconds = (timer: ActiveTimer | null): number => {
 };
 
 const notifyListeners = (): void => {
-  listeners.forEach((listener) => listener());
+  listeners.forEach(listener => listener());
 };
 
 const persistState = async (): Promise<void> => {
   const persistable: PersistedTimerState = {
     activeTimer: storeState.activeTimer,
     offlineQueue: storeState.offlineQueue,
+    projectId: storeState.projectId,
   };
 
   try {
@@ -60,7 +68,12 @@ const persistState = async (): Promise<void> => {
 };
 
 const setStoreData = (
-  partial: Partial<Pick<TimerStoreState, 'activeTimer' | 'localElapsed' | 'isRunning' | 'offlineQueue'>>
+  partial: Partial<
+    Pick<
+      TimerStoreState,
+      'activeTimer' | 'localElapsed' | 'isRunning' | 'offlineQueue' | 'projectId'
+    >
+  >
 ): void => {
   if (partial.activeTimer !== undefined) {
     storeState.activeTimer = partial.activeTimer;
@@ -73,6 +86,9 @@ const setStoreData = (
   }
   if (partial.offlineQueue !== undefined) {
     storeState.offlineQueue = partial.offlineQueue;
+  }
+  if (partial.projectId !== undefined) {
+    storeState.projectId = partial.projectId;
   }
 
   notifyListeners();
@@ -114,24 +130,32 @@ const hydrateStore = async (): Promise<void> => {
     const parsed: unknown = JSON.parse(stored);
     const activeTimerCandidate =
       typeof parsed === 'object' && parsed !== null && 'activeTimer' in parsed
-        ? (parsed as { activeTimer?: unknown }).activeTimer ?? null
+        ? ((parsed as { activeTimer?: unknown }).activeTimer ?? null)
         : null;
     const offlineQueueCandidate =
       typeof parsed === 'object' && parsed !== null && 'offlineQueue' in parsed
         ? (parsed as { offlineQueue?: unknown }).offlineQueue
         : [];
+    const projectIdCandidate =
+      typeof parsed === 'object' && parsed !== null && 'projectId' in parsed
+        ? (parsed as { projectId?: unknown }).projectId
+        : null;
 
     const activeTimer =
-      activeTimerCandidate === null ? null : ActiveTimerSchema.safeParse(activeTimerCandidate).data ?? null;
+      activeTimerCandidate === null
+        ? null
+        : (ActiveTimerSchema.safeParse(activeTimerCandidate).data ?? null);
     const offlineQueue = Array.isArray(offlineQueueCandidate)
       ? offlineQueueCandidate
-          .map((item) => QueuedActionSchema.safeParse(item))
-          .filter((result) => result.success)
-          .map((result) => result.data)
+          .map(item => QueuedActionSchema.safeParse(item))
+          .filter(result => result.success)
+          .map(result => result.data)
       : [];
+    const projectId = typeof projectIdCandidate === 'string' ? projectIdCandidate : null;
 
     storeState.activeTimer = activeTimer;
     storeState.offlineQueue = offlineQueue;
+    storeState.projectId = projectId;
     storeState.isRunning = Boolean(activeTimer?.running);
     storeState.localElapsed = calculateElapsedSeconds(activeTimer);
     notifyListeners();
@@ -149,6 +173,7 @@ const storeState: TimerStoreState = {
   localElapsed: 0,
   isRunning: false,
   offlineQueue: [],
+  projectId: null,
   setActiveTimer(timer) {
     const parsed = timer === null ? null : ActiveTimerSchema.parse(timer);
     const shouldRun = Boolean(parsed?.running);
@@ -193,6 +218,12 @@ const storeState: TimerStoreState = {
   },
   syncFromServer(timer) {
     storeState.setActiveTimer(timer);
+  },
+  setProjectId(projectId) {
+    setStoreData({ projectId });
+  },
+  clearProject() {
+    setStoreData({ projectId: null });
   },
 };
 

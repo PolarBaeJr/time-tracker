@@ -116,6 +116,7 @@ async function createTimeEntry(input: CreateTimeEntryInput): Promise<TimeEntry> 
       notes: validatedInput.notes ?? null,
       entry_type: 'work',
       is_billable: validatedInput.is_billable ?? false,
+      project_id: validatedInput.project_id ?? null,
       created_at: now,
       updated_at: now,
     } as TimeEntry;
@@ -131,6 +132,7 @@ async function createTimeEntry(input: CreateTimeEntryInput): Promise<TimeEntry> 
       duration_seconds: validatedInput.duration_seconds,
       notes: validatedInput.notes ?? null,
       is_billable: validatedInput.is_billable ?? false,
+      project_id: validatedInput.project_id ?? null,
     })
     .select()
     .single();
@@ -286,6 +288,9 @@ async function updateTimeEntry({ id, data }: UpdateTimeEntryParams): Promise<Tim
   }
   if (validatedInput.billing_rate !== undefined) {
     updateData.billing_rate = validatedInput.billing_rate;
+  }
+  if (validatedInput.project_id !== undefined) {
+    updateData.project_id = validatedInput.project_id;
   }
 
   // RLS ensures user can only update their own entries
@@ -619,6 +624,7 @@ async function duplicateTimeEntry(id: string): Promise<TimeEntry> {
       entry_type: original.entry_type,
       is_billable: original.is_billable,
       billing_rate: original.billing_rate,
+      project_id: original.project_id,
     })
     .select()
     .single();
@@ -908,6 +914,7 @@ async function mergeTimeEntries(ids: string[]): Promise<TimeEntry> {
   );
   const totalDuration = entries.reduce((sum, e) => sum + e.duration_seconds, 0);
   const categoryId = entries[0].category_id;
+  const projectId = entries[0].project_id;
   const notes = entries
     .map(e => e.notes)
     .filter(Boolean)
@@ -923,6 +930,7 @@ async function mergeTimeEntries(ids: string[]): Promise<TimeEntry> {
       duration_seconds: totalDuration,
       notes: notes || null,
       billing_rate: entries[0].billing_rate,
+      project_id: projectId,
     })
     .select()
     .single();

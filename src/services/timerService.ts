@@ -84,6 +84,12 @@ export interface StartTimerOptions {
    */
   categoryId?: string | null;
 
+  /**
+   * Project ID to associate with the timer (optional)
+   * Must be a valid UUID of a project in the active workspace
+   */
+  projectId?: string | null;
+
   /** Timer mode: 'normal', 'pomodoro', or 'countdown' */
   timerMode?: 'normal' | 'pomodoro' | 'countdown';
 
@@ -233,6 +239,12 @@ export interface StopTimerOptions {
    * Max 1000 characters
    */
   notes?: string | null;
+
+  /**
+   * Project ID to associate with the created time entry (optional)
+   * Must be a valid UUID of a project in the active workspace
+   */
+  projectId?: string | null;
 }
 
 /**
@@ -292,6 +304,7 @@ export async function stopTimer(options?: StopTimerOptions): Promise<TimerResult
         end_at: now,
         duration_seconds: durationSeconds,
         notes: input.notes,
+        project_id: options?.projectId ?? null,
       });
 
       store.setActiveTimer(null);
@@ -300,6 +313,7 @@ export async function stopTimer(options?: StopTimerOptions): Promise<TimerResult
         id: crypto.randomUUID(),
         user_id: '00000000-0000-0000-0000-000000000000',
         category_id: activeTimer.category_id,
+        project_id: options?.projectId ?? null,
         start_at: activeTimer.started_at,
         end_at: now,
         duration_seconds: durationSeconds,
@@ -314,6 +328,7 @@ export async function stopTimer(options?: StopTimerOptions): Promise<TimerResult
     // Call the RPC function which handles everything atomically
     const { data, error } = await supabase.rpc('stop_timer_and_create_entry', {
       p_notes: input.notes,
+      p_project_id: options?.projectId ?? null,
     });
 
     if (error) {

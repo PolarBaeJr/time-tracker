@@ -295,3 +295,350 @@ git status      # check for local changes
 git stash       # stash them, then retry
 ./scripts/deploy.sh
 ```
+
+---
+
+## Self-hosted Supabase on Raspberry Pi 5
+
+This section covers running the entire Supabase stack locally on a Pi 5 (16 GB RAM, 2 TB SSD). In this setup the Pi is your database server — no supabase.com account needed.
+
+### Hardware assumptions
+
+| Component | Spec |
+|-----------|------|
+| Board | Raspberry Pi 5 |
+| RAM | 16 GB |
+| Storage | 2 TB SSD (connected via USB 3 or PCIe HAT) |
+| OS | Raspberry Pi OS 64-bit Lite (`aarch64`) |
+
+### Overview of what runs
+
+Supabase self-host spins up ~13 containers:
+
+| Container | Purpose |
+|-----------|---------|
+| `db` | PostgreSQL 15 |
+| `auth` (GoTrue) | Authentication |
+| `rest` (PostgREST) | Auto-generated REST API |
+| `realtime` | WebSocket subscriptions |
+| `storage` | File storage |
+| `imgproxy` | Image transformations |
+| `edge-runtime` | Supabase Edge Functions |
+| `kong` | API gateway (port 8000) |
+| `studio` | Supabase dashboard UI (port 3001) |
+| `meta` | Postgres metadata API |
+| `functions` | Custom Edge Functions |
+| `analytics` | Logflare analytics |
+| `vector` | Log aggregation |
+
+---
+
+### Step A — Mount and prepare the SSD
+
+```bash
+# Find the SSD device name
+lsblk
+
+# Format (if new — DESTRUCTIVE, skip if already formatted)
+sudo mkfs.ext4 /dev/sda1
+
+# Create mount point and mount
+sudo mkdir -p /mnt/ssd
+sudo mount /dev/sda1 /mnt/ssd
+
+# Make it auto-mount on reboot
+echo "UUID=$(sudo blkid -s UUID -o value /dev/sda1) /mnt/ssd ext4 defaults,noatime 0 2" | sudo tee -a /etc/fstab
+
+# Create data directories on the SSD
+sudo mkdir -p /mnt/ssd/supabase/postgres
+sudo mkdir -p /mnt/ssd/supabase/storage
+sudo chown -R $USER:$USER /mnt/ssd/supabase
+```
+
+---
+
+### Step B — Install Docker (skip if already installed)
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+newgrp docker
+sudo apt-get install -y docker-compose-plugin
+docker compose version   # should print v2.x
+```
+
+---
+
+### Step C — Clone Supabase and configure
+
+```bash
+git clone --depth 1 https://github.com/supabase/supabase /opt/supabase
+cd /opt/supabase/docker
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```bash
+nano .env
+```
+
+Set these values (generate secrets with `openssl rand -base64 32`):
+
+```env
+############################################################
+# REQUIRED — generate these, do not leave as defaults
+############################################################
+
+# Postgres password — pick something strong
+POSTGRES_PASSWORD=your_strong_password_here
+
+# JWT secrets — must be at least 32 chars
+JWT_SECRET=your_jwt_secret_here
+ANON_KEY=your_anon_key_here          # generate with: node -e "require('jsonwebtoken').sign({role:'anon'},process.env.JWT_SECRET,{expiresIn:'10y'},(_,t)=>console.log(t))"
+SERVICE_ROLE_KEY=your_service_role_key_here
+
+############################################################
+# URLs — replace <pi-ip> with your Pi's LAN IP
+############################################################
+
+SITE_URL=http://<pi-ip>:8000
+API_EXTERNAL_URL=http://<pi-ip>:8000
+SUPABASE_PUBLIC_URL=http://<pi-ip>:8000
+
+# Studio dashboard URL
+STUDIO_DEFAULT_ORGANIZATION=WorkTracker
+STUDIO_DEFAULT_PROJECT=worktracker
+
+############################################################
+# Google OAuth (copy from your existing Supabase project)
+############################################################
+
+GOTRUE_EXTERNAL_GOOGLE_ENABLED=true
+GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID=your_google_client_id
+GOTRUE_EXTERNAL_GOOGLE_SECRET=your_google_client_secret
+GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=http://<pi-ip>:8000/auth/v1/callback
+
+############################################################
+# Email (for workspace invites — optional, add later)
+############################################################
+
+SMTP_HOST=smtp.resend.com
+SMTP_PORT=465
+SMTP_USER=resend
+SMTP_PASS=your_resend_api_key
+SMTP_SENDER_NAME=WorkTracker
+```
+
+Point Postgres data at the SSD by editing `docker-compose.yml`:
+
+```bash
+# Replace the db volume path with your SSD mount
+sed -i 's|./volumes/db/data:|/mnt/ssd/supabase/postgres:|g' docker-compose.yml
+sed -i 's|./volumes/storage:|/mnt/ssd/supabase/storage:|g' docker-compose.yml
+```
+
+---
+
+### Step D — Pull images and start
+
+The first pull will take several minutes on Pi (large images):
+
+```bash
+cd /opt/supabase/docker
+docker compose pull
+docker compose up -d
+
+# Watch startup progress
+docker compose logs -f --tail=50
+```
+
+Once all containers are healthy:
+
+```bash
+docker compose ps   # all should show "healthy" or "running"
+```
+
+Verify the API gateway is responding:
+
+```bash
+curl http://localhost:8000/rest/v1/   # should return JSON
+```
+
+Open the Studio dashboard in your browser:
+```
+http://<pi-ip>:3001
+```
+
+---
+
+### Step E — Apply WorkTracker migrations
+
+With your local Supabase running, apply all migrations:
+
+```bash
+cd /Users/matthewcheng/Projects/Time\ tracker
+
+# Set the local DB URL (password from .env POSTGRES_PASSWORD)
+export SUPABASE_DB_URL="postgresql://postgres:your_strong_password_here@<pi-ip>:5432/postgres"
+
+npx supabase db push --db-url "$SUPABASE_DB_URL"
+```
+
+All 34 migrations will be applied to the local Postgres instance.
+
+---
+
+### Step F — Deploy Edge Functions
+
+```bash
+cd /Users/matthewcheng/Projects/Time\ tracker
+
+# Link to the local instance
+npx supabase link --project-ref worktracker --supabase-url http://<pi-ip>:8000 --supabase-key your_service_role_key_here
+
+# Deploy all Edge Functions
+npx supabase functions deploy send-workspace-invite
+npx supabase functions deploy shared-dashboard
+npx supabase functions deploy public-profile
+npx supabase functions deploy decrypt-api-key
+npx supabase functions deploy encrypt-api-key
+npx supabase functions deploy email-sync
+npx supabase functions deploy calendar-sync
+```
+
+Set Edge Function secrets (for workspace invite emails):
+
+```bash
+npx supabase secrets set RESEND_API_KEY=your_resend_api_key
+```
+
+---
+
+### Step G — Point the WorkTracker app at the Pi
+
+Update your local `.env` (or app config):
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=http://<pi-ip>:8000
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+```
+
+Update Google OAuth in Google Cloud Console — add `http://<pi-ip>:8000/auth/v1/callback` as an authorised redirect URI.
+
+---
+
+### Step H — Auto-start Supabase on reboot
+
+```bash
+sudo tee /etc/systemd/system/supabase.service > /dev/null <<EOF
+[Unit]
+Description=Supabase self-hosted
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/supabase/docker
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=300
+User=$USER
+Group=$USER
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable supabase.service
+sudo systemctl start supabase.service
+```
+
+---
+
+### Generating ANON_KEY and SERVICE_ROLE_KEY
+
+Use this script on any machine with Node.js to generate keys from your `JWT_SECRET`:
+
+```bash
+node -e "
+const jwt = require('jsonwebtoken');
+const secret = 'your_jwt_secret_here';
+const anon = jwt.sign({ role: 'anon' }, secret, { expiresIn: '10y' });
+const service = jwt.sign({ role: 'service_role' }, secret, { expiresIn: '10y' });
+console.log('ANON_KEY=' + anon);
+console.log('SERVICE_ROLE_KEY=' + service);
+"
+```
+
+---
+
+### Useful commands
+
+```bash
+# Status of all Supabase containers
+docker compose -f /opt/supabase/docker/docker-compose.yml ps
+
+# Live logs for a specific service
+docker compose -f /opt/supabase/docker/docker-compose.yml logs -f db
+docker compose -f /opt/supabase/docker/docker-compose.yml logs -f auth
+
+# Restart a single service
+docker compose -f /opt/supabase/docker/docker-compose.yml restart realtime
+
+# Connect directly to Postgres
+psql postgresql://postgres:your_password@localhost:5432/postgres
+
+# Disk usage
+df -h /mnt/ssd
+du -sh /mnt/ssd/supabase/postgres
+```
+
+### Updating Supabase
+
+```bash
+cd /opt/supabase
+git pull
+cd docker
+docker compose pull
+docker compose up -d --remove-orphans
+```
+
+### Self-hosted Supabase troubleshooting
+
+**Studio shows blank / can't connect**
+```bash
+# Check Kong gateway
+docker compose logs kong | tail -20
+# Verify SITE_URL in .env matches the URL you're browsing from
+```
+
+**Auth / Google OAuth not working**
+```bash
+docker compose logs auth | tail -30
+# Confirm GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI exactly matches the
+# authorised redirect URI in Google Cloud Console
+```
+
+**Realtime subscriptions not connecting**
+```bash
+docker compose logs realtime | tail -20
+# Ensure port 4000 is not blocked by firewall:
+sudo ufw allow 4000/tcp
+```
+
+**Edge Functions not responding**
+```bash
+docker compose logs edge-runtime | tail -20
+# Redeploy:
+npx supabase functions deploy <function-name>
+```
+
+**Postgres running out of connections**
+```bash
+# Edit /opt/supabase/docker/volumes/db/postgresql.conf
+# Increase: max_connections = 200
+docker compose restart db
+```

@@ -37,7 +37,7 @@ export const MonthlyGoalSchema = z.object({
    * NULL = overall/total goal or per-category goal
    * NOT NULL = per-type goal
    */
-  category_type: z.string().min(1).max(50).nullable(),
+  category_type: z.string().min(1).max(50).nullable().optional(),
 
   /**
    * Target hours to achieve in this month

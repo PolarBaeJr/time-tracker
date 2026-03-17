@@ -18,7 +18,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export interface SettingsNavLinkProps {
   /** The screen to navigate to */
-  screen: 'Categories' | 'Goals' | 'Workspaces';
+  screen: 'Categories' | 'Goals' | 'Workspaces' | 'SharedDashboards' | 'PublicProfileSettings';
   /** Icon to display */
   icon: IconName;
   /** Title text */
@@ -33,7 +33,7 @@ export interface SettingsNavLinkProps {
  * SettingsNavLink Component
  *
  * A styled navigation link for the Settings screen that navigates to
- * sub-screens in the root stack (Categories, Goals, Workspaces).
+ * sub-screens in the root stack (Categories, Goals, Workspaces, SharedDashboards, PublicProfileSettings).
  *
  * @example
  * ```tsx

@@ -17,4 +17,4 @@ CREATE POLICY "Users can manage own AI connections" ON public.ai_connections FOR
 -- Add trigger for auto-updating updated_at
 CREATE TRIGGER update_ai_connections_updated_at
   BEFORE UPDATE ON public.ai_connections
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();

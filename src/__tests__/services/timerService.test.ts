@@ -173,6 +173,7 @@ describe('timerService', () => {
       expect(result.data).toEqual(validEntry);
       expect(supabase.rpc).toHaveBeenCalledWith('stop_timer_and_create_entry', {
         p_notes: null,
+        p_project_id: null,
       });
     });
 
@@ -190,6 +191,7 @@ describe('timerService', () => {
       expect(result.error).toBeNull();
       expect(supabase.rpc).toHaveBeenCalledWith('stop_timer_and_create_entry', {
         p_notes: notes,
+        p_project_id: null,
       });
     });
 
@@ -225,6 +227,7 @@ describe('timerService', () => {
       expect(result.error).toBeNull();
       expect(supabase.rpc).toHaveBeenCalledWith('stop_timer_and_create_entry', {
         p_notes: null,
+        p_project_id: null,
       });
     });
   });

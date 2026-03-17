@@ -1,6 +1,4 @@
-# syntax=docker/dockerfile:1.7
-
-FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -24,7 +22,7 @@ ENV EAS_PROJECT_ID=$EAS_PROJECT_ID
 
 RUN npm run build:web
 
-FROM --platform=$TARGETPLATFORM nginx:alpine AS production
+FROM nginx:alpine AS production
 
 COPY nginx/ /etc/nginx/
 COPY --from=builder /app/dist /usr/share/nginx/html

@@ -5,10 +5,28 @@
  * needed for testing business logic without the full RN runtime.
  */
 
+const easingFn = (t: number) => t;
+export const Easing = {
+  linear: easingFn,
+  ease: easingFn,
+  quad: easingFn,
+  cubic: easingFn,
+  poly: () => easingFn,
+  sin: easingFn,
+  circle: easingFn,
+  exp: easingFn,
+  elastic: () => easingFn,
+  back: () => easingFn,
+  bounce: easingFn,
+  bezier: () => easingFn,
+  in: (fn: unknown) => fn,
+  out: (fn: unknown) => fn,
+  inOut: (fn: unknown) => fn,
+};
+
 export const Platform = {
   OS: 'web' as const,
-  select: <T extends { web?: unknown; native?: unknown }>(obj: T): unknown =>
-    obj.web ?? obj.native,
+  select: <T extends { web?: unknown; native?: unknown }>(obj: T): unknown => obj.web ?? obj.native,
   Version: 0,
   isTV: false,
   isTesting: true,

@@ -54,6 +54,9 @@ module.exports = {
     // Mock testing library (use jest-native builtins)
     '^@testing-library/react-native$':
       '<rootDir>/src/__tests__/mocks/testing-library-react-native.ts',
+    // Mock Expo native modules that ship as ESM and can't be transformed by ts-jest
+    '^expo-secure-store$': '<rootDir>/src/__tests__/mocks/expo-secure-store.ts',
+    '^expo-constants$': '<rootDir>/src/__tests__/mocks/expo-constants.ts',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
@@ -86,6 +89,12 @@ module.exports = {
       lines: 70,
       statements: 70,
     },
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(expo-constants|expo-modules-core|expo-secure-store|expo-av|expo-linking|expo-web-browser|@expo)/)',
+  ],
+  globals: {
+    __DEV__: true,
   },
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
